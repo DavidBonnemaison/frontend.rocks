@@ -1,0 +1,27 @@
+.Header {
+  background-color: var(--primary);
+  background-image: url('/assets/images/banner.jpg');
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: cover;
+  font-family: 'Roboto Mono', monospace;
+  line-height: 1.2;
+  padding: 2rem;
+}
+
+.Header-container {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin: 0 auto;
+  max-width: 50rem;
+}
+
+.Logo {
+  color: white;
+  cursor: poitner;
+}
+
+.Logo-title {
+  font-size: 2rem;
+}

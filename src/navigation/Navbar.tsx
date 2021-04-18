@@ -1,25 +1,22 @@
-import React, { ReactNode } from 'react';
+import React from 'react';
 
-type INavbarProps = {
-  children: ReactNode;
-};
+import Link from 'next/link';
 
-const Navbar = (props: INavbarProps) => (
-  <ul className="navbar flex flex-wrap text-xl">
-    {props.children}
+import styles from './style.module.css';
 
-    <style jsx>
-      {`
-        .navbar :global(a) {
-          @apply text-gray-700;
-        }
-
-        .navbar :global(a:hover) {
-          @apply no-underline text-gray-900;
-        }
-      `}
-    </style>
+const Navbar = () => (
+  <ul className={styles.Menu}>
+    <li className={styles['Menu-item']}>
+      <Link href="/">
+        <a className={styles['Menu-link']}>Blog</a>
+      </Link>
+    </li>
+    <li className={styles['Menu-item']}>
+      <Link href="/about/">
+        <a className={styles['Menu-link']}>About</a>
+      </Link>
+    </li>
   </ul>
 );
 
-export { Navbar };
+export default Navbar;

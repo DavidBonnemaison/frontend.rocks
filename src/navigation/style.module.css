@@ -1,0 +1,14 @@
+.Menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+}
+
+.Menu-item + .Menu-item {
+  margin-left: 1rem;
+}
+
+.Menu-link {
+  color: white;
+}

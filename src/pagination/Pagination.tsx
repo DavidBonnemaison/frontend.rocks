@@ -4,13 +4,13 @@ import Link from 'next/link';
 
 import { convertUrlToLinkHref } from '../utils/Pagination';
 
-export type IPaginationProps = {
+export interface PaginationProps {
   previous?: string;
   next?: string;
-};
+}
 
-const Pagination = (props: IPaginationProps) => (
-  <div className="text-sm flex justify-between">
+const Pagination = (props: PaginationProps) => (
+  <div>
     {props.previous && (
       <div>
         <Link href={convertUrlToLinkHref(props.previous)} as={props.previous}>
@@ -20,7 +20,7 @@ const Pagination = (props: IPaginationProps) => (
     )}
 
     {props.next && (
-      <div className="text-right ml-auto">
+      <div>
         <Link href={convertUrlToLinkHref(props.next)} as={props.next}>
           <a>Older Posts →</a>
         </Link>

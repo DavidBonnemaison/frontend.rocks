@@ -2,10 +2,9 @@ import React from 'react';
 
 import { AppProps } from 'next/app';
 
-import '../styles/main.css';
-import '../styles/prism-a11y-dark.css';
+import './main.css';
 
 // eslint-disable-next-line react/jsx-props-no-spreading
-const MyApp = ({ Component, pageProps }: AppProps) => <Component {...pageProps} />;
+const App = ({ Component, pageProps }: AppProps) => <Component {...pageProps} />;
 
-export default MyApp;
+export default App;
