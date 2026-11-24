@@ -17,3 +17,17 @@
   path = "/vs/*"
   function = "markdown-negotiation"
 
+[[headers]]
+  for = "/concepts/*"
+  [headers.values]
+    Vary = "Accept"
+
+[[headers]]
+  for = "/autopsies/*"
+  [headers.values]
+    Vary = "Accept"
+
+[[headers]]
+  for = "/vs/*"
+  [headers.values]
+    Vary = "Accept"

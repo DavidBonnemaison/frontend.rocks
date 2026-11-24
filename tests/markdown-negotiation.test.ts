@@ -40,4 +40,34 @@ describe('markdown negotiation edge function', () => {
     );
     expect(res).toBe(next);
   });
+
+  it('keeps the upstream Vary tokens and adds Accept', async () => {
+    const res = await markdownNegotiation(
+      markdownRequest('/concepts/fixture-concept-a/'),
+      makeContext(
+        new Response('# Twin', { headers: { Vary: 'Accept-Encoding' } }),
+        new Response('html')
+      )
+    );
+    expect(res.headers.get('Vary')).toBe('Accept-Encoding, Accept');
+  });
+
+  it('does not repeat Accept when the upstream Vary already has it', async () => {
+    const res = await markdownNegotiation(
+      markdownRequest('/concepts/fixture-concept-a/'),
+      makeContext(
+        new Response('# Twin', { headers: { Vary: 'accept, Accept-Encoding' } }),
+        new Response('html')
+      )
+    );
+    expect(res.headers.get('Vary')).toBe('accept, Accept-Encoding');
+  });
+
+  it('sets Vary: Accept when the upstream response has none', async () => {
+    const res = await markdownNegotiation(
+      markdownRequest('/concepts/fixture-concept-a/'),
+      makeContext(new Response('# Twin'), new Response('html'))
+    );
+    expect(res.headers.get('Vary')).toBe('Accept');
+  });
 });
