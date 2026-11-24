@@ -27,6 +27,7 @@ import { PRODUCTION_SYMPTOMS } from '../src/config/symptoms';
 import { buildSearchIndex } from '../src/lib/search-index';
 import { PUBLIC_DIR, SITE_ROOT } from '../src/lib/paths';
 import { parseCliArgs } from '../src/lib/cli-args';
+import { buildIndexNowPending } from '../src/lib/indexnow';
 import { buildAuditRulesCatalog, renderAuditCatalogMarkdown } from '../src/lib/audit-rules';
 
 const PUBLIC_SKILL_REFS_DIR = path.join(process.cwd(), 'packages', 'public-skill', 'references');
@@ -271,6 +272,18 @@ ${rssItems}
     })),
   ];
   fs.writeFileSync(path.join(PUBLIC_DIR, 'sitemap.xml'), buildSitemapXml(sitemapEntries));
+
+  // 7b. IndexNow: the deploy-succeeded Netlify function reads this file (it has no git history).
+  const indexNowPending = buildIndexNowPending({
+    commit,
+    deployedCommit: process.env.DEPLOYED_COMMIT,
+    publishedUrls: sitemapEntries.map((entry) => entry.loc),
+    git: (args) => execFileSync('git', args, { cwd: SITE_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }),
+  });
+  fs.writeFileSync(
+    path.join(PUBLIC_DIR, 'indexnow-pending.json'),
+    JSON.stringify(indexNowPending, null, 2) + '\n',
+  );
 
   // 8. Static OG Images (1200x630 PNG) in public/og/ — generated for ALL pages (every page keeps
   // an accessible URL and a share image is not a content distribution channel).

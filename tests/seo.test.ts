@@ -30,11 +30,6 @@ import { extractVsPairs } from '@/lib/vs-pairs';
 import { PRODUCTION_SYMPTOMS } from '@/config/symptoms';
 import { validateProgrammaticSeo } from '@/lib/validators/seo-validator';
 import markdownNegotiation from '../netlify/edge-functions/markdown-negotiation';
-import {
-  collectIndexNowUrls,
-  mapChangedFileToUrls,
-  submitIndexNow,
-} from '../scripts/post-deploy-seo';
 
 describe('US-14.3: SEO Titles, JSON-LD @graph & Git-Freshness Sitemap', () => {
   const concepts = getAllConcepts();
@@ -364,63 +359,6 @@ describe('US-14.1, US-14.2 & Section 1.2: Programmatic /vs/, /symptoms/ & Anti-D
       dateModified: sample.dateModified,
     });
     expect(vsJsonLd['@graph'].some((n) => n['@type'] === 'FAQPage')).toBe(true);
-  });
-});
-
-describe('US-14.6: Post-Deploy SEO Pipeline (IndexNow)', () => {
-  it('maps changed git diff files to canonical frontend.rocks URLs', () => {
-    expect(mapChangedFileToUrls('content/concepts/css-stacking-context.mdx')).toEqual([
-      'https://frontend.rocks/concepts/css-stacking-context/',
-    ]);
-    expect(mapChangedFileToUrls('content/autopsies/zindex-9999-tooltip-war.mdx')).toEqual([
-      'https://frontend.rocks/autopsies/zindex-9999-tooltip-war/',
-    ]);
-    expect(mapChangedFileToUrls('content/digests/2026-w46.json')).toEqual([
-      'https://frontend.rocks/digest/',
-    ]);
-    expect(mapChangedFileToUrls('content/labs/css-stacking-context.json')).toEqual([
-      'https://frontend.rocks/embed/lab/css-stacking-context/',
-    ]);
-    expect(mapChangedFileToUrls('src/config/symptoms.ts')).toEqual([
-      'https://frontend.rocks/symptoms/',
-    ]);
-    expect(mapChangedFileToUrls('README.md')).toEqual([]);
-
-    expect(
-      collectIndexNowUrls([
-        'content/concepts/css-stacking-context.mdx',
-        'content/concepts/css-stacking-context.mdx',
-        'src/config/symptoms.ts',
-        'package.json',
-      ])
-    ).toEqual([
-      'https://frontend.rocks/concepts/css-stacking-context/',
-      'https://frontend.rocks/symptoms/',
-    ]);
-  });
-
-  it('skips gracefully without error when the IndexNow key is missing', async () => {
-    const indexRes = await submitIndexNow(['https://frontend.rocks/concepts/css-stacking-context/'], {});
-    expect(indexRes).toEqual({ skipped: true, reason: 'INDEXNOW_KEY not set' });
-  });
-
-  it('submits the URL list to IndexNow when the key is set', async () => {
-    const calls: Array<{ url: string; body: string }> = [];
-    const mockFetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-      calls.push({ url: String(input), body: String(init?.body) });
-      return new Response('', { status: 200 });
-    }) as typeof fetch;
-    const res = await submitIndexNow(
-      ['https://frontend.rocks/concepts/css-stacking-context/'],
-      { INDEXNOW_KEY: 'k' },
-      mockFetch
-    );
-    expect(res).toEqual({ skipped: false, submittedCount: 1 });
-    expect(calls).toHaveLength(1);
-    expect(calls[0].url).toBe('https://api.indexnow.org/indexnow');
-    expect(JSON.parse(calls[0].body).urlList).toEqual([
-      'https://frontend.rocks/concepts/css-stacking-context/',
-    ]);
   });
 });
 

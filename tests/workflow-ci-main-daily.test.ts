@@ -125,10 +125,12 @@ describe('workflows', () => {
   });
 });
 
-describe('post-deploy-seo.yml', () => {
-  it('only runs on workflow_dispatch', () => {
-    const { wf } = load('post-deploy-seo.yml');
-    expect(Object.keys(wf.on)).toEqual(['workflow_dispatch']);
+describe('IndexNow', () => {
+  it('has no GitHub workflow: the deploy-succeeded Netlify function sends it', () => {
+    expect(fs.existsSync(path.join(workflowsDir, 'post-deploy-seo.yml'))).toBe(false);
+    expect(
+      fs.existsSync(path.join(process.cwd(), 'netlify', 'functions', 'deploy-succeeded.mts')),
+    ).toBe(true);
   });
 });
 
