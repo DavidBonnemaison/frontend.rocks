@@ -1,17 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
+import type { Page } from '@playwright/test';
 
 test.describe('Quarantine: unverified pages stay reachable but are hidden from search and machines', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.route('https://static.cloudflareinsights.com/**', (route) =>
-      route.fulfill({
-        status: 200,
-        headers: { 'Content-Type': 'application/javascript; charset=utf-8' },
-        body: '/* stub */',
-      })
-    );
-  });
-
-  async function firstVsHref(page: import('@playwright/test').Page): Promise<string> {
+  async function firstVsHref(page: Page): Promise<string> {
     await page.goto('/vs/', { waitUntil: 'networkidle' });
     const href = await page.locator('a[href^="/vs/"]:not([href="/vs/"])').first().getAttribute('href');
     expect(href).toBeTruthy();
@@ -39,7 +30,7 @@ test.describe('Quarantine: unverified pages stay reachable but are hidden from s
     await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(0);
   });
 
-  test('listing pages with nothing published are noindex, the homepage is not', async ({ page }) => {
+  test('listing pages with nothing published are noindex, the homepage is not @smoke', async ({ page }) => {
     for (const url of ['/autopsies/', '/symptoms/', '/vs/', '/digest/']) {
       await page.goto(url, { waitUntil: 'networkidle' });
       await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);

@@ -1,17 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
-test.describe('US-18.1: Client-Side Diagnostic Tool (/diagnose)', () => {
-  test('analyzes all 3 demo traces locally in a Web Worker with zero outgoing network requests and valid prescription links', async ({
+test.describe('Diagnostic tool (/diagnose)', () => {
+  test('analyzes every demo trace locally in a Web Worker with zero outgoing network requests and valid prescription links @smoke', async ({
     page,
   }) => {
     const errors: string[] = [];
-    await page.route('https://static.cloudflareinsights.com/**', (route) =>
-      route.fulfill({
-        status: 200,
-        headers: { 'Content-Type': 'application/javascript; charset=utf-8' },
-        body: '/* stub */',
-      })
-    );
     page.on('pageerror', (e) => errors.push(e.message));
     page.on('console', (m) => {
       if (m.type() === 'error') errors.push(m.text());

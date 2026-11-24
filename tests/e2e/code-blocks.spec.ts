@@ -1,17 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
-test.describe('EPIC-16 US-16.3: Shiki Syntax Highlighting & Copy Code Button', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.route('https://static.cloudflareinsights.com/**', (route) =>
-      route.fulfill({
-        status: 200,
-        headers: { 'Content-Type': 'application/javascript; charset=utf-8' },
-        body: '/* stub */',
-      })
-    );
-  });
-
-  test('renders Shiki highlighted spans and toggles Copy -> Copied on a concept code block', async ({
+test.describe('Code blocks', () => {
+  test('highlights a concept code block and toggles its Copy button @smoke', async ({
     page,
     context,
   }) => {
@@ -51,7 +41,7 @@ test.describe('EPIC-16 US-16.3: Shiki Syntax Highlighting & Copy Code Button', (
     expect(errors).toEqual([]);
   });
 
-  test('renders Shiki highlighted code blocks with Copy button on an autopsy page', async ({
+  test('highlights an autopsy code block and gives it a Copy button', async ({
     page,
     context,
   }) => {

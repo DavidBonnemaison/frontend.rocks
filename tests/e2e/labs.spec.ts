@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 const CONCEPTS_DIR = path.join(process.cwd(), 'content', 'concepts');
 const conceptIds = fs
@@ -24,17 +24,10 @@ for (const slug of ALIGNED_SLUGS) {
 
 for (const id of conceptIds) {
   test.describe(`Interactive Lab & Layout — ${id}`, () => {
-    test('zero console errors, zero horizontal overflow (desktop & mobile), interactive controls & screenshots', async ({
+    test(`zero console errors, zero horizontal overflow (desktop & mobile), interactive controls & screenshots${ALIGNED_SLUGS.includes(id) ? ' @smoke' : ''}`, async ({
       page,
     }) => {
       const consoleErrors: string[] = [];
-      await page.route('https://static.cloudflareinsights.com/**', (route) =>
-        route.fulfill({
-          status: 200,
-          headers: { 'Content-Type': 'application/javascript; charset=utf-8' },
-          body: '/* stub */',
-        })
-      );
       page.on('console', (msg) => {
         if (msg.type() === 'error') consoleErrors.push(msg.text());
       });
@@ -100,3 +93,55 @@ for (const id of conceptIds) {
     });
   });
 }
+
+test.describe('Lab behaviours', () => {
+  test('keeps the step machine inspector inside the mobile viewport @smoke', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/concepts/event-loop-tasks-microtasks/', { waitUntil: 'networkidle' });
+
+    const lab = page.getByTestId('lab-step-machine');
+    await expect(lab).toBeVisible();
+
+    // Advance to step 2 to trigger state modification highlight
+    await page.getByTestId('lab-next').click();
+
+    const labOverflow = await lab.evaluate((el) => el.scrollWidth > el.clientWidth);
+    expect(labOverflow, 'StepMachineLab horizontal overflow on 390px').toBe(false);
+  });
+
+  test('renders the sandboxed live lab and updates it from its controls', async ({
+    page,
+  }) => {
+    const consoleErrors: string[] = [];
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') consoleErrors.push(msg.text());
+    });
+    page.on('pageerror', (err) => consoleErrors.push(err.message));
+
+    await page.goto('/concepts/block-formatting-context/');
+
+    const iframe = page.locator('iframe[sandbox="allow-scripts"]').first();
+    await expect(iframe).toBeVisible();
+    await expect(iframe).toHaveAttribute('sandbox', 'allow-scripts');
+
+    const initialSrcDoc = await iframe.getAttribute('srcdoc');
+    expect(initialSrcDoc).toBeTruthy();
+
+    // Toggle a control inside the sandbox lab and verify srcDoc updates deterministically
+    const toggleBtn = page.locator('button[role="switch"]').first();
+    await expect(toggleBtn).toBeVisible();
+    await toggleBtn.click();
+
+    const updatedSrcDoc = await iframe.getAttribute('srcdoc');
+    expect(updatedSrcDoc).toBeTruthy();
+    expect(updatedSrcDoc).not.toBe(initialSrcDoc);
+
+    // Verify /embed/lab/[lab_id]/ also renders cleanly
+    await page.goto('/embed/lab/block-formatting-context/');
+    await expect(page.locator('iframe[sandbox="allow-scripts"]').first()).toBeVisible();
+
+    expect(consoleErrors).toEqual([]);
+  });
+});

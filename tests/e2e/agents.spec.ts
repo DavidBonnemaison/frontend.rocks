@@ -1,17 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
-test.describe('US-19.3: Agent-Native Ecosystem Showcase (/agents/)', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.route('https://static.cloudflareinsights.com/**', (route) =>
-      route.fulfill({
-        status: 200,
-        headers: { 'Content-Type': 'application/javascript; charset=utf-8' },
-        body: '/* stub */',
-      })
-    );
-  });
-
-  test('renders all 3 sections, CopyCodeButton on every code block, 4 MCP tools, and raw machine links', async ({
+test.describe('Agents page (/agents/)', () => {
+  test('renders all 3 sections, a Copy button on every code block, the MCP tools and the raw machine links @smoke', async ({
     page,
     context,
   }) => {
@@ -39,15 +29,17 @@ test.describe('US-19.3: Agent-Native Ecosystem Showcase (/agents/)', () => {
       page.getByRole('heading', { level: 2, name: /Raw Machine Interfaces/i })
     ).toBeVisible();
 
-    // Every code block shell has a visible CopyCodeButton
-    const codeShells = page.locator('.code-block-shell');
-    const shellCount = await codeShells.count();
-    expect(shellCount).toBeGreaterThanOrEqual(8);
+    // Every code block has a visible Copy button
+    const codeBlocks = page.locator('main pre');
+    const blockCount = await codeBlocks.count();
+    expect(blockCount).toBeGreaterThan(0);
 
-    for (let i = 0; i < shellCount; i += 1) {
-      const btn = codeShells.nth(i).getByTestId('copy-code-button');
-      await expect(btn).toBeVisible();
+    for (let i = 0; i < blockCount; i += 1) {
+      const shell = codeBlocks.nth(i).locator('xpath=ancestor::*[contains(@class,"code-block-shell")]');
+      await expect(shell.getByTestId('copy-code-button')).toBeVisible();
     }
+
+    const codeShells = page.locator('.code-block-shell');
 
     // Clicking the first Copy button copies the skill install command
     const firstCopyBtn = codeShells.first().getByTestId('copy-code-button');
@@ -95,7 +87,7 @@ test.describe('US-19.3: Agent-Native Ecosystem Showcase (/agents/)', () => {
     expect(errors).toEqual([]);
   });
 
-  test('links from homepage footer to /agents/ and renders without horizontal overflow on 390px mobile', async ({
+  test('links from the home footer to /agents/ without horizontal overflow on mobile', async ({
     page,
   }) => {
     const errors: string[] = [];

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 interface SearchIndexEntry {
   kind: string;
@@ -9,8 +9,27 @@ interface SearchIndexEntry {
   badge: string;
 }
 
-test.describe('EPIC-16 US-16.1: Command Palette 2.0 & Lazy-Loaded Static Search Index', () => {
-  test('homepage static HTML does not serialize searchItems into RSC payload', async ({
+test.describe('Command palette and search index', () => {
+  test('does not surface unverified autopsies and shows a clean empty state', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByTestId('cmdk-trigger');
+    await expect(trigger).toBeVisible();
+    await trigger.click();
+
+    const dialog = page.getByRole('dialog', { name: 'Instant search' });
+    await expect(dialog).toBeVisible();
+
+    const input = dialog.getByLabel('Instant search input');
+    await input.fill('Double Payment');
+    await expect(dialog.getByText(/No results for/)).toBeVisible();
+    await expect(dialog.getByRole('button', { name: /Double Payment/i })).toHaveCount(0);
+  });
+
+  test('keeps the search items out of the home page HTML payload', async ({
     request,
   }) => {
     const res = await request.get('/');
@@ -22,17 +41,10 @@ test.describe('EPIC-16 US-16.1: Command Palette 2.0 & Lazy-Loaded Static Search 
     expect(html).not.toContain('zindex-9999-tooltip-war#lab');
   });
 
-  test('Cmd+K lazy-loads /search-index.json once and shows a clean empty state when no content is published', async ({
+  test('lazy-loads /search-index.json once and caches it @smoke', async ({
     page,
     request,
   }) => {
-    await page.route('https://static.cloudflareinsights.com/**', (route) =>
-      route.fulfill({
-        status: 200,
-        headers: { 'Content-Type': 'application/javascript; charset=utf-8' },
-        body: '/* stub */',
-      })
-    );
 
     let searchIndexRequests = 0;
     page.on('request', (req) => {

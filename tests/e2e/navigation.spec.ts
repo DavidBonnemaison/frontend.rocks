@@ -1,17 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
-test.describe('Editorial Home, Concept Map (/graph), Index, Cmd+K Search, Digest & Obsolescence', () => {
-  test('renders editorial storefront on /, dedicated /graph with edge notes, and secondary routes without errors', async ({
+test.describe('Navigation', () => {
+  test('renders the storefront, the graph with edge notes and the secondary routes without errors', async ({
     page,
   }) => {
     const errors: string[] = [];
-    await page.route('https://static.cloudflareinsights.com/**', (route) =>
-      route.fulfill({
-        status: 200,
-        headers: { 'Content-Type': 'application/javascript; charset=utf-8' },
-        body: '/* stub */',
-      })
-    );
     page.on('pageerror', (e) => errors.push(e.message));
     page.on('console', (m) => {
       if (m.type() === 'error') errors.push(m.text());
@@ -92,6 +85,61 @@ test.describe('Editorial Home, Concept Map (/graph), Index, Cmd+K Search, Digest
     await page.goto('/obsolescence/', { waitUntil: 'networkidle' });
     await expect(page.getByRole('heading', { name: /Obsolescence Radar/i })).toBeVisible();
     await expect(page.getByText(/ResizeObserver/i).first()).toBeVisible();
+
+    expect(errors).toEqual([]);
+  });
+
+  test('links to the autopsies from the desktop header and the mobile drawer @smoke', async ({
+    page,
+  }) => {
+    // Desktop 1440x900
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'networkidle' });
+
+    const desktopNav = page.getByRole('navigation', { name: 'Primary navigation' });
+    const desktopAutopsiesLink = desktopNav.getByRole('link', { name: 'Autopsies' });
+    await expect(desktopAutopsiesLink).toBeVisible();
+    await desktopAutopsiesLink.click();
+    await expect(page).toHaveURL(/\/autopsies\/?$/);
+
+    // Mobile 390x844
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/', { waitUntil: 'networkidle' });
+
+    const menuToggle = page.getByRole('button', { name: 'Open navigation menu' });
+    await expect(menuToggle).toBeVisible();
+    await menuToggle.click();
+
+    const mobileDrawer = page.getByRole('navigation', { name: 'Mobile navigation' });
+    await expect(mobileDrawer).toBeVisible();
+    const mobileAutopsiesLink = mobileDrawer.getByRole('link', { name: 'Autopsies' });
+    await expect(mobileAutopsiesLink).toBeVisible();
+    await mobileAutopsiesLink.click();
+    await expect(page).toHaveURL(/\/autopsies\/?$/);
+  });
+
+  test('shows the primary navigation in order', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('console', (m) => {
+      if (m.type() === 'error') errors.push(m.text());
+    });
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/', { waitUntil: 'networkidle' });
+
+    const desktopNav = page.getByRole('navigation', { name: 'Primary navigation' });
+    const navLabels = await desktopNav.locator('a').allInnerTexts();
+    expect(navLabels).toEqual(['Home', 'Autopsies', 'Symptoms', 'Diagnose', 'Concept Map', 'Index', 'Radar']);
+
+    await expect(desktopNav.getByRole('link', { name: 'Symptoms' })).toHaveAttribute(
+      'href',
+      '/symptoms/'
+    );
+    await expect(desktopNav.getByRole('link', { name: 'Radar' })).toHaveAttribute(
+      'href',
+      '/obsolescence/'
+    );
 
     expect(errors).toEqual([]);
   });
