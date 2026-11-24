@@ -13,14 +13,14 @@ import './agents.css';
 export const metadata: Metadata = {
   title: 'AI Agents, Audit Skill & MCP Server | frontend.rocks',
   description:
-    'Install the frontend-rocks-audit skill, connect the @frontend-rocks/mcp server in Cursor, Claude Code, or Antigravity, and consume raw Markdown and JSON feeds.',
+    'Install the frontend-rocks-audit skill, connect the hosted frontend.rocks MCP endpoint in Cursor, Claude Code, or Antigravity, and consume raw Markdown and JSON feeds.',
   alternates: {
     canonical: `${SITE_URL}/agents/`,
   },
   openGraph: {
     title: 'AI Agents, Audit Skill & MCP Server | frontend.rocks',
     description:
-      'Install the frontend-rocks-audit skill, connect the @frontend-rocks/mcp server in Cursor, Claude Code, or Antigravity, and consume raw Markdown and JSON feeds.',
+      'Install the frontend-rocks-audit skill, connect the hosted frontend.rocks MCP endpoint in Cursor, Claude Code, or Antigravity, and consume raw Markdown and JSON feeds.',
     url: `${SITE_URL}/agents/`,
     type: 'website',
   },
@@ -70,26 +70,6 @@ const ANTIGRAVITY_REMOTE_MCP_CONFIG = `{
   "mcpServers": {
     "frontend-rocks": {
       "serverUrl": "https://frontend.rocks/mcp"
-    }
-  }
-}`;
-
-const CURSOR_MCP_CONFIG = `{
-  "mcpServers": {
-    "frontend-rocks": {
-      "command": "npx",
-      "args": ["-y", "@frontend-rocks/mcp"]
-    }
-  }
-}`;
-
-const CLAUDE_CODE_MCP_CMD = 'claude mcp add frontend-rocks -- npx -y @frontend-rocks/mcp';
-
-const ANTIGRAVITY_MCP_CONFIG = `{
-  "mcpServers": {
-    "frontend-rocks": {
-      "command": "npx",
-      "args": ["-y", "@frontend-rocks/mcp"]
     }
   }
 }`;
@@ -165,7 +145,7 @@ export default function AgentsPage() {
         <p className="agents-subtitle">
           Give your coding agent direct access to browser-internals mechanics, production autopsy
           case files, and {catalog.rule_count} deterministic audit rules—via an installable Agent
-          Skill, a local stdio MCP server, or raw Markdown and JSON feeds.
+          Skill, the hosted MCP endpoint, or raw Markdown and JSON feeds.
         </p>
 
         <nav className="agents-jump-nav" aria-label="Agent integration sections">
@@ -280,18 +260,16 @@ export default function AgentsPage() {
         <div className="agents-section-header">
           <span className="agents-section-kicker">02 // Model Context Protocol</span>
           <h2 id="mcp-server-heading" className="agents-section-title">
-            Connect the MCP Server (<code>{REMOTE_MCP_URL}</code> &amp;{' '}
-            <code>@frontend-rocks/mcp</code>)
+            Connect the MCP Server (<code>{REMOTE_MCP_URL}</code>)
           </h2>
           <p className="agents-section-lead">
             Query the full <code>frontend.rocks</code> knowledge graph directly from your IDE or
-            agent runtime—either via our hosted Streamable HTTP endpoint (zero install) or locally
-            over stdio via npm. Zero API keys, zero telemetry, 1-hour in-memory cache over live
-            JSON/Markdown artifacts with optional local <code>public/</code> fallback.
+            agent runtime through the hosted Streamable HTTP endpoint. Nothing to install, zero API
+            keys, zero telemetry, 1-hour in-memory cache over live JSON and Markdown artifacts.
           </p>
         </div>
 
-        <h3 className="agents-subsection-title">Hosted Remote HTTP — Zero Install (Recommended)</h3>
+        <h3 className="agents-subsection-title">Hosted Streamable HTTP Endpoint</h3>
         <div className="agents-clients-grid">
           <article className="agents-client-card">
             <div className="agents-client-head">
@@ -355,76 +333,6 @@ export default function AgentsPage() {
               </div>
               <pre className="agents-code-pre">
                 <code>{ANTIGRAVITY_REMOTE_MCP_CONFIG}</code>
-              </pre>
-            </div>
-          </article>
-        </div>
-
-        <h3 className="agents-subsection-title">Local Stdio Package (@frontend-rocks/mcp)</h3>
-        <div className="agents-clients-grid">
-          <article className="agents-client-card">
-            <div className="agents-client-head">
-              <h4 className="agents-client-name">Cursor (Stdio)</h4>
-              <span className="badge">.cursor/mcp.json</span>
-            </div>
-            <p className="agents-client-note">
-              Add this block to your project&apos;s <code>.cursor/mcp.json</code> or global Cursor
-              MCP settings.
-            </p>
-            <div className="agents-code-shell code-block-shell">
-              <div className="code-block-header">
-                <span className="code-lang-badge">JSON · CURSOR</span>
-                <CopyCodeButton
-                  rawCode={CURSOR_MCP_CONFIG}
-                  label="Copy Cursor MCP JSON configuration"
-                />
-              </div>
-              <pre className="agents-code-pre">
-                <code>{CURSOR_MCP_CONFIG}</code>
-              </pre>
-            </div>
-          </article>
-
-          <article className="agents-client-card">
-            <div className="agents-client-head">
-              <h4 className="agents-client-name">Claude Code (Stdio)</h4>
-              <span className="badge">CLI</span>
-            </div>
-            <p className="agents-client-note">
-              Register the stdio server directly from your terminal with a single command.
-            </p>
-            <div className="agents-code-shell code-block-shell">
-              <div className="code-block-header">
-                <span className="code-lang-badge">BASH · CLAUDE CODE</span>
-                <CopyCodeButton
-                  rawCode={CLAUDE_CODE_MCP_CMD}
-                  label="Copy Claude Code MCP CLI command"
-                />
-              </div>
-              <pre className="agents-code-pre">
-                <code>{CLAUDE_CODE_MCP_CMD}</code>
-              </pre>
-            </div>
-          </article>
-
-          <article className="agents-client-card">
-            <div className="agents-client-head">
-              <h4 className="agents-client-name">Antigravity (Stdio)</h4>
-              <span className="badge">mcpServers</span>
-            </div>
-            <p className="agents-client-note">
-              Add <code>frontend-rocks</code> to your Antigravity MCP server configuration.
-            </p>
-            <div className="agents-code-shell code-block-shell">
-              <div className="code-block-header">
-                <span className="code-lang-badge">JSON · ANTIGRAVITY</span>
-                <CopyCodeButton
-                  rawCode={ANTIGRAVITY_MCP_CONFIG}
-                  label="Copy Antigravity MCP JSON configuration"
-                />
-              </div>
-              <pre className="agents-code-pre">
-                <code>{ANTIGRAVITY_MCP_CONFIG}</code>
               </pre>
             </div>
           </article>

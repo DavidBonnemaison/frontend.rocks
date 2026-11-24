@@ -25,7 +25,7 @@ jobs:
       changed: ${{ steps.cmp.outputs.changed }}
       deployed: ${{ steps.cmp.outputs.deployed }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - id: cmp
@@ -49,11 +49,11 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # git diff from the deployed commit (IndexNow, EPIC-21)
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -74,7 +74,7 @@ jobs:
       # and the deployed dist/ must contain them.
       - run: npm run generate:lab-previews
       - run: npx playwright test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: site-dist
           path: dist/
@@ -89,16 +89,16 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4 # netlify.toml, netlify/functions, netlify/edge-functions
+      - uses: actions/checkout@v7 # netlify.toml, netlify/functions, netlify/edge-functions
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
       - name: Install dependencies for function bundling, without running any install script
         run: npm ci --ignore-scripts
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: site-dist
           path: dist

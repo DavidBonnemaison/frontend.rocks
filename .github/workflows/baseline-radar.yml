@@ -19,8 +19,8 @@ jobs:
   baseline-radar:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -55,7 +55,7 @@ jobs:
 
       - name: Create Baseline Sync PR
         if: ${{ github.event.inputs.dry_run != 'true' && steps.git_diff.outputs.has_changes == 'true' }}
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.NIGHTLY_PR_TOKEN }}
           commit-message: 'chore(radar): weekly baseline sync'

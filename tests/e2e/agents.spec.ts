@@ -56,10 +56,10 @@ test.describe('US-19.3: Agent-Native Ecosystem Showcase (/agents/)', () => {
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
     expect(clipboardText).toContain('npx skills add DavidBonnemaison/frontend-rocks-skills');
 
-    // Both hosted Remote HTTP MCP and local stdio MCP are documented
+    // Only the hosted endpoint is documented: no npm package and no stdio setup
     const mcpSection = page.locator('#mcp-server');
     await expect(mcpSection).toContainText('https://frontend.rocks/mcp');
-    await expect(mcpSection).toContainText('@frontend-rocks/mcp');
+    await expect(page.getByText('npx -y @frontend-rocks/mcp')).toHaveCount(0);
 
     // All 4 MCP tool names are documented
     for (const toolName of [
