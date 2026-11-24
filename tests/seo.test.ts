@@ -11,6 +11,7 @@ import {
   SITE_URL,
 } from '@/lib/seo-schema';
 import {
+  buildBuildInfo,
   buildAutopsyMarkdownTwin,
   buildConceptMarkdownTwin,
   buildLlmsTxt,
@@ -420,5 +421,29 @@ describe('US-14.6: Post-Deploy SEO Pipeline (IndexNow)', () => {
     expect(JSON.parse(calls[0].body).urlList).toEqual([
       'https://frontend.rocks/concepts/css-stacking-context/',
     ]);
+  });
+});
+
+describe('build-info.json', () => {
+  const now = new Date('2026-12-01T03:41:12.000Z');
+
+  it('records the commit, the deployed commit and the deploy context', () => {
+    expect(
+      buildBuildInfo({ DEPLOYED_COMMIT: '802ed13', DEPLOY_CONTEXT: 'production' }, '5997682', now),
+    ).toEqual({
+      commit: '5997682',
+      previousCommit: '802ed13',
+      builtAt: '2026-12-01T03:41:12.000Z',
+      context: 'production',
+    });
+  });
+
+  it('falls back to null and "local" when the variables are unset or empty', () => {
+    expect(buildBuildInfo({ DEPLOYED_COMMIT: '' }, '5997682', now)).toEqual({
+      commit: '5997682',
+      previousCommit: null,
+      builtAt: '2026-12-01T03:41:12.000Z',
+      context: 'local',
+    });
   });
 });

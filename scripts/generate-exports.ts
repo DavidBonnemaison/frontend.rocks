@@ -10,6 +10,7 @@ import {
   buildLlmsTxt,
   buildRobotsTxt,
   buildSitemapXml,
+  buildBuildInfo,
   buildVsMarkdownTwin,
   getGitLastModified,
   SITE_URL,
@@ -25,18 +26,22 @@ import { extractVsPairs } from '../src/lib/vs-pairs';
 import { PRODUCTION_SYMPTOMS } from '../src/config/symptoms';
 import { buildSearchIndex } from '../src/lib/search-index';
 import { PUBLIC_DIR, SITE_ROOT } from '../src/lib/paths';
+import { parseCliArgs } from '../src/lib/cli-args';
 import { buildAuditRulesCatalog, renderAuditCatalogMarkdown } from '../src/lib/audit-rules';
 
 const PUBLIC_SKILL_REFS_DIR = path.join(process.cwd(), 'packages', 'public-skill', 'references');
 
 async function main(): Promise<void> {
+  const args = parseCliArgs(process.argv.slice(2), { 'skip-og': 'boolean' });
+  // OG images are the slow part of the build: PR builds and `npm run dev` skip them.
+  const skipOg = args['skip-og'] === true || process.env.EXPORTS_SKIP_OG === '1';
   fs.mkdirSync(PUBLIC_DIR, { recursive: true });
 
   // Written first: the daily deploy workflow reads the deployed commit from /build-info.json.
   const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: SITE_ROOT, encoding: 'utf8' }).trim();
   fs.writeFileSync(
     path.join(PUBLIC_DIR, 'build-info.json'),
-    JSON.stringify({ commit, builtAt: new Date().toISOString() }, null, 2) + '\n'
+    JSON.stringify(buildBuildInfo(process.env, commit), null, 2) + '\n'
   );
   const allConcepts = getAllConcepts();
   const allAutopsies = getAllAutopsies();
@@ -269,26 +274,28 @@ ${rssItems}
 
   // 8. Static OG Images (1200x630 PNG) in public/og/ — generated for ALL pages (every page keeps
   // an accessible URL and a share image is not a content distribution channel).
-  const ogConceptsDir = path.join(PUBLIC_DIR, 'og', 'concepts');
-  const ogAutopsiesDir = path.join(PUBLIC_DIR, 'og', 'autopsies');
-  const ogVsDir = path.join(PUBLIC_DIR, 'og', 'vs');
-  fs.mkdirSync(ogConceptsDir, { recursive: true });
-  fs.mkdirSync(ogAutopsiesDir, { recursive: true });
-  fs.mkdirSync(ogVsDir, { recursive: true });
+  if (!skipOg) {
+    const ogConceptsDir = path.join(PUBLIC_DIR, 'og', 'concepts');
+    const ogAutopsiesDir = path.join(PUBLIC_DIR, 'og', 'autopsies');
+    const ogVsDir = path.join(PUBLIC_DIR, 'og', 'vs');
+    fs.mkdirSync(ogConceptsDir, { recursive: true });
+    fs.mkdirSync(ogAutopsiesDir, { recursive: true });
+    fs.mkdirSync(ogVsDir, { recursive: true });
 
-  for (const c of allConcepts) {
-    const png = await renderConceptOgPng(c);
-    fs.writeFileSync(path.join(ogConceptsDir, `${c.frontmatter.id}.png`), png);
-  }
-  for (const a of allAutopsies) {
-    const png = await renderAutopsyOgPng(a, conceptTitles);
-    fs.writeFileSync(path.join(ogAutopsiesDir, `${a.frontmatter.id}.png`), png);
-    const coverPng = await renderAutopsyCoverPng(a, conceptTitles);
-    fs.writeFileSync(path.join(ogAutopsiesDir, `${a.frontmatter.id}-cover.png`), coverPng);
-  }
-  for (const pair of allVsPairs) {
-    const png = await renderVsOgPng(pair);
-    fs.writeFileSync(path.join(ogVsDir, `${pair.slug}.png`), png);
+    for (const c of allConcepts) {
+      const png = await renderConceptOgPng(c);
+      fs.writeFileSync(path.join(ogConceptsDir, `${c.frontmatter.id}.png`), png);
+    }
+    for (const a of allAutopsies) {
+      const png = await renderAutopsyOgPng(a, conceptTitles);
+      fs.writeFileSync(path.join(ogAutopsiesDir, `${a.frontmatter.id}.png`), png);
+      const coverPng = await renderAutopsyCoverPng(a, conceptTitles);
+      fs.writeFileSync(path.join(ogAutopsiesDir, `${a.frontmatter.id}-cover.png`), coverPng);
+    }
+    for (const pair of allVsPairs) {
+      const png = await renderVsOgPng(pair);
+      fs.writeFileSync(path.join(ogVsDir, `${pair.slug}.png`), png);
+    }
   }
 
   // 9. Static Search Index (public/search-index.json)
@@ -320,9 +327,11 @@ ${rssItems}
   );
 
   const twinCount = concepts.length + autopsies.length + vsPairs.length;
-  const ogCount = allConcepts.length + allAutopsies.length * 2 + allVsPairs.length;
+  const ogCount = skipOg
+    ? 0
+    : allConcepts.length + allAutopsies.length * 2 + allVsPairs.length;
   console.log(
-    `✅ Generated exports (published ${concepts.length + autopsies.length + symptoms.length + vsPairs.length} / total ${allConcepts.length + allAutopsies.length + PRODUCTION_SYMPTOMS.length + allVsPairs.length}): llms.txt, llms-full.txt, graph.json (${concepts.length} nodes), audit-rules.json (${auditCatalog.rule_count} rules), packages/public-skill/references/audit-catalog.md, rss.xml (0 items), search-index.json (${searchIndex.length} items), ${twinCount} .md twins, robots.txt, sitemap.xml (${sitemapEntries.length} URLs), and ${ogCount} OG PNGs.`,
+    `✅ Generated exports (published ${concepts.length + autopsies.length + symptoms.length + vsPairs.length} / total ${allConcepts.length + allAutopsies.length + PRODUCTION_SYMPTOMS.length + allVsPairs.length}): llms.txt, llms-full.txt, graph.json (${concepts.length} nodes), audit-rules.json (${auditCatalog.rule_count} rules), packages/public-skill/references/audit-catalog.md, rss.xml (0 items), search-index.json (${searchIndex.length} items), ${twinCount} .md twins, robots.txt, sitemap.xml (${sitemapEntries.length} URLs), ${skipOg ? 'OG PNGs skipped' : `and ${ogCount} OG PNGs`}.`,
   );
 }
 

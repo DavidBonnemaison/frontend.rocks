@@ -23,6 +23,7 @@ Each claim has a type, and each type has its own check. The receipts are on [fro
 - `tests/`: unit tests (Vitest) and end-to-end tests (Playwright).
 - `netlify/`: edge function and function used in production.
 - `packages/`: the MCP server and the public audit skill.
+- `public/`: static files only (favicons and the IndexNow key). The build writes everything else there (`llms.txt`, `sitemap.xml`, `search-index.json`, Markdown twins, OG images, `build-info.json`...). None of it is tracked by git, and `tests/repo-hygiene.test.ts` fails if one gets committed.
 
 ## Running locally
 
