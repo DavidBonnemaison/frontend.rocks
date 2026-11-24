@@ -1,5 +1,7 @@
 # frontend.rocks
 
+**Frontend, with receipts.**
+
 Frontend engineering explained at the level of the browser engine: concepts, production autopsies and the interactive labs that go with them. Every factual claim on the site is meant to be checked by a machine, not taken on trust.
 
 ## How claims are proven
