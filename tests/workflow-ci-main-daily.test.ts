@@ -61,6 +61,19 @@ describe('ci-main-daily.yml', () => {
     expect(lines[0]).toContain('--dir dist');
   });
 
+  it('runs the full gate: lint, full E2E suite and Lighthouse, before the artifact upload', () => {
+    const lines = runLines(wf.jobs['build-and-test']);
+    expect(lines).toContain('npm run lint');
+    expect(lines).toContain('npm run build-prod');
+    expect(lines.filter((l) => l.startsWith('npx playwright test'))).toEqual([
+      'npx playwright test --project=chromium',
+    ]);
+    expect(lines.some((l) => l.includes('@lhci/cli') && l.includes('autorun'))).toBe(true);
+    const text = JSON.stringify(wf.jobs['build-and-test'].steps);
+    expect(text).not.toContain('EXPORTS_SKIP_OG');
+    expect(text.indexOf('@lhci/cli')).toBeLessThan(text.indexOf('site-dist'));
+  });
+
   it('only deploys what build-and-test produced', () => {
     expect(wf.jobs.deploy.needs).toBe('build-and-test');
     expect(raw).toContain('name: site-dist');
@@ -82,6 +95,33 @@ describe('ci-pr.yml', () => {
     expect([...(wf.jobs['ci-result'].needs as string[])].sort()).toEqual([...others].sort());
     expect(wf.jobs['ci-result'].if).toBe('always()');
     expect(raw).not.toContain('secrets.');
+  });
+});
+
+describe('ci-pr.yml gate', () => {
+  const { wf } = load('ci-pr.yml');
+  const lines = runLines(wf.jobs.gate);
+
+  it('runs typecheck, lint, tests and content validation', () => {
+    for (const command of ['npm run typecheck', 'npm run lint', 'npm test', 'npm run validate:content']) {
+      expect(lines).toContain(command);
+    }
+  });
+
+  it('builds without OG images and only runs the smoke E2E tests on chromium', () => {
+    const build = wf.jobs.gate.steps.find((s) => s.run === 'npm run build-prod');
+    expect(build?.env?.EXPORTS_SKIP_OG).toBe('1');
+    expect(lines).toContain('npx playwright test --grep @smoke --project=chromium');
+    expect(lines.some((l) => l.includes('generate:lab-previews'))).toBe(false);
+  });
+});
+
+describe('workflows', () => {
+  it('pin the Node 24 majors of the official actions', () => {
+    for (const name of fs.readdirSync(workflowsDir)) {
+      const { raw } = load(name);
+      expect(raw, name).not.toMatch(/uses: actions\/(checkout|setup-node|upload-artifact|download-artifact|cache)@v[1-4]\b/);
+    }
   });
 });
 

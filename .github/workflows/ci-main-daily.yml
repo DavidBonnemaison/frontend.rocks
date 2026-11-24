@@ -59,6 +59,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run lint
       - run: npm test
       - run: npm run validate:content
       - name: Build
@@ -69,11 +70,23 @@ jobs:
           NEXT_PUBLIC_GOATCOUNTER_ENDPOINT: ${{ vars.NEXT_PUBLIC_GOATCOUNTER_ENDPOINT }}
           NEXT_PUBLIC_CROWD_REPORTS_ENABLED: ${{ vars.NEXT_PUBLIC_CROWD_REPORTS_ENABLED }}
         run: npm run build-prod
-      - run: npx playwright install --with-deps chromium
-      # The E2E suite reads the lab preview PNGs that this step writes into public/ and dist/,
-      # and the deployed dist/ must contain them.
-      - run: npm run generate:lab-previews
-      - run: npx playwright test
+      - name: Read Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium
+      - if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - run: npx playwright test --project=chromium
+      # A failing Lighthouse assertion fails build-and-test, so the deploy job does not run.
+      - name: Lighthouse CI
+        run: npx @lhci/cli@0.15.x autorun
       - uses: actions/upload-artifact@v7
         with:
           name: site-dist

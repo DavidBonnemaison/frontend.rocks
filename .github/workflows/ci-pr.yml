@@ -46,13 +46,27 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run lint
       - run: npm test
       - run: npm run validate:content
-      - run: npm run build-prod
-      - run: npx playwright install --with-deps chromium
-      # The E2E suite reads the lab preview PNGs that this step writes into public/ and dist/.
-      - run: npm run generate:lab-previews
-      - run: npx playwright test
+      - name: Build (OG images skipped)
+        run: npm run build-prod
+        env:
+          EXPORTS_SKIP_OG: '1'
+      - name: Read Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium
+      - if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - run: npx playwright test --grep @smoke --project=chromium
 
   ci-result:
     needs: [changes, gate]

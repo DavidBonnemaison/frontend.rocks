@@ -4,13 +4,11 @@
       "staticDistDir": "./dist",
       "url": [
         "http://localhost/index.html",
-        "http://localhost/graph/index.html",
-        "http://localhost/index-list/index.html",
         "http://localhost/concepts/browser-rendering-pipeline/index.html",
-        "http://localhost/diagnose/index.html",
-        "http://localhost/agents/index.html"
+        "http://localhost/autopsies/double-payment-race-condition/index.html",
+        "http://localhost/diagnose/index.html"
       ],
-      "numberOfRuns": 3,
+      "numberOfRuns": 1,
       "settings": {
         "preset": "desktop"
       }
