@@ -1,2 +1,6 @@
 node_modules
 *.md
+dist
+public
+content/.proof-cache
+content/.proof-results

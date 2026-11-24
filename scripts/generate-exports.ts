@@ -11,7 +11,6 @@ import {
   buildRobotsTxt,
   buildSitemapXml,
   buildVsMarkdownTwin,
-  escapeXml,
   getGitLastModified,
   SITE_URL,
   type SitemapEntry,
