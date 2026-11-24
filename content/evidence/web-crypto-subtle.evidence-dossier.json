@@ -1,0 +1,42 @@
+{
+  "concept_id": "web-crypto-subtle",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://w3c.github.io/webcrypto/#subtlecrypto-interface",
+      "spec_section": "Web Cryptography API §14 SubtleCrypto Interface",
+      "quote": "The SubtleCrypto interface provides a set of cryptographic primitives executed in native code over secure contexts, returning Promises so heavy key derivation and signing never block the main thread."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "37+",
+    "firefox": "34+",
+    "safari": "11+",
+    "notes": "Requires Secure Context (HTTPS or localhost). Ed25519 is Baseline Newly Available."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Secure Context Gate",
+      "Native C++ Crypto Backend (BoringSSL / NSS / CommonCrypto)",
+      "Non-Extractable CryptoKey Handle"
+    ],
+    "mechanism_summary": "SubtleCrypto dispatches cryptographic operations off the JS thread to the browser's native C++ crypto library and isolates raw key bytes behind opaque CryptoKey handles."
+  },
+  "production_failures": [
+    {
+      "symptom": "TypeError: Cannot read properties of undefined (reading 'digest') on an HTTP staging domain",
+      "root_cause": "window.crypto.subtle is undefined in non-secure (http://) contexts other than localhost.",
+      "mitigation": "Serve all environments over HTTPS or guard with window.isSecureContext."
+    },
+    {
+      "symptom": "AES-GCM ciphertext forged or corrupted silently when reusing an IV",
+      "root_cause": "Reusing the same 96-bit initialization vector (IV) with the same AES-GCM key leaks XOR differences and breaks authentication.",
+      "mitigation": "Generate a fresh 12-byte IV via crypto.getRandomValues(new Uint8Array(12)) for every encrypt() call."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto",
+    "https://w3c.github.io/webcrypto/"
+  ]
+}

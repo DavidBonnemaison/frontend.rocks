@@ -1,0 +1,48 @@
+{
+  "concept_id": "client-storage-schema-migrations",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://w3c.github.io/IndexedDB/#upgrade-transaction-steps",
+      "spec_section": "W3C IndexedDB 3.0: Upgrade Transaction",
+      "quote": "An upgrade transaction cannot start until all other open connections to the same database are closed; if any remain open, a blocked event is fired."
+    },
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase/versionchange_event",
+      "spec_section": "IDBDatabase: versionchange event",
+      "quote": "The versionchange event is fired on open database connections when a new connection attempts to upgrade the database version."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "24+",
+    "firefox": "16+",
+    "safari": "8+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "indexedDB.open(name, newVersion)",
+      "versionchange Broadcast to Open Tabs",
+      "Cooperative db.close() Release",
+      "Atomic onupgradeneeded Step Execution"
+    ],
+    "mechanism_summary": "Coordinates cross-tab database handle closure via onversionchange so an atomic versionchange transaction can apply sequential schema steps."
+  },
+  "production_failures": [
+    {
+      "symptom": "App stays stuck on loading spinner whenever user opens a second tab after a release",
+      "root_cause": "Tab 1 held an open IndexedDB v1 connection without an onversionchange handler, blocking Tab 2's v2 open() request indefinitely.",
+      "mitigation": "Attach db.onversionchange = () => db.close() on every connection and prompt or reload Tab 1."
+    },
+    {
+      "symptom": "Migration throws TransactionInactiveError mid-upgrade and rolls back all stores",
+      "root_cause": "Migration script awaited a Promise (fetch or setTimeout) inside onupgradeneeded, causing IndexedDB to auto-commit the versionchange transaction.",
+      "mitigation": "Keep onupgradeneeded strictly synchronous over IDBRequests; run async data backfills in a separate readwrite transaction after open() resolves."
+    }
+  ],
+  "sources": [
+    "https://w3c.github.io/IndexedDB/#upgrade-transaction-steps",
+    "https://developer.mozilla.org/en-US/docs/Web/API/IDBOpenDBRequest/upgradeneeded_event",
+    "https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase/versionchange_event"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "type": "constraint-simulator",
+  "id": "zindex-9999-tooltip-war",
+  "title": "Stacking Context Trap & z-index: 9999 Isolation",
+  "description": "Adjust parent opacity, transform promotion, and sibling header z-index to observe how a local stacking context traps z-index: 9999.",
+  "presetMode": "stacking-context",
+  "controls": [
+    {
+      "key": "opacity",
+      "label": "Parent container opacity",
+      "kind": "range",
+      "min": 0.4,
+      "max": 1,
+      "step": 0.1,
+      "defaultValue": 0.9
+    },
+    {
+      "key": "transform",
+      "label": "Parent transform: translateZ(0)",
+      "kind": "toggle",
+      "defaultValue": true
+    },
+    {
+      "key": "zIndex",
+      "label": "Sticky header z-index",
+      "kind": "range",
+      "min": 1,
+      "max": 50,
+      "step": 1,
+      "defaultValue": 10
+    }
+  ]
+}

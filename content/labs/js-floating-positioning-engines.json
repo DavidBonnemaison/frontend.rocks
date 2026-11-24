@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "js-floating-positioning-engines",
+  "title": "Naive scroll Listener vs Floating UI autoUpdate",
+  "description": "Compare fragile manual rect math against a middleware-based positioning pipeline.",
+  "before": {
+    "label": "Naive Rect + Window Scroll",
+    "code": "window.addEventListener('scroll', () => {\n  const r = btn.getBoundingClientRect();\n  tip.style.top = `${r.bottom + 8}px`;\n  tip.style.left = `${r.left}px`;\n});",
+    "metrics": {
+      "lines": 5,
+      "reflows": "Thrashing on every scroll",
+      "dependencies": "0 (clips at viewport)"
+    },
+    "previewNote": "Clips off-screen, misses nested scrollers, and writes top/left."
+  },
+  "after": {
+    "label": "Floating UI Middleware + Transform",
+    "code": "const cleanup = autoUpdate(btn, tip, async () => {\n  const { x, y } = await computePosition(btn, tip, {\n    middleware: [offset(8), flip(), shift({ padding: 8 })],\n  });\n  tip.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;\n});",
+    "metrics": {
+      "lines": 6,
+      "reflows": "Batched read -> transform",
+      "dependencies": "@floating-ui/dom"
+    },
+    "previewNote": "Flips away from edges, tracks nested scrollers, and cleans up on close."
+  }
+}

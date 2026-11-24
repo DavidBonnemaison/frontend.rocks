@@ -1,0 +1,41 @@
+{
+  "concept_id": "dynamic-viewport-units",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-values-4/#viewport-relative-lengths",
+      "spec_section": "6.1.2 Viewport-percentage Lengths",
+      "quote": "The small viewport-percentage units (sv*) reflect the viewport size when all dynamic UA interfaces are expanded; large (lv*) when retracted; dynamic (dv*) tracks the current state."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "108+",
+    "firefox": "101+",
+    "safari": "15.4+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Viewport Toolbar State",
+      "Length Resolution",
+      "Layout Pass"
+    ],
+    "mechanism_summary": "100vh maps to the Large Viewport (lvh); 100svh locks to the Small Viewport; 100dvh triggers layout recalculation when toolbars animate."
+  },
+  "production_failures": [
+    {
+      "symptom": "Bottom CTA button in a 100vh mobile hero is hidden behind the Safari/Chrome address bar",
+      "root_cause": "Legacy 100vh equals 100lvh (toolbars retracted), which is taller than the visible screen on initial load.",
+      "mitigation": "Use min-height: 100svh (or 100dvh) so the entire hero fits inside the visible viewport."
+    },
+    {
+      "symptom": "Page content stutters or shifts vertically as mobile toolbars collapse during scroll",
+      "root_cause": "Using 100dvh on multiple stacked sections forces Layout recalculations as the toolbar animates.",
+      "mitigation": "Use 100svh for static full-height sections that should stay rock-solid during scroll."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-values-4/#viewport-relative-lengths",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/length#relative_length_units_based_on_viewport"
+  ]
+}

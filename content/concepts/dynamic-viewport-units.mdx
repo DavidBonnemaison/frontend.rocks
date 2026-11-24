@@ -1,0 +1,63 @@
+---
+id: dynamic-viewport-units
+title: "Dynamic Viewport Units (dvh, svh, lvh)"
+domain: css-layout
+maturity_status: baseline-widely
+summary_tldr: "svh, lvh, and dvh disambiguate mobile browser toolbars so full-screen layouts never clip behind the address bar."
+relations:
+  - target_id: render-tree-layout
+    type: requires
+    note: "Viewport units resolve during Layout against the small, large, or dynamic viewport box."
+  - target_id: css-scroll-snap
+    type: contrasts_with
+    note: "Dynamic viewport units resize container bounds on toolbar transitions, whereas CSS Scroll Snap locks scrollport alignment."
+sources:
+  - "https://drafts.csswg.org/css-values-4/#viewport-relative-lengths"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/length#relative_length_units_based_on_viewport"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "dvh"
+  - "svh"
+  - "lvh"
+  - "100vh mobile bug"
+  - "viewport units"
+web_feature_id: viewport-unit-variants
+---
+
+## TL;DR
+
+On mobile browsers, `100vh` equals the *largest* possible viewport (with the address bar hidden), pushing bottom buttons off-screen on load. `svh` locks to the small viewport (toolbars visible), `lvh` to the large viewport, and `dvh` resizes dynamically as toolbars collapse.
+
+## Interactive Lab
+
+Compare `100vh` clipping against `100svh` and `100dvh` in `PatternComparatorLab`.
+
+## Under the Hood
+
+Mobile browsers have a telescoping frame: the address bar and bottom tab bar slide in and out during scroll, changing the visible height without changing device dimensions.
+
+1. **`svh` (Small)**: Assumes all browser toolbars are expanded. Zero layout shifts during scroll.
+2. **`lvh` (Large)**: Assumes all toolbars are retracted, identical to legacy `vh`.
+3. **`dvh` (Dynamic)**: Tracks the live toolbar state during [Render Tree & Layout](/concepts/render-tree-layout), resizing the element whenever toolbars animate.
+
+```css
+.app-viewport {
+  /* Fallback for ancient engines, then Small Viewport */
+  min-height: 100vh;
+  min-height: 100svh;
+}
+```
+
+Pair `min-height: 100dvh` with [CSS Scroll Snap](/concepts/css-scroll-snap) or fixed app shells carefully to avoid mid-scroll jumps.
+
+## Problem Genealogy
+
+- **2015–2021**: Developers hacked `window.innerHeight * 0.01` into a `--vh` CSS variable on `resize`, causing initial load flashes.
+- **2022+**: CSS Values Level 4 introduced `sv*`, `lv*`, and `dv*` units across all major browsers.
+
+## Production Pitfalls
+
+- **Using `100dvh` everywhere**: Applying `height: 100dvh` to long-scrolling landing page sections triggers [Layout](/concepts/render-tree-layout) reflows while the user's thumb drags the page.
+- **`height` instead of `min-height`**: Hardcoding `height: 100svh` clips overflowing content on landscape phones; always prefer `min-height`.
+- **When not to use `dvh`**: Avoid `dvh` on scrollable marketing sections or elements holding heavy text; use `svh` so line wraps never jump mid-scroll.

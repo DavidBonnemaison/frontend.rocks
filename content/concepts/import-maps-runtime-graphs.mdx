@@ -1,0 +1,68 @@
+---
+id: import-maps-runtime-graphs
+title: Import Maps & Browser-Native Module Resolution
+domain: web-apis
+maturity_status: baseline-widely
+summary_tldr: "Content-hash bundle invalidation forces entire vendor chunks to re-download when one utility line changes. Import Maps resolve bare specifiers in the browser without a bundler, isolating cache keys per module."
+relations:
+  - target_id: es-modules-live-bindings
+    type: requires
+    note: "Import Maps map bare specifiers onto ES Module graph URLs while preserving live read-only bindings."
+  - target_id: preload-scanner-hints
+    type: requires
+    note: "Nested import-map subgraphs still require modulepreload links so the preload scanner fetches deep dependencies early."
+sources:
+  - "https://html.spec.whatwg.org/multipage/webappapis.html#import-maps"
+  - "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "import-maps"
+  - "es-modules"
+  - "cache-invalidation"
+  - "modulepreload"
+web_feature_id: import-maps
+---
+
+## TL;DR
+
+Import Maps bind bare specifiers like `"react"` to hashed CDN URLs directly in HTML, isolating cache invalidation to the exact file that changed. Pair them with [ES Module live bindings](/concepts/es-modules-live-bindings) and [`modulepreload` hints](/concepts/preload-scanner-hints) so the browser skips bundler manifests without waterfall latency.
+
+## Interactive Lab
+
+Trace bare-specifier resolution, `scopes` overrides, and `modulepreload` flattening in `StepMachineLab`.
+
+## Under the Hood
+
+The HTML parser registers a single merged module map per document from `<script type="importmap">` before any module script executes. When Blink's module loader encounters `import { x } from "pkg"`, it resolves `"pkg"` against `imports` and `scopes` by longest-prefix match without network round-trips.
+
+1. **Isolated Cache Busting**: Updating `"date-fns"` only rewrites its one hashed URL inside the inline import map, leaving every other vendor module cached.
+2. **Scoped Overrides**: The `scopes` key maps a specific path prefix (e.g. `"/legacy/"`) to an older major version without polluting the global module graph.
+3. **Integrity Enforcement**: Adding an `"integrity"` dictionary inside the import map supplies SRI hashes for dynamically resolved ES modules.
+
+```html
+<script type="importmap">
+{
+  "imports": {
+    "lit": "/cdn/lit.3.2.1.js",
+    "@app/ui": "/assets/ui.8f2a1c.js"
+  },
+  "scopes": {
+    "/legacy/": { "lit": "/cdn/lit.2.8.0.js" }
+  }
+}
+</script>
+<link rel="modulepreload" href="/cdn/lit.3.2.1.js" />
+```
+
+## Problem Genealogy
+
+- **2014 (SystemJS & Runtime Loaders)**: Polyfilled module maps shipped 25-45 KB of loader JS and blocked execution until `fetch()` waterfalls resolved every dependency.
+- **2018 (Webpack Chunk-Manifest Cascading)**: Bundlers rewrote every parent chunk hash whenever a leaf module changed, invalidating 150 KB+ vendor bundles on one-line fixes.
+- **2023 (Baseline Import Maps)**: Native HTML resolution eliminated runtime loader JS and stabilized single-module cache keys across micro-frontends.
+
+## Production Pitfalls
+
+- **Deep Dependency Waterfalls**: Without `<link rel="modulepreload">` for transitive imports, Blink discovers leaf modules sequentially after parsing each parent, adding 3-5 RTTs to LCP.
+- **Late Map Injection**: Inserting a `<script type="importmap">` after any `<script type="module">` has already started throws or gets ignored in strict engine order.
+- **When not to use unbundled Import Maps**: Do not serve 500+ tiny raw `.js` source files over HTTP without bundling or `modulepreload`; HTTP/2 header overhead and per-file compression losses outweigh cache-key isolation.

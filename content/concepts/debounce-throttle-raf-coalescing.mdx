@@ -1,0 +1,71 @@
+---
+id: debounce-throttle-raf-coalescing
+title: "Debounce, Throttle & rAF Coalescing"
+domain: state-architecture
+maturity_status: baseline-widely
+summary_tldr: "Separates bursty input rates from execution: debounce waits for quietness (API search), throttle caps interval rate (telemetry), and rAF coalescing aligns visual writes to VSync."
+relations:
+  - target_id: event-loop-tasks-microtasks
+    type: requires
+    note: "Debounce/throttle timers schedule macrotasks while requestAnimationFrame hooks into the render step."
+  - target_id: browser-rendering-pipeline
+    type: under_the_hood
+    note: "Coalescing pointermove writes into one rAF per frame prevents redundant style/layout work between VSyncs."
+  - target_id: stale-closures-hooks
+    type: under_the_hood
+    note: "Debounced callbacks must read latest values or cancel on unmount to avoid firing stale closures."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame"
+  - "https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html#animation-frames"
+  - "https://web.dev/articles/optimize-javascript-execution"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "debounce"
+  - "throttle"
+  - "requestanimationframe"
+  - "coalescing"
+  - "vsync"
+---
+
+## TL;DR
+
+High-rate gaming mice fire `pointermove` at 240+ Hz, while displays only paint at 60–120 Hz. Use **debounce** to wait for a pause (search API calls), **throttle** to cap steady-state frequency (analytics pings), and **rAF coalescing** to fold multiple visual updates into one VSync frame.
+
+## Interactive Lab
+
+Test how `raf-coalesce`, `throttle`, and `debounce` collapse high-frequency input bursts using `ConstraintSimulatorLab`.
+
+## Under the Hood
+
+Firing a DOM mutation on every `pointermove` event is like repainting a billboard 240 times a second when the camera shutter only opens 60 times. Each strategy hooks a different phase of the [Event Loop](/concepts/event-loop-tasks-microtasks) and [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline):
+
+- **Debounce**: Resets a `setTimeout` on every event; executes once after `N` ms of silence.
+- **Throttle**: Executes at most once per `N` ms window using a timestamp or cooldown timer.
+- **rAF Coalescing**: Stores the latest coordinates in a variable and schedules a single `requestAnimationFrame` if one isn't already pending, always matching the monitor's exact refresh rate and pausing in background tabs.
+
+```js
+let pendingFrame = 0;
+let latestX = 0;
+
+window.addEventListener('pointermove', (e) => {
+  latestX = e.clientX;
+  if (pendingFrame) return; // Coalesce until next VSync
+  pendingFrame = requestAnimationFrame(() => {
+    pendingFrame = 0;
+    slider.style.transform = `translateX(${latestX}px)`;
+  });
+});
+```
+
+## Problem Genealogy
+
+- **2009 (jQuery Scroll/Resize Handlers)**: Ran synchronously on every pixel scrolled, freezing browsers until developers bolted on Underscore `_.debounce` and `_.throttle`.
+- **2013 (`requestAnimationFrame` Standardization)**: Replaced `setTimeout(..., 16)` hacks that drifted against 60 Hz and 120 Hz VSync intervals.
+- **2016+ (`ResizeObserver` & `IntersectionObserver`)**: Moved common scroll/resize polling natively into the browser's frame lifecycle.
+
+## Production Pitfalls
+
+- **Debouncing controlled `<input>` state**: Delaying the text box's own `value` state makes typing feel broken; update the input synchronously and debounce only the side-effect query.
+- **Uncancelled timers on unmount**: Leaving a 300 ms debounced `save()` pending after a user navigates away triggers [Stale Closures](/concepts/stale-closures-hooks) or writes to unmounted state, always call `clearTimeout` / `cancelAnimationFrame` on cleanup.
+- **When not to use throttling**: Never throttle discrete state-machine inputs (`keydown` Enter, form `submit`, or `click` toggles), dropping or delaying discrete user intent feels like a broken button.

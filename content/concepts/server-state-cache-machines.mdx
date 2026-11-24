@@ -1,0 +1,70 @@
+---
+id: server-state-cache-machines
+title: "Server State Cache Machines (fresh → stale → fetching)"
+domain: framework-internals
+maturity_status: baseline-widely
+summary_tldr: "Stop firing duplicate API requests on every component mount or tab switch. A deterministic cache state machine deduplicates in-flight fetches, serves stale memory in 0 ms, and revalidates in the background."
+relations:
+  - target_id: http-caching-directives
+    type: requires
+    note: "Client cache machines mirror HTTP Cache-Control stale-while-revalidate semantics in JavaScript heap memory."
+  - target_id: beacon-api-visibilitychange
+    type: requires
+    note: "Tab refocus triggers visibilitychange listeners that transition stale cache entries back to fetching."
+sources:
+  - "https://datatracker.ietf.org/doc/html/rfc5861"
+  - "https://tanstack.com/query/latest/docs/framework/react/guides/caching"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "server state"
+  - "stale-while-revalidate"
+  - "request deduplication"
+  - "gcTime"
+---
+
+## TL;DR
+
+Storing API payloads in Redux or `useState` turns every mount into a redundant network waterfall. A server-state cache machine tracks `fresh`, `stale`, and `fetching` transitions, deduplicating concurrent reads via [HTTP Caching](/concepts/http-caching-directives) patterns and revalidating on [Visibility Changes](/concepts/beacon-api-visibilitychange).
+
+## Interactive Lab
+
+Trace cache entry transitions from `fetching` to `fresh`, `stale`, and garbage collection in `StepMachineLab`.
+
+## Under the Hood
+
+A cache machine indexes every query by a deterministic serialized key in a `Map<QueryKey, QueryEntry>`. Multiple mounted observers subscribe to the same entry instead of owning independent `fetch` lifecycles.
+
+1. **In-Flight Deduplication**: When an observer mounts for a key with an active `Promise`, the machine returns the existing promise reference instead of opening a second TCP/HTTP stream.
+2. **Stale-While-Revalidate (SWR)**: If `Date.now() - updatedAt < staleTime`, the entry stays `fresh` and returns cached data synchronously. Once `staleTime` expires, reads still return stale data in 0 ms while dispatching a background refetch.
+3. **Observer Reference Counting & GC**: Each mounted component increments `observers.size`. When `observers.size` hits `0`, a `gcTime` timer starts; if no observer remounts before expiry, V8 reclaims the entry.
+
+```ts
+class QueryEntry<T> {
+  state: 'fresh' | 'stale' | 'fetching' = 'fetching';
+  data?: T;
+  updatedAt = 0;
+  inflight: Promise<T> | null = null;
+  fetch(fetcher: () => Promise<T>, staleTime: number): Promise<T> {
+    if (this.inflight) return this.inflight;
+    if (this.data && Date.now() - this.updatedAt < staleTime) return Promise.resolve(this.data);
+    this.state = 'fetching';
+    return (this.inflight = fetcher().then((res) => {
+      Object.assign(this, { data: res, updatedAt: Date.now(), state: staleTime > 0 ? 'fresh' : 'stale', inflight: null });
+      return res;
+    }));
+  }
+}
+```
+
+## Problem Genealogy
+
+- **2015 (Global Store Boilerplate)**: Teams stored server responses in Redux with manual `isLoading` booleans, shipping 25 KB of reducer/thunk code and still suffering duplicate mounts.
+- **2019 (SWR & React Query)**: Replaced client-owned loading flags with key-indexed cache machines modeled after RFC 5861 `stale-while-revalidate`.
+- **2024 (Unified Hydration & Optimistic Mutations)**: Cache machines serialize dehydrated snapshots during SSR and roll back optimistic writes deterministically.
+
+## Production Pitfalls
+
+- **Thundering Herd on `staleTime: 0`**: Defaulting `staleTime` to `0` marks every response immediately stale, causing a full refetch burst whenever a user switches browser tabs or remounts a list.
+- **Unstable Object Keys**: Passing inline objects with randomized property order or unmemoized functions as query keys defeats `Map` lookup and leaks entries until `gcTime` expires.
+- **When not to use a client cache machine**: Never put high-frequency ephemeral streams (60 fps WebSocket telemetry, local drag coordinates) into a serialized query cache; key hashing and subscriber notifications add unnecessary heap allocations.

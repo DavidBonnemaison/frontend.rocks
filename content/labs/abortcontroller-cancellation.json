@@ -1,0 +1,51 @@
+{
+  "type": "step-machine",
+  "id": "abortcontroller-cancellation",
+  "title": "AbortController Signal Propagation & Teardown",
+  "description": "Trace how controller.abort() cancels in-flight fetch(), listeners, and composite signals.",
+  "steps": [
+    {
+      "label": "1. Bind Signal to Async Work",
+      "description": "fetch() and addEventListener() register internal abort steps on signal.",
+      "codeHighlight": "fetch(url, { signal: AbortSignal.any([userCtrl.signal, AbortSignal.timeout(3000)]) });",
+      "state": {
+        "aborted": false,
+        "registeredConsumers": ["fetch", "pointermove"]
+      },
+      "visualNodes": [
+        { "id": "ctrl", "label": "AbortController", "status": "idle" },
+        { "id": "sig", "label": "AbortSignal (active)", "status": "active" },
+        { "id": "fetch", "label": "fetch() Socket", "status": "active" }
+      ]
+    },
+    {
+      "label": "2. Trigger abort(reason)",
+      "description": "Calling controller.abort('superseded') marks signal.aborted = true and sets signal.reason.",
+      "codeHighlight": "userCtrl.abort(new DOMException('Superseded', 'AbortError'));",
+      "state": {
+        "aborted": true,
+        "reason": "AbortError: Superseded"
+      },
+      "visualNodes": [
+        { "id": "ctrl", "label": "AbortController", "status": "active" },
+        { "id": "sig", "label": "AbortSignal (aborted)", "status": "error" },
+        { "id": "fetch", "label": "fetch() Socket", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Synchronous Teardown & Reject",
+      "description": "Engine closes the HTTP stream, removes event listeners, and rejects the fetch Promise with signal.reason.",
+      "codeHighlight": "catch (err) { if (err.name !== 'AbortError') throw err; }",
+      "state": {
+        "aborted": true,
+        "registeredConsumers": [],
+        "socketClosed": true
+      },
+      "visualNodes": [
+        { "id": "ctrl", "label": "AbortController", "status": "done" },
+        { "id": "sig", "label": "AbortSignal (aborted)", "status": "done" },
+        { "id": "fetch", "label": "Socket Closed", "status": "done" }
+      ]
+    }
+  ]
+}

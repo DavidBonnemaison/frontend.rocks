@@ -1,0 +1,61 @@
+{
+  "concept_id": "signal-graph-topological-sort",
+  "compiled_at": "2026-11-21",
+  "normative_extracts": [
+    {
+      "source_url": "https://github.com/tc39/proposal-signals",
+      "spec_section": "Design Goals: Glitch-Free & Push-Pull Algorithm",
+      "quote": "Signals use a push-pull algorithm: writes eagerly push dirty state down the graph, while reads lazily pull and recompute only when an upstream dependency actually changed."
+    },
+    {
+      "source_url": "https://github.com/modderme123/reactively",
+      "spec_section": "Tri-State Coloring (Clean, Check, Dirty)",
+      "quote": "Direct children of a changed source are marked Dirty, while transitive descendants are marked Check so they verify upstream versions before recomputing."
+    },
+    {
+      "source_url": "https://preactjs.com/blog/signal-boosting/",
+      "spec_section": "Doubly-Linked Dependency Graphs",
+      "quote": "Replacing per-node Set allocations with doubly-linked list nodes cuts memory overhead and allows O(1) subscription addition and stale edge pruning."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "All modern (ES2015+)",
+    "firefox": "All modern (ES2015+)",
+    "safari": "All modern (ES2015+)",
+    "notes": "Implemented in userland JavaScript across all modern engines (V8, SpiderMonkey, JavaScriptCore); native TC39 Signal namespace remains Stage 1."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Push Phase: Eager Dirty and Check state propagation",
+      "Batch Boundary: Enqueue affected side-effect sinks",
+      "Pull Phase: Depth-first upstream verification of Check nodes",
+      "Equality Cutoff: Short-circuit downstream execution on Object.is match",
+      "Edge Pruning: Unlink stale subscriptions from dynamic branches"
+    ],
+    "mechanism_summary": "A directed acyclic reactive graph executes on the JS main thread by splitting invalidation into an eager push pass that colors direct subscribers Dirty and transitive subscribers Check, followed by a lazy pull pass that resolves dependencies in topological order and skips recomputation when upstream outputs are unchanged."
+  },
+  "production_failures": [
+    {
+      "symptom": "RangeError: Maximum call stack size exceeded during initial render or state update.",
+      "root_cause": "A derived computed signal reads its own value directly or through a mutual dependency cycle (A -> B -> A), causing infinite recursion during the pull phase.",
+      "mitigation": "Track an explicit Computing state flag per node during pull traversal and throw a deterministic cycle-detection error before recursing."
+    },
+    {
+      "symptom": "Monotonically rising JS heap size and phantom recomputations in long-lived SPAs.",
+      "root_cause": "Dynamic conditional branches (e.g., flag() ? a() : b()) retain old subscriber links to inactive signals when the runtime omits versioned edge pruning after re-evaluation.",
+      "mitigation": "Stamp each dependency edge with a monotonic evaluation epoch and unlink any incoming source edge whose epoch was not refreshed during the latest pull."
+    },
+    {
+      "symptom": "Duplicate API requests or forced layout thrashing inside synchronous state-update loops.",
+      "root_cause": "Calling signal.set() multiple times without a batch boundary flushes the effect queue after every individual write instead of coalescing the transaction.",
+      "mitigation": "Wrap multi-signal mutations in a batch() transaction so the push phase marks all affected nodes before the effect queue flushes once."
+    }
+  ],
+  "sources": [
+    "https://github.com/tc39/proposal-signals",
+    "https://github.com/modderme123/reactively",
+    "https://preactjs.com/blog/signal-boosting/",
+    "https://docs.solidjs.com/concepts/derived-values/memos"
+  ]
+}

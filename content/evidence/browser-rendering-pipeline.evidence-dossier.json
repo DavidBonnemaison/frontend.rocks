@@ -1,0 +1,43 @@
+{
+  "concept_id": "browser-rendering-pipeline",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/webappapis.html#update-the-rendering",
+      "spec_section": "8.1.7.3 Update the rendering",
+      "quote": "Run animation frame callbacks, recalculate styles, update layout, paint and composite."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+ (RenderingNG since 94)",
+    "firefox": "1+ (WebRender since 84)",
+    "safari": "1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Style",
+      "Layout",
+      "Paint",
+      "Layerize",
+      "Composite"
+    ],
+    "mechanism_summary": "Geometric mutations invalidate Layout+Paint; transform and opacity execute directly on the Compositor Thread."
+  },
+  "production_failures": [
+    {
+      "symptom": "FPS drop (INP > 200ms) during scrolling or JS animations",
+      "root_cause": "Reading geometric properties (offsetHeight) immediately after DOM writes inside a loop (Layout Thrashing).",
+      "mitigation": "Batch all DOM reads before writes or defer writes to requestAnimationFrame."
+    },
+    {
+      "symptom": "Tab crash on iOS/Android mobile devices",
+      "root_cause": "Excessive promotion of hundreds of layers via will-change: transform exhausting GPU VRAM.",
+      "mitigation": "Apply will-change strictly during active transition windows."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/Performance/Critical_rendering_path",
+    "https://web.dev/articles/renderingng-architecture"
+  ]
+}

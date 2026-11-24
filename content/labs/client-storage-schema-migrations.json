@@ -1,0 +1,50 @@
+{
+  "type": "step-machine",
+  "id": "client-storage-schema-migrations",
+  "title": "IndexedDB Multi-Tab Versionchange Handshake",
+  "description": "Trace how Tab 1 releases its v1 handle via onversionchange so Tab 2 can run the v2 migration without blocking.",
+  "steps": [
+    {
+      "label": "1. Tab 2 Requests Schema v2",
+      "description": "Newly deployed Tab 2 calls indexedDB.open('app-db', 2) while Tab 1 still holds a v1 connection.",
+      "codeHighlight": "const req = indexedDB.open('app-db', 2); // blocked until Tab 1 closes",
+      "state": {
+        "tab1Version": 1,
+        "tab2Status": "waiting-versionchange"
+      },
+      "visualNodes": [
+        { "id": "tab1", "label": "Tab 1 (v1 Open)", "status": "active" },
+        { "id": "idb", "label": "IDB Engine (Pending v2)", "status": "active" },
+        { "id": "tab2", "label": "Tab 2 (Waiting)", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Tab 1 Handles onversionchange",
+      "description": "Engine dispatches versionchange to Tab 1; Tab 1 calls db.close() and pauses writes.",
+      "codeHighlight": "db.onversionchange = () => { db.close(); showReloadBanner(); };",
+      "state": {
+        "tab1Version": "closed",
+        "tab2Status": "upgradeneeded"
+      },
+      "visualNodes": [
+        { "id": "tab1", "label": "Tab 1 (Closed Handle)", "status": "done" },
+        { "id": "idb", "label": "IDB Lock Acquired", "status": "active" },
+        { "id": "tab2", "label": "Tab 2 (Upgrading)", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Atomic v1 -> v2 Upgrade Commits",
+      "description": "Tab 2 executes onupgradeneeded synchronously, creates the new index, and resolves onsuccess.",
+      "codeHighlight": "store.createIndex('byUpdated', 'updatedAt');",
+      "state": {
+        "activeVersion": 2,
+        "migrationComplete": true
+      },
+      "visualNodes": [
+        { "id": "tab1", "label": "Tab 1 (Reload Prompt)", "status": "done" },
+        { "id": "idb", "label": "IDB Schema v2", "status": "done" },
+        { "id": "tab2", "label": "Tab 2 (Ready)", "status": "done" }
+      ]
+    }
+  ]
+}

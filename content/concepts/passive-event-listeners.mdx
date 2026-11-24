@@ -1,0 +1,66 @@
+---
+id: passive-event-listeners
+title: Passive Event Listeners and Compositor Scrolling
+domain: dom-events
+maturity_status: baseline-widely
+summary_tldr: "Eliminate 100ms+ mobile scroll-start jank—{ passive: true } promises the GPU compositor thread that wheel/touch listeners will never call preventDefault()."
+relations:
+  - target_id: dom-event-propagation
+    type: requires
+    note: "Passive flags are checked during hit-testing before dispatching wheel or touch propagation."
+  - target_id: gpu-compositor-layers
+    type: under_the_hood
+    note: "Without passive listeners, the GPU compositor thread must stall scroll translation on main-thread JS."
+  - target_id: pointer-events-touch-action
+    type: contrasts_with
+    note: "Passive listeners promise no preventDefault() in JS, whereas CSS touch-action declares scroll constraints to the compositor."
+sources:
+  - "https://dom.spec.whatwg.org/#dom-addeventlisteneroptions-passive"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#passive"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "passive"
+  - "touchstart"
+  - "wheel"
+  - "scroll performance"
+---
+
+## TL;DR
+
+Passing `{ passive: true }` to `addEventListener` guarantees your `wheel` or `touchmove` handler will never call `preventDefault()`. That promise lets [GPU Compositor Layers](/concepts/gpu-compositor-layers) scroll immediately on the compositor thread instead of stalling [DOM Event Propagation](/concepts/dom-event-propagation) on a busy main thread.
+
+## Interactive Lab
+
+Compare compositor-blocking listeners against `{ passive: true }` in `PatternComparatorLab`.
+
+## Under the Hood
+
+The compositor thread checks a hit-tested layer's non-passive event region bit before translating a scroll gesture; if any non-passive `touchstart` or `wheel` listener is present, scrolling stalls until main-thread JS finishes. Passing `{ passive: true }` gives the compositor permanent clearance to translate the layer immediately at 120 fps.
+
+1. **Non-Passive Slow Path**: The compositor checks a "slow scroll region" bit; if present, it waits for main-thread JS to finish running the listener before scrolling.
+2. **Passive Fast Path**: The compositor translates the layer immediately and dispatches the event asynchronously.
+3. **Root Default**: Chrome, Firefox, and Safari default `touchstart`, `touchmove`, and `wheel` on `window`, `document`, and `body` to `passive: true`.
+
+```js
+// Analytics listener: never blocks compositor scroll
+scroller.addEventListener('wheel', recordScrollDelta, { passive: true });
+
+// Custom zoomable map: explicitly opt out of passive
+mapCanvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  zoomMap(e.deltaY);
+}, { passive: false });
+```
+
+## Problem Genealogy
+
+- **2012 (Touch Scroll Jank)**: Any `touchstart` listener forced mobile browsers to block scrolling on main-thread JS execution.
+- **2016 (`{ passive: true }` Option)**: Added explicit opt-in for non-canceling scroll and touch listeners.
+- **2017–2019 (Root Passive Defaults)**: Browsers flipped document-level `touch*` and `wheel` listeners to passive by default.
+
+## Production Pitfalls
+
+- **Ignored `preventDefault()` on `document`**: Calling `e.preventDefault()` inside a document-level `wheel` listener logs a warning and fails to stop scrolling unless `{ passive: false }` is set.
+- **Third-Party Tracking Scripts**: Non-passive `touchstart` listeners attached to inner containers silently re-introduce scroll jank.
+- **When not to use `{ passive: false }`**: Avoid `{ passive: false }` on general page wrappers just to suppress scroll conditionally; use CSS `touch-action` via [Pointer Events & `touch-action`](/concepts/pointer-events-touch-action) instead.

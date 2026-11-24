@@ -1,0 +1,66 @@
+---
+id: opfs-origin-private-fs
+title: Origin Private File System (OPFS)
+domain: web-apis
+maturity_status: baseline-widely
+summary_tldr: "Origin-sandboxed virtual file system backed by raw OS files, offering synchronous in-place byte-range I/O inside Dedicated Workers."
+relations:
+  - target_id: dedicated-web-workers
+    type: requires
+    note: "FileSystemSyncAccessHandle is only exposed inside DedicatedWorkerGlobalScope."
+  - target_id: indexeddb-transactions-quotas
+    type: under_the_hood
+    note: "OPFS shares the origin's storage quota pool and eviction rules with IndexedDB."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system"
+  - "https://fs.spec.whatwg.org/"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "OPFS"
+  - "FileSystemSyncAccessHandle"
+  - "Wasm filesystem"
+  - "origin private file system"
+web_feature_id: origin-private-file-system
+---
+
+## TL;DR
+
+The Origin Private File System (OPFS) gives each origin a hidden, sandboxed directory on disk without user permission prompts. Inside a Dedicated Worker, `createSyncAccessHandle()` unlocks synchronous, in-place byte-range reads and writes at near-native speed.
+
+## Interactive Lab
+
+Compare IndexedDB blob transactions against OPFS `FileSystemSyncAccessHandle` byte-range writes.
+
+## Under the Hood
+
+If [IndexedDB](/concepts/indexeddb-transactions-quotas) is a notary public stamping every envelope, OPFS is a raw file descriptor handed directly to your [Dedicated Web Worker](/concepts/dedicated-web-workers).
+
+1. **Private Root**: `navigator.storage.getDirectory()` returns a `FileSystemDirectoryHandle` invisible to the user's OS file picker.
+2. **Exclusive Sync Handle**: Calling `fileHandle.createSyncAccessHandle()` in a worker acquires an exclusive lock and exposes `read(buf, { at })` and `write(buf, { at })`.
+3. **Zero Serialization**: Bytes move straight from a Wasm linear memory `Uint8Array` to the OS file buffer without `structuredClone` or transaction wrappers.
+
+```js
+// Inside a Dedicated Worker
+const root = await navigator.storage.getDirectory();
+const file = await root.getFileHandle('db.sqlite', { create: true });
+const access = await file.createSyncAccessHandle();
+
+const page = new Uint8Array(4096);
+access.read(page, { at: 0 });
+access.write(page, { at: 4096 });
+access.flush();
+access.close();
+```
+
+## Problem Genealogy
+
+- **2011 (FileSystem API, Chrome-only)**: Deprecated non-standard sandboxed filesystem never adopted by Firefox or Safari.
+- **2020 (File System Access API)**: Standardized `FileSystemFileHandle` for user-chosen files, plus the origin-private branch.
+- **2022+ (`FileSystemSyncAccessHandle`)**: Added synchronous worker I/O, unlocking production SQLite, DuckDB, and video editors in Wasm.
+
+## Production Pitfalls
+
+- **Multi-tab lock contention**: `createSyncAccessHandle()` throws `NoModificationAllowedError` if another tab holds the file lock; wrap access in `navigator.locks.request()`.
+- **Forgetting `flush()` and `close()`**: Buffered writes may vanish on sudden tab termination, and unclosed handles block future workers from opening the file.
+- **When not to use OPFS**: For small key-value settings or indexed JSON queries, IndexedDB avoids manual byte-offset management and exclusive file locking.

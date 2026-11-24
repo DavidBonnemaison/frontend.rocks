@@ -1,0 +1,67 @@
+---
+id: zero-runtime-vs-runtime-css
+title: "Zero-Runtime Atomic CSS vs Dynamic Style Injection"
+domain: framework-internals
+maturity_status: baseline-widely
+summary_tldr: "Runtime CSS-in-JS recalculates hashes and mutates <style> tags during every render, triggering synchronous CSSOM invalidation. Zero-runtime compilers extract static atomic classes at build time and delegate dynamic values to CSS custom properties."
+relations:
+  - target_id: dom-cssom-construction
+    type: requires
+    note: "Runtime insertRule() calls invalidate the browser CSSOM and force style recalculation across the DOM."
+  - target_id: css-custom-properties-cascade
+    type: requires
+    note: "Zero-runtime engines bind dynamic prop values to inline CSS custom properties instead of generating new classes."
+  - target_id: css-cascade-layers
+    type: requires
+    note: "Atomic CSS compilers emit deterministic @layer rules so utility overrides never depend on stylesheet import order."
+sources:
+  - "https://drafts.csswg.org/cssom/#dom-cssstylesheet-insertrule"
+  - "https://stylexjs.com/docs/learn/thinking-in-stylex/"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "zero-runtime css"
+  - "atomic css"
+  - "css-in-js"
+  - "cssom"
+---
+
+## TL;DR
+
+Runtime CSS-in-JS libraries hash style objects and call `sheet.insertRule()` during component renders, thrashing [DOM & CSSOM Construction](/concepts/dom-cssom-construction) and blocking concurrent streaming. Zero-runtime compilers extract static atomic rules at build time and pass dynamic values through [CSS Custom Properties](/concepts/css-custom-properties-cascade).
+
+## Interactive Lab
+
+Compare runtime `insertRule()` CSSOM invalidation against build-time atomic extraction in `StepMachineLab`.
+
+## Under the Hood
+
+Every `insertRule()` mutation on an active `CSSStyleSheet` forces Blink/Gecko to mark style selectors dirty for the next frame.
+
+1. **Runtime CSS-in-JS Pipeline**: On each render, the JS runtime serializes the style object, computes a MurmurHash class name, checks a cache, and calls `CSSStyleSheet.insertRule()` if unseen—shipping a 12–20 KB runtime and breaking React Server Components.
+2. **Zero-Runtime Atomic Extraction**: Compilers (StyleX, Panda, Vanilla Extract, Tailwind) resolve static styles at build time into deduplicated single-property classes (`.x1a2b { display: flex }`), capping total CSS growth logarithmically.
+3. **Dynamic Values via Variables**: Runtime-dependent values (`width: props.size`) compile to a static rule (`width: var(--w)`) paired with an inline `--w` property, updating paint without mutating the CSSOM.
+
+```tsx
+// Zero-runtime compiled output: static atomic classes + inline CSS var
+function ProgressBar({ percent }: { percent: number }) {
+  return (
+    <div
+      className="x_h_2 x_bg_slate x_w_var"
+      style={{ '--w': `${percent}%` } as React.CSSProperties}
+    />
+  );
+}
+```
+
+## Problem Genealogy
+
+- **2015 (Global BEM & Specificity Wars)**: Teams shipped 250+ KB monolithic CSS bundles with `.card .header .btn` chains that broke whenever DOM nesting changed.
+- **2017 (Runtime CSS-in-JS)**: Emotion and Styled Components scoped styles via JS hashing, solving dead-code elimination at the cost of 15–40 ms render-time style injection.
+- **2023 (Zero-Runtime Atomic + `@layer`)**: Build-time compilers paired atomic deduplication with [CSS Cascade Layers](/concepts/css-cascade-layers), cutting production CSS payloads by 70–90% with 0 ms JS overhead.
+
+## Production Pitfalls
+
+- **CSSOM Thrashing in Virtualized Lists**: Rendering 100 rows with unique dynamic runtime CSS-in-JS values (`top: ${y}px`) injects hundreds of rules per scroll frame, stalling main-thread style recalculation.
+- **Specificity Collisions Across Chunks**: Without `@layer` or deterministic atomic precedence, lazy-loaded route chunks append `<style>` tags in arrival order and randomly override base component styles.
+- **When not to use zero-runtime static extraction**: Never force build-time static extraction on user-authored theme builders or CMS arbitrary stylesheet editors where rules are unknown until runtime; use scoped `<style>` sheets or CSS custom properties instead.

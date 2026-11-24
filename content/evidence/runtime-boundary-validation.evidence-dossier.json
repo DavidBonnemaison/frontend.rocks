@@ -1,0 +1,48 @@
+{
+  "concept_id": "runtime-boundary-validation",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/",
+      "spec_section": "Parse, Don't Validate",
+      "quote": "A parser is a function that consumes less-structured input and produces more-structured output, preserving type invariants in the return value."
+    },
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse",
+      "spec_section": "ECMAScript JSON.parse",
+      "quote": "JSON.parse() parses a JSON string and constructs the JavaScript value or object described by the string without runtime type guarantees."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+ (JSON.parse + Schema Parser)",
+    "firefox": "3.5+ (JSON.parse + Schema Parser)",
+    "safari": "4+ (JSON.parse + Schema Parser)"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Untrusted I/O Deserialization (unknown)",
+      "Structural Schema Parsing & Coercion",
+      "Discriminated Result / Quarantine Fallback",
+      "Typed Domain State Ingestion"
+    ],
+    "mechanism_summary": "Transforms untrusted unknown payloads at I/O boundaries into statically typed structures via single-pass schema parsing, isolating drift before UI render."
+  },
+  "production_failures": [
+    {
+      "symptom": "App white-screens on boot for 12% of returning users after a deploy",
+      "root_cause": "Hydration called JSON.parse(localStorage.getItem('prefs')) as Prefs; older stored objects lacked a newly required nested key.",
+      "mitigation": "Use schema.safeParse() at storage read boundaries and fall back to default state or run a migration when parsing fails."
+    },
+    {
+      "symptom": "INP spikes above 220 ms when opening a 4,000-row data grid",
+      "root_cause": "Validating every row with deep Zod refinements synchronously on the main thread blocked layout and paint.",
+      "mitigation": "Parse large payloads inside a Web Worker or validate only the outer envelope and visible rows."
+    }
+  ],
+  "sources": [
+    "https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/",
+    "https://zod.dev/",
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse"
+  ]
+}

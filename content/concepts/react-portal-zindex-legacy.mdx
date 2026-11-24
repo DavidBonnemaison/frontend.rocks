@@ -1,0 +1,63 @@
+---
+id: react-portal-zindex-legacy
+title: React Portals and z-index Layering (Legacy Pattern)
+domain: dom-events
+maturity_status: superseded
+superseded_by:
+  - native-dialog-element
+  - popover-api-light-dismiss
+summary_tldr: "Legacy pattern reparenting overlays to document.body via createPortal and global z-index scales—now superseded by native Browser Top Layer primitives."
+relations:
+  - target_id: css-stacking-context
+    type: requires
+    note: "Portals only exist to escape local ancestor stacking contexts and overflow clipping."
+  - target_id: browser-top-layer
+    type: requires
+    note: "Native Top Layer promotion eliminates the need to teleport DOM nodes to document.body."
+sources:
+  - "https://html.spec.whatwg.org/multipage/interactive-elements.html#the-dialog-element"
+  - "https://react.dev/reference/react-dom/createPortal"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "portal"
+  - "z-index"
+  - "legacy"
+  - "modal"
+---
+
+## TL;DR
+
+`createPortal(..., document.body)` escaped local [CSS Stacking Context](/concepts/css-stacking-context) traps by teleporting DOM nodes to `<body>`. With the [Browser Top Layer](/concepts/browser-top-layer) now universal, [Native Dialog](/concepts/native-dialog-element) and [Popover API](/concepts/popover-api-light-dismiss) supersede manual portals.
+
+## Interactive Lab
+
+Compare a `createPortal` + `z-index` wrapper against native `<dialog>.showModal()` in `PatternComparatorLab`.
+
+## Under the Hood
+
+Picture mailing your furniture to a neighbor's rooftop just so it sits higher than your ceiling: `createPortal` relocates the DOM node to `document.body`, yet still leaves you wiring Escape keys, focus traps, and `z-index` treaties with every other tenant.
+
+1. **DOM Reparenting**: `createPortal` keeps React's synthetic event bubbling intact while mounting the real DOM subtree under `document.body`.
+2. **Global `z-index` Collisions**: Portals still compete inside the root stacking context (`z-50` vs `z-[9999]`).
+3. **Manual A11y**: Without `<dialog>.showModal()`, JS must trap Tab focus, lock body scroll, and restore focus on close.
+
+```jsx
+// Superseded: portal + hardcoded z-index
+createPortal(<div className="fixed inset-0 z-[9999]">{children}</div>, document.body);
+
+// Modern replacement: stays inline in component DOM, renders in Top Layer
+<dialog ref={dialogRef} className="backdrop:bg-black/50">{children}</dialog>
+```
+
+## Problem Genealogy
+
+- **2017 (`ReactDOM.createPortal`)**: Solved `overflow: hidden` clipping in nested component trees.
+- **2018–2023 (Overlay Library Stack)**: Spawned `react-focus-lock`, `body-scroll-lock`, and Floating UI `z-index` managers.
+- **2024 (Top Layer Baseline)**: `<dialog>` and `[popover]` made DOM teleportation unnecessary for modals and menus.
+
+## Production Pitfalls
+
+- **Inherited CSS Breakage**: Teleporting a component to `document.body` detaches it from local CSS custom properties and container queries.
+- **Broken Screen-Reader Containment**: Forgetting `aria-modal` or `inert` on siblings lets keyboard users tab behind the backdrop.
+- **When not to use `createPortal`**: Never reach for `createPortal` for new modals, drawers, or tooltips, use `<dialog>.showModal()` or `[popover]` instead.

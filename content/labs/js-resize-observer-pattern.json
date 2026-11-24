@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "js-resize-observer-pattern",
+  "title": "Adaptive Layout: ResizeObserver vs @container",
+  "before": {
+    "label": "JS ResizeObserver + State Hack",
+    "code": "useEffect(() => {\n  const ro = new ResizeObserver(([e]) => {\n    setCompact(e.contentRect.width < 400);\n  });\n  ro.observe(ref.current);\n  return () => ro.disconnect();\n}, []);",
+    "metrics": {
+      "lines": 7,
+      "reflows": "2 passes (SSR -> client)",
+      "dependencies": "React Hook + Observer"
+    },
+    "previewNote": "Causes a visual layout flash after hydration."
+  },
+  "after": {
+    "label": "Native CSS @container",
+    "code": ".card-wrap { container-type: inline-size; }\n@container (min-width: 400px) {\n  .card { grid-template-columns: 1fr 1fr; }\n}",
+    "metrics": {
+      "lines": 4,
+      "reflows": "1 native pass",
+      "dependencies": "0 JS"
+    },
+    "previewNote": "Evaluated on the first Paint without hydration."
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "a11y-tree-queries-vs-dom-selectors",
+  "title": "DOM Selector Coupling vs Accessibility-Tree Queries",
+  "description": "Compare how data-testid hides broken semantics while getByRole enforces ARIA roles and accessible names.",
+  "before": {
+    "label": "Coupled DOM Selector (Hides <div onClick>)",
+    "code": "const btn = page.locator('[data-testid=\"pay-btn\"]');\nawait btn.click(); // Passes even on a non-focusable <div>",
+    "metrics": {
+      "lines": 2,
+      "reflows": "0 (bypasses AccName)",
+      "dependencies": "Private testid attribute"
+    },
+    "previewNote": "Passes when <button> is replaced with <div onClick> and no keyboard support."
+  },
+  "after": {
+    "label": "Accessibility-Tree Query (AccName 1.2)",
+    "code": "const btn = page.getByRole('button', { name: 'Pay now' });\nawait btn.click(); // Fails if role or label is missing",
+    "metrics": {
+      "lines": 2,
+      "reflows": "1 AccName traversal",
+      "dependencies": "WAI-ARIA 1.2 + AccName"
+    },
+    "previewNote": "Enforces semantic role, visible label, and exclusion of inert/hidden subtrees."
+  }
+}

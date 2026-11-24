@@ -1,0 +1,63 @@
+---
+id: js-garbage-collection
+title: JavaScript Generational Garbage Collection
+domain: js-runtime
+maturity_status: baseline-widely
+summary_tldr: "Prevent frame-drop GC pauses by understanding V8's Orinoco collector—short-lived objects evacuate between Young Generation semi-spaces while Old Generation marks concurrently."
+relations:
+  - target_id: execution-context-call-stack
+    type: requires
+    note: "Active Call Stack frames act as primary GC roots that keep local bindings reachable."
+  - target_id: event-loop-tasks-microtasks
+    type: under_the_hood
+    note: "V8 schedules incremental marking steps and idle-time GC work between Event Loop tasks."
+sources:
+  - "https://v8.dev/blog/trash-talk"
+  - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Memory_management"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "garbage collection"
+  - "orinoco"
+  - "mark-sweep"
+  - "weakref"
+---
+
+## TL;DR
+
+V8's Orinoco collector splits the heap into a fast Young Generation (semi-space Scavenger for short-lived allocations) and an Old Generation (concurrent tri-color Mark-Sweep-Compact). Reachability from the [Call Stack](/concepts/execution-context-call-stack) and globals (not reference counting) determines what survives.
+
+## Interactive Lab
+
+Observe Young Generation semi-space evacuation and Old Generation promotion in `StepMachineLab`.
+
+## Under the Hood
+
+V8's Orinoco collector partitions the heap into a Young Generation (two semi-spaces scavenged via Cheney's copying algorithm) and an Old Generation (concurrent tri-color Mark-Sweep-Compact). Short-lived allocations evacuate from From-space to To-space in microseconds, while background threads trace Old Generation pointers alongside JS execution.
+
+1. **Root Enumeration**: The collector starts from globals, active [Call Stack](/concepts/execution-context-call-stack) frames, and DOM wrappers.
+2. **Young Generation Scavenge**: Objects allocate via bump-pointer in From-space; survivors copy to To-space, and dead objects cost zero to free.
+3. **Promotion**: Surviving two scavenges moves an object into the Old Generation.
+4. **Concurrent Marking**: Background worker threads trace Old Generation pointers alongside JS execution, coordinated with the [Event Loop](/concepts/event-loop-tasks-microtasks).
+
+```js
+// Reuse buffers instead of allocating per animation frame
+const scratch = new Float32Array(4);
+function projectPoint(x, y) {
+  scratch[0] = x * 1.5;
+  scratch[1] = y * 1.5;
+  return scratch;
+}
+```
+
+## Problem Genealogy
+
+- **1999 (Stop-the-World Mark-Sweep)**: Single-threaded pauses froze pages for hundreds of milliseconds on large heaps.
+- **2017 (V8 Orinoco)**: Parallel scavenging and concurrent marking cut main-thread GC pauses below a few milliseconds.
+- **2021 (ES2021 `WeakRef` & `FinalizationRegistry`)**: Exposed non-deterministic weak references for external caches.
+
+## Production Pitfalls
+
+- **Per-Frame Allocation Churn**: Returning fresh `{ x, y }` objects inside `requestAnimationFrame` saturates the Young Generation and triggers janky scavenges.
+- **Finalizer Unreliability**: `FinalizationRegistry` callbacks run only after an indeterminate GC cycle, never synchronously on scope exit.
+- **When not to use `WeakRef`**: Never rely on `WeakRef` to manage critical resources like WebGL textures or file handles; call explicit `.dispose()` or `using` blocks instead.

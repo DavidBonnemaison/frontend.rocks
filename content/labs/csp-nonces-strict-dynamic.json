@@ -1,0 +1,50 @@
+{
+  "type": "step-machine",
+  "id": "csp-nonces-strict-dynamic",
+  "title": "CSP Nonce & 'strict-dynamic' Trust Propagation",
+  "description": "Trace how a per-request nonce trusts the entry bundle, propagates to lazy chunks, and blocks injected inline scripts.",
+  "steps": [
+    {
+      "label": "1. Server Mints Per-Response Nonce",
+      "description": "Edge middleware generates nonce='r4nd0m' in the Content-Security-Policy header and stamps it on the root <script>.",
+      "codeHighlight": "Content-Security-Policy: script-src 'nonce-r4nd0m' 'strict-dynamic';",
+      "state": {
+        "headerNonce": "r4nd0m",
+        "strictDynamic": true,
+        "blockedScripts": 0
+      },
+      "visualNodes": [
+        { "id": "entry", "label": "Entry Script (nonce=r4nd0m)", "status": "active" },
+        { "id": "injected", "label": "Injected <script>alert(1)</script>", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Entry Script Loads Lazy Chunk",
+      "description": "The trusted entry script dynamically creates a <script src='/chunk.js'>. Because 'strict-dynamic' is set, trust propagates without a nonce on the child.",
+      "codeHighlight": "import('./analytics-chunk.js'); // Inherits trust",
+      "state": {
+        "headerNonce": "r4nd0m",
+        "chunkTrusted": true,
+        "blockedScripts": 0
+      },
+      "visualNodes": [
+        { "id": "entry", "label": "Entry Script (Trusted)", "status": "done" },
+        { "id": "chunk", "label": "Lazy Chunk (Inherited Trust)", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Injected Inline Script Blocked",
+      "description": "An attacker injects <script>steal()</script> via unescaped HTML. It lacks the per-request nonce, so the engine refuses execution and emits a violation report.",
+      "codeHighlight": "<script>steal()</script> // Blocked by CSP!",
+      "state": {
+        "chunkTrusted": true,
+        "injectedBlocked": true,
+        "blockedScripts": 1
+      },
+      "visualNodes": [
+        { "id": "chunk", "label": "Lazy Chunk (Executed)", "status": "done" },
+        { "id": "injected", "label": "Injected Script (BLOCKED)", "status": "error" }
+      ]
+    }
+  ]
+}

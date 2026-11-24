@@ -1,0 +1,61 @@
+---
+id: css-stacking-context
+title: CSS Stacking Context
+domain: rendering-pipeline
+maturity_status: baseline-widely
+summary_tldr: "Hierarchical tree isolating Z-axis paint order. A high z-index remains trapped inside its parent stacking context."
+relations:
+  - target_id: browser-rendering-pipeline
+    type: under_the_hood
+    note: "Stacking context order determines DisplayItem emission order during the Paint phase."
+  - target_id: browser-top-layer
+    type: contrasts_with
+    note: "Stacking contexts trap z-index inside ancestors, whereas the Top Layer renders above every stacking context."
+sources:
+  - "https://drafts.csswg.org/css2/#elaborate-stacking-contexts"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_positioned_layout/Understanding_z-index/Stacking_context"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "z-index ignored"
+  - "modal behind header"
+  - "isolation"
+  - "opacity"
+---
+
+## TL;DR
+
+A stacking context is an atomic boundary on the Z-axis. Descendants are painted relative to their parent context and can never interleave in front of an external element stacked above that parent.
+
+## Interactive Lab
+
+Test how `opacity < 1` or `transform` traps a child `z-index: 9999` inside `ConstraintSimulatorLab`.
+
+## Under the Hood
+
+1. During the Paint phase of the [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline), the engine sorts boxes across 7 stacking levels (context background, `z-index < 0`, in-flow blocks, floats, inline, `z-index: 0`, `z-index > 0`).
+2. Many non-positioning properties create a stacking context: `opacity < 1`, `transform !== none`, `filter !== none`, `isolation: isolate`, `contain: layout|paint`.
+3. A child stacking context is painted as a single atomic unit inside its parent before subsequent sibling contexts are drawn.
+
+```css
+/* Header sits at root stacking order z-index: 10 */
+.site-header { position: sticky; z-index: 10; }
+
+/* Parent opacity < 1 creates a stacking context at z-index: 1 */
+.card-wrapper { position: relative; z-index: 1; opacity: 0.99; }
+
+/* Trapped inside .card-wrapper: still paints BEHIND .site-header */
+.card-tooltip { position: absolute; z-index: 999999; }
+```
+
+## Problem Genealogy
+
+- **1998 (CSS 2.0)**: `z-index` only applies to positioned elements (`relative`, `absolute`, `fixed`).
+- **2011 (CSS3 Transforms/Opacity)**: Effects requiring an offscreen buffer (`opacity < 1`, `transform`) implicitly create a stacking context.
+- **2015+ (`isolation: isolate`)**: Dedicated property added to create a stacking context without visual side effects or forced GPU promotion.
+
+## Production Pitfalls
+
+- **Modal stuck under a header**: An intermediate ancestor receives `transform: translateY(0)` for an animation, trapping the modal's `z-index: 9999` under the sticky header.
+- **`z-index: 999999` escalation**: Adding extra nines to `z-index` is the CSS equivalent of shouting louder in a soundproof room, it never crosses a parent stacking context boundary.
+- **When not to use `z-index`**: Use the [Native `<dialog>` Element](/concepts/native-dialog-element) or [Popover API](/concepts/popover-api-light-dismiss) in the [Browser Top Layer](/concepts/browser-top-layer) for modals and tooltips instead of managing global `z-index` scales.

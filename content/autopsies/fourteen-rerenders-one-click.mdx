@@ -1,0 +1,112 @@
+---
+id: fourteen-rerenders-one-click
+case_number: 3
+title: "Autopsy #03: Fourteen Re-Renders and a Jumping Toolbar From One Toggle"
+symptom: "A single filter click freezes the UI for 180 ms INP and triggers a visible 24 px toolbar jump in the data grid."
+failure_mode: main-thread-freeze
+format: narrative
+case_type: composite
+cast:
+  - julie
+  - karim
+  - ines
+traversed_concepts:
+  - concept_id: css-custom-properties-cascade
+    step_order: 1
+    role_in_chain: "Mutating a CSS custom property on :root invalidates style resolution across all 2,400 descendant DOM nodes."
+  - concept_id: virtual-dom-reconciliation
+    step_order: 2
+    role_in_chain: "Unstable inline context objects and unkeyed wrappers force 14 cascading React subtree reconciliations."
+  - concept_id: layout-thrashing
+    step_order: 3
+    role_in_chain: "Interleaved getBoundingClientRect() reads and style.minHeight writes force 14 synchronous Blink layouts."
+  - concept_id: long-tasks-and-inp
+    step_order: 4
+    role_in_chain: "Combined style, VDOM diff, and forced layouts form a 180 ms Long Task that blocks next-frame paint."
+  - concept_id: concurrent-rendering-lanes
+    step_order: 5
+    role_in_chain: "Running heavy grid filtering on the synchronous SyncLane prevents React from yielding to input paint."
+case_file:
+  trigger: "Added a Compact / Comfortable density toggle writing `--row-density` to `:root` plus a `useLayoutEffect` row-height loop"
+  symptom: "Every tap froze mid-tier Android for 180 ms INP and dropped the sticky toolbar 24 px downward (0.14 CLS)"
+  root_cause: "`:root` variable mutation invalidated 2,400 nodes, unstable context defeated `React.memo`, and `useLayoutEffect` thrashed layout"
+  bad_fixes:
+    - label: "Wrap grid and rows in `React.memo`"
+      outcome: "Unit tests passed; production stayed at 180 ms because context passed a fresh object literal every render"
+  fix: "Scope `--row-density` to `.catalog-grid`, use CSS Grid `grid-auto-rows: 1fr`, and wrap grid filtering in `startTransition`"
+  how_to_spot: "Performance panel shows 14 purple `Layout` blocks and a 180 ms Long Task on a single toggle click"
+  deleted: "Global `:root` style mutation, `useLayoutEffect` height-equalization loop, redundant `React.memo` wrappers"
+reading_time_min: 7
+sources:
+  - "https://drafts.csswg.org/css-variables/#defining-variables"
+  - "https://web.dev/articles/inp"
+  - "https://web.dev/articles/avoid-large-complex-layouts-and-layout-thrashing"
+  - "https://react.dev/reference/react/startTransition"
+last_verified_at: "2026-11-17"
+proof_status: unverified
+lab_id: fourteen-rerenders-one-click
+---
+
+## Twenty demo rows on an M3
+
+Design asked for a "Compact / Comfortable" density toggle in the catalog toolbar so merchandising managers could scan more SKUs without scrolling. Julie wired the button to write `--row-density` onto `document.documentElement.style` and added a `useLayoutEffect` loop to keep every card row in a band the same height.
+
+```ts
+document.documentElement.style.setProperty('--row-density', mode);
+```
+
+On Karim's M3 MacBook Pro with 20 seeded demo items, the toggle snapped between modes faster than the eye could follow. Storybook screenshots looked crisp, Lighthouse on localhost stayed green, and we merged the PR on Tuesday morning.
+
+By Tuesday afternoon, Inès pulled the old Moto G out of her desk drawer and opened the real production catalog with 2,400 DOM nodes. Every tap on the toggle froze the screen for 180 milliseconds, and when the frame finally painted, the sticky toolbar visibly jumped 24 pixels downward. Inès dropped a slow-motion video in `#frontend` where you could watch the search bar hop down every time her thumb touched "Compact".
+
+## Zero milliseconds saved by React.memo
+
+Karim looked at the React DevTools Profiler, saw the whole catalog tree lighting up, and wrapped `<CatalogGrid>` and `<CatalogRow>` in `React.memo`. Our unit tests confirmed that `<CatalogRow>` skipped re-rendering when its row props stayed identical.
+
+We deployed the hotfix. Production stayed at 180 milliseconds.
+
+There were two reasons `React.memo` did nothing. First, the parent provider passed `value={{ filter, density }}` as an inline object literal, which allocated a new object reference on every render and walked straight past `React.memo` during [Virtual DOM reconciliation](/concepts/virtual-dom-reconciliation). Every consumer below the provider re-rendered anyway, and React DevTools cheerfully flagged "Context changed" on every row.
+
+Second, even if React had skipped every single component, mutating a [CSS custom property](/concepts/css-custom-properties-cascade) on `:root` (`<html>`) invalidates style resolution for every descendant in the document. Because custom properties inherit down the cascade, Blink has to walk all 2,400 nodes—header, sidebar, filters, footer, and cards—and recalculate computed styles before it can even think about painting a frame.
+
+## Reading the flamegraph
+
+When we recorded a Performance trace on the Moto G, the click was not one slow function. It was a chain reaction across three subsystems, all firing inside the same animation frame before the browser could paint a single pixel.
+
+<CausalChainStepper />
+
+The trace showed 14 cascading React render passes followed by a `useLayoutEffect` loop that measured `row.getBoundingClientRect().height` and immediately wrote `row.style.minHeight` on each row before moving to the next. That read-then-write pattern is textbook [layout thrashing](/concepts/layout-thrashing): reading geometry forces Blink to compute layout synchronously, writing `minHeight` invalidates it, and the next iteration forces it again. Repeating that 14 times inside a single commit meant the browser could not reuse any layout geometry from the previous pass, burning 94 milliseconds in purple `Layout` bars alone.
+
+Together, style recalculation, 14 VDOM passes, and 14 forced layouts merged into a single 180 ms [Long Task](/concepts/long-tasks-and-inp) on the main thread. The browser could not paint the button's pressed state until the entire grid finished shifting 24 pixels downward, and Chrome's Interaction to Next Paint metric dutifully recorded the whole stall against the toggle click.
+
+<FailureSimulator />
+
+## Scoped CSS and CSS Grid
+
+The real fix removed work from JavaScript instead of trying to memoize it.
+
+First, we moved `--row-density` off `:root` onto `.catalog-grid` so style invalidation stayed inside the grid container instead of walking the header, sidebar, and footer. Second, we deleted the `useLayoutEffect` measurement loop entirely and let CSS Grid (`grid-auto-rows: 1fr`) equalize row heights in a single layout pass, eliminating the 24 px toolbar jump and bringing CLS down to `0.00`. Third, we memoized the provider context value with `useMemo` so `React.memo` actually had stable props to compare.
+
+## The `startTransition` trap
+
+With style and layout fixed, heavy catalog filtering still ran on React's synchronous `SyncLane` whenever a user toggled modes on a large category. We wrapped the update in `startTransition` so React could schedule the grid projection on a lower-priority [concurrent rendering lane](/concepts/concurrent-rendering-lanes) and yield to input paint.
+
+First try with `startTransition`: we put both the density toggle's local visual state and the grid projection inside `startTransition`.
+
+```tsx
+function onToggleDensity() {
+  startTransition(() => {
+    setDensity((d) => (d === 'compact' ? 'comfortable' : 'compact'));
+  });
+}
+```
+
+On the Moto G, the button looked broken. When Inès tapped "Compact", the button label did not change for over 100 milliseconds while React worked on the background grid render, making it feel like the tap had been dropped. The button's own immediate feedback (`urgentDensity` or `isPending`) has to stay on the synchronous lane; only the heavy grid update belongs inside `startTransition`. Once we split the urgent button state from the deferred grid update, INP on the Moto G dropped from 180 ms to 28 ms.
+
+## What stayed in the codebase
+
+<CaseFile />
+
+`:root` means the entire document, and Blink takes that literally.
+
+Inès put the Moto G back in her drawer until the next design polish PR.

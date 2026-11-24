@@ -1,0 +1,35 @@
+{
+  "type": "constraint-simulator",
+  "id": "streams-api-backpressure",
+  "title": "Stream Queue Depth & Backpressure Simulator",
+  "description": "Adjust producer chunk size, consumer drain rate, and highWaterMark to observe desiredSize backpressure.",
+  "presetMode": "streams-backpressure",
+  "controls": [
+    {
+      "key": "highWaterMark",
+      "label": "highWaterMark (KB)",
+      "kind": "range",
+      "min": 16,
+      "max": 512,
+      "step": 16,
+      "defaultValue": 64,
+      "unit": "KB"
+    },
+    {
+      "key": "chunkSize",
+      "label": "Chunk Size (KB)",
+      "kind": "range",
+      "min": 4,
+      "max": 128,
+      "step": 4,
+      "defaultValue": 16,
+      "unit": "KB"
+    },
+    {
+      "key": "respectBackpressure",
+      "label": "Honor controller.desiredSize <= 0",
+      "kind": "toggle",
+      "defaultValue": true
+    }
+  ]
+}

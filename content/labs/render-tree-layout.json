@@ -1,0 +1,103 @@
+{
+  "type": "step-machine",
+  "id": "render-tree-layout",
+  "title": "DOM + CSSOM to Physical Box Geometry",
+  "description": "Inspect how display: none, visibility: hidden, and text nodes map into the Render Tree.",
+  "steps": [
+    {
+      "label": "1. Style Resolution",
+      "description": "Engine matches CSSOM selectors against DOM elements to produce ComputedStyle per node.",
+      "codeHighlight": ".hidden { display: none; } .ghost { visibility: hidden; }",
+      "state": {
+        "domNodes": 5,
+        "styledNodes": 5,
+        "omitted": 0
+      },
+      "visualNodes": [
+        {
+          "id": "dom",
+          "label": "DOM",
+          "status": "done"
+        },
+        {
+          "id": "style",
+          "label": "ComputedStyle",
+          "status": "active"
+        },
+        {
+          "id": "box",
+          "label": "Box Tree",
+          "status": "idle"
+        },
+        {
+          "id": "layout",
+          "label": "Geometry",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "2. Box Tree Pruning",
+      "description": "Nodes with display: none and <head> elements emit zero layout boxes; visibility: hidden stays in the tree.",
+      "codeHighlight": "<div class=\"hidden\">Skipped</div><div class=\"ghost\">Kept</div>",
+      "state": {
+        "boxCount": 3,
+        "displayNoneOmitted": 1,
+        "visibilityHiddenKept": 1
+      },
+      "visualNodes": [
+        {
+          "id": "dom",
+          "label": "DOM",
+          "status": "done"
+        },
+        {
+          "id": "style",
+          "label": "ComputedStyle",
+          "status": "done"
+        },
+        {
+          "id": "box",
+          "label": "Box Tree",
+          "status": "active"
+        },
+        {
+          "id": "layout",
+          "label": "Geometry",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "3. Constraint & Geometry Pass",
+      "description": "Layout walks the box tree top-down and bottom-up to resolve widths, line wraps, and (x, y) offsets.",
+      "state": {
+        "layoutRects": "resolved",
+        "unit": "subpixel-px",
+        "dirtyFlags": "CLEARED"
+      },
+      "visualNodes": [
+        {
+          "id": "dom",
+          "label": "DOM",
+          "status": "done"
+        },
+        {
+          "id": "style",
+          "label": "ComputedStyle",
+          "status": "done"
+        },
+        {
+          "id": "box",
+          "label": "Box Tree",
+          "status": "done"
+        },
+        {
+          "id": "layout",
+          "label": "Geometry",
+          "status": "active"
+        }
+      ]
+    }
+  ]
+}

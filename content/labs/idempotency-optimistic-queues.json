@@ -1,0 +1,53 @@
+{
+  "type": "step-machine",
+  "id": "idempotency-optimistic-queues",
+  "title": "Outbox Queue & Idempotency Key Retry",
+  "description": "Trace how an IndexedDB outbox persists a mutation key, survives a dropped response, and deduplicates on retry.",
+  "steps": [
+    {
+      "label": "1. Enqueue Intent with Fixed UUID",
+      "description": "User submits order; client generates Idempotency-Key once, writes to IndexedDB, and updates UI optimistically.",
+      "codeHighlight": "await idb.put('outbox', { seq: 1, key: '9b1d-...', body });",
+      "state": {
+        "outboxLength": 1,
+        "idempotencyKey": "9b1d-4c2a",
+        "attempt": 0
+      },
+      "visualNodes": [
+        { "id": "idb", "label": "IDB Outbox [1]", "status": "active" },
+        { "id": "net", "label": "Network Worker", "status": "idle" },
+        { "id": "srv", "label": "API Server", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Network Drops After Server Commit",
+      "description": "First POST commits on server, but cellular drop loses the 200 OK; client keeps item in outbox and retries with same key.",
+      "codeHighlight": "fetch('/api/orders', { headers: { 'Idempotency-Key': '9b1d-4c2a' } });",
+      "state": {
+        "outboxLength": 1,
+        "idempotencyKey": "9b1d-4c2a",
+        "attempt": 2
+      },
+      "visualNodes": [
+        { "id": "idb", "label": "IDB Outbox [1]", "status": "active" },
+        { "id": "net", "label": "Retry #2 (Same Key)", "status": "error" },
+        { "id": "srv", "label": "Key Cached (Committed)", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Replay Cached 200 & Dequeue",
+      "description": "Server recognizes '9b1d-4c2a', replays the original 200 OK without double-charging, and client removes item #1.",
+      "codeHighlight": "await idb.delete('outbox', 1); // causal slot freed",
+      "state": {
+        "outboxLength": 0,
+        "idempotencyKey": "9b1d-4c2a",
+        "replayed": true
+      },
+      "visualNodes": [
+        { "id": "idb", "label": "IDB Outbox [0]", "status": "done" },
+        { "id": "net", "label": "200 OK (Replayed)", "status": "done" },
+        { "id": "srv", "label": "Single Order Created", "status": "done" }
+      ]
+    }
+  ]
+}

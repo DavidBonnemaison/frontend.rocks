@@ -1,0 +1,42 @@
+{
+  "concept_id": "js-memory-leaks-retainers",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Memory_management",
+      "spec_section": "Reachability and Retainer Paths",
+      "quote": "An object is considered garbage-collectable if there are zero references pointing to it, or if it is unreachable from the root."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "66+",
+    "firefox": "69+",
+    "safari": "12.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Closure Context Capture",
+      "Shared Context Slot Allocation",
+      "Detached DOM Subtree Retention",
+      "Heap Snapshot Retainer Graph"
+    ],
+    "mechanism_summary": "In V8, all inner functions in a scope share a single heap-allocated Context object; one retained closure keeps every captured sibling variable alive."
+  },
+  "production_failures": [
+    {
+      "symptom": "SPA memory grows by 50MB per route navigation until tab crash",
+      "root_cause": "Global event listeners or setInterval callbacks hold closures referencing unmounted DOM nodes, retaining entire detached DOM subtrees.",
+      "mitigation": "Pass an AbortController signal to addEventListener and abort it on component unmount."
+    },
+    {
+      "symptom": "10MB ArrayBuffer stays pinned in memory even though the active handler never reads it",
+      "root_cause": "A sibling closure in the same lexical scope referenced the buffer, causing V8 to retain the shared Context object.",
+      "mitigation": "Nullify large temporary variables after setup or isolate closures into separate helper scopes."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Memory_management",
+    "https://developer.chrome.com/docs/devtools/memory-problems/heap-snapshots"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "ci": {
+    "collect": {
+      "staticDistDir": "./dist",
+      "url": [
+        "http://localhost/index.html",
+        "http://localhost/graph/index.html",
+        "http://localhost/index-list/index.html",
+        "http://localhost/concepts/browser-rendering-pipeline/index.html",
+        "http://localhost/diagnose/index.html",
+        "http://localhost/agents/index.html"
+      ],
+      "numberOfRuns": 3,
+      "settings": {
+        "preset": "desktop"
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", { "minScore": 0.95 }],
+        "categories:accessibility": ["error", { "minScore": 0.95 }]
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}

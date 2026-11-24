@@ -1,0 +1,42 @@
+{
+  "concept_id": "css-grid-track-sizing",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-grid-2/#algo-track-sizing",
+      "spec_section": "12.3 Track Sizing Algorithm",
+      "quote": "Grid track sizing initializes base sizes and growth limits, resolves intrinsic track sizes, maximizes tracks up to their limits, and finally expands flexible (fr) tracks."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "57+",
+    "firefox": "52+",
+    "safari": "10.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Track Initialization",
+      "Intrinsic Content Sizing",
+      "Flex (fr) Expansion",
+      "Item Alignment"
+    ],
+    "mechanism_summary": "1fr is shorthand for minmax(auto, 1fr); intrinsic minimum sizing runs before fr space division, causing grid blowout unless minmax(0, 1fr) is used."
+  },
+  "production_failures": [
+    {
+      "symptom": "A 1fr grid column expands beyond the container when holding a wide code block or table",
+      "root_cause": "1fr resolves to minmax(auto, 1fr), so its minimum track size is the child’s min-content width.",
+      "mitigation": "Write minmax(0, 1fr) instead of 1fr when tracks must stay bounded by the container."
+    },
+    {
+      "symptom": "auto-fit vs auto-fill leaves unexpected empty space in sparse grids",
+      "root_cause": "auto-fill keeps empty implicit tracks at their minimum size, whereas auto-fit collapses empty tracks to 0px.",
+      "mitigation": "Use auto-fit to stretch items across the row, or auto-fill to preserve fixed column widths."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-grid-2/#algo-track-sizing",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout"
+  ]
+}

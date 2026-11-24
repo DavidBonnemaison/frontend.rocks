@@ -1,0 +1,43 @@
+{
+  "concept_id": "early-hints-103",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://www.rfc-editor.org/rfc/rfc8297",
+      "spec_section": "RFC 8297 Section 2: HTTP Status Code 103 (Early Hints)",
+      "quote": "The 103 (Early Hints) informational status code indicates to the client that the server is likely to send a final response with the header fields included in the informational response."
+    },
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/links.html#early-hints",
+      "spec_section": "WHATWG HTML: Processing Link headers in 103 responses",
+      "quote": "A 103 Early Hints response allows the user agent to start preloading or preconnecting to critical subresources while the final response is still being generated."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-newly",
+    "chrome": "103+",
+    "firefox": "120+",
+    "safari": "18.2+"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["GET Navigation Request", "103 Informational Frame", "Speculative Preload Queue", "200 OK HTML Stream"],
+    "mechanism_summary": "Emits an interim 103 HTTP frame with Link preload/preconnect headers during server think time, feeding the preload scanner before byte 0 of HTML arrives."
+  },
+  "production_failures": [
+    {
+      "symptom": "Preloaded fonts or stylesheets via 103 Early Hints are fetched twice",
+      "root_cause": "The 103 Link header omitted crossorigin on a CORS-enabled font, or used a different URL query string than the final HTML.",
+      "mitigation": "Match the exact URL and crossorigin attribute in both the 103 Link header and the HTML document."
+    },
+    {
+      "symptom": "103 Early Hints ignored completely by the browser",
+      "root_cause": "Origin or reverse proxy sent 103 over HTTP/1.1 or HTTP/1.0, where informational 1xx responses are disabled by browsers due to proxy framing bugs.",
+      "mitigation": "Serve 103 Early Hints strictly over HTTP/2 or HTTP/3 connections."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/103",
+    "https://developer.chrome.com/docs/web-platform/early-hints",
+    "https://www.rfc-editor.org/rfc/rfc8297"
+  ]
+}

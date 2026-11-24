@@ -1,0 +1,67 @@
+---
+id: web-crypto-subtle
+title: Web Crypto API and SubtleCrypto
+domain: web-apis
+maturity_status: baseline-widely
+summary_tldr: "Native C++-backed cryptographic primitives (AES-GCM, SHA-256, ECDSA, HKDF) running off the JS thread in secure contexts with non-extractable CryptoKey handles."
+relations:
+  - target_id: event-loop-tasks-microtasks
+    type: requires
+    note: "SubtleCrypto returns Promises that resolve on the microtask queue after native thread work."
+  - target_id: dom-xss-trusted-types
+    type: contrasts_with
+    note: "Non-extractable CryptoKeys resist exfiltration even if an XSS payload executes in the page."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto"
+  - "https://w3c.github.io/webcrypto/"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "SubtleCrypto"
+  - "CryptoKey"
+  - "AES-GCM"
+  - "Web Crypto"
+web_feature_id: web-cryptography
+---
+
+## TL;DR
+
+`window.crypto.subtle` delegates hashing, authenticated encryption, and key derivation to the browser's native C++ cryptographic library (`BoringSSL`, `NSS`, or `CommonCrypto`). Operations run off the main thread, require HTTPS, and can lock raw key material inside non-extractable `CryptoKey` objects.
+
+## Interactive Lab
+
+Compare a pure-JavaScript crypto bundle against native `crypto.subtle` execution.
+
+## Under the Hood
+
+`SubtleCrypto` is a bank safe-deposit box with a slot in the door: you slide plaintext in, and ciphertext slides out, while the key inside can be marked `extractable: false` so even an [XSS](/concepts/dom-xss-trusted-types) script cannot read the raw key bytes.
+
+1. **Native Offload**: Calls dispatch to an internal browser crypto thread pool, resolving Promises on the [Event Loop](/concepts/event-loop-tasks-microtasks) without blocking frames.
+2. **Non-Extractable Keys**: Keys generated or imported with `extractable: false` can be stored in [IndexedDB](/concepts/indexeddb-transactions-quotas) and used to sign or decrypt, yet `exportKey()` rejects.
+3. **Hardware Acceleration**: Engines route AES-GCM and SHA-256 to CPU AES-NI / ARMv8 crypto instructions.
+
+```js
+const key = await crypto.subtle.generateKey(
+  { name: 'AES-GCM', length: 256 },
+  false, // non-extractable: JS can never read raw key bytes
+  ['encrypt', 'decrypt']
+);
+const iv = crypto.getRandomValues(new Uint8Array(12));
+const ciphertext = await crypto.subtle.encrypt(
+  { name: 'AES-GCM', iv },
+  key,
+  new TextEncoder().encode('sensitive-payload')
+);
+```
+
+## Problem Genealogy
+
+- **2010–2014 (JS Crypto Libraries)**: Pure-JS implementations shipped tens of kilobytes, stalled the UI thread, and suffered timing side-channels.
+- **2015 (W3C Web Crypto API)**: Standardized `SubtleCrypto` and `crypto.getRandomValues()` across engines.
+- **2024+ (Ed25519 & X25519)**: Modern curves landed in `SubtleCrypto`, retiring legacy RSA-OAEP boilerplate.
+
+## Production Pitfalls
+
+- **Reusing an AES-GCM IV**: Encrypting two messages with the same key and 12-byte `iv` destroys confidentiality and authentication; always call `crypto.getRandomValues(new Uint8Array(12))` per message.
+- **Missing `window.isSecureContext`**: `crypto.subtle` is `undefined` on plain `http://` staging URLs; test over HTTPS or `localhost`.
+- **When not to use `SubtleCrypto`**: Never roll custom client-side password hashing to replace server-side Argon2id or TLS transport security.

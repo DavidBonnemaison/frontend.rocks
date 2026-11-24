@@ -1,0 +1,62 @@
+{
+  "id": "2026-w46",
+  "title": "Issue #46: Native Top Layer, Container Queries, and Microtask Overhead",
+  "published_at": "2026-11-15",
+  "summary": "Weekly curation of browser engine changes with direct impact on frontend architecture.",
+  "entries": [
+    {
+      "title": "Popover API reaches Baseline Widely Available",
+      "source_url": "https://web.dev/baseline",
+      "category": "obsolescence-alert",
+      "impact_score": 9.5,
+      "editorial_take": "Native Top Layer promotion and light-dismiss handling render custom React tooltip portals and z-index ladders obsolete.",
+      "related_concepts": [
+        "popover-api-light-dismiss",
+        "css-stacking-context"
+      ]
+    },
+    {
+      "title": "Container Size and Style Queries: the end of ResizeObserver layout hacks",
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_queries",
+      "category": "spec-update",
+      "impact_score": 9.1,
+      "editorial_take": "Evaluating container dimensions inside the CSS engine eliminates main-thread ResizeObserver loops and hydration layout flashes.",
+      "related_concepts": [
+        "css-container-queries",
+        "js-resize-observer-pattern"
+      ]
+    },
+    {
+      "title": "scheduler.yield() available to break up long tasks (INP)",
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/API/Scheduler/yield",
+      "category": "browser-release",
+      "impact_score": 8.7,
+      "editorial_take": "Yields control back to the main thread without losing scheduling priority to third-party timers, directly lowering input latency.",
+      "related_concepts": [
+        "event-loop-tasks-microtasks",
+        "browser-rendering-pipeline"
+      ]
+    },
+    {
+      "title": "Back/Forward Cache (bfcache): diagnosing common blockers",
+      "source_url": "https://web.dev/articles/bfcache",
+      "category": "deep-dive",
+      "impact_score": 8.2,
+      "editorial_take": "Legacy unload listeners and open IndexedDB transactions prevent browsers from snapshotting pages in memory for instant back/forward navigation.",
+      "related_concepts": [
+        "bfcache-navigation"
+      ]
+    },
+    {
+      "title": "Fetch Priority (fetchpriority='high') on LCP hero images",
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/fetchPriority",
+      "category": "spec-update",
+      "impact_score": 8,
+      "editorial_take": "Signals the browser preload scanner to promote the hero image ahead of deferred scripts during initial HTML tokenization.",
+      "related_concepts": [
+        "preload-scanner-hints",
+        "browser-rendering-pipeline"
+      ]
+    }
+  ]
+}

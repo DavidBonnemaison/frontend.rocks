@@ -1,0 +1,168 @@
+{
+  "type": "step-machine",
+  "id": "hexagonal-ports-adapters-ui",
+  "title": "Hexagonal Command Flow & Adapter Swap",
+  "description": "Trace a checkout command across driving adapter, pure domain core, and swappable driven adapters without inverting dependency direction.",
+  "steps": [
+    {
+      "label": "1. Composition Root Wires Port",
+      "description": "At boot, the composition root injects a concrete OrderGateway adapter (HttpOrderAdapter in prod, InMemoryOrderAdapter in tests) into the domain factory.",
+      "codeHighlight": "const submitOrder = createSubmitOrder(httpOrderAdapter);",
+      "state": {
+        "dependencyDirection": "outer -> inner",
+        "domainImports": "[]",
+        "wiredAdapter": "HttpOrderAdapter"
+      },
+      "visualNodes": [
+        {
+          "id": "composition-root",
+          "label": "Composition Root",
+          "status": "active"
+        },
+        {
+          "id": "ui-adapter",
+          "label": "UI Driving Adapter",
+          "status": "idle"
+        },
+        {
+          "id": "domain-core",
+          "label": "Pure Domain Core",
+          "status": "idle"
+        },
+        {
+          "id": "driven-adapter",
+          "label": "Driven Adapter (HTTP / Fake)",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "2. Driving Adapter Captures UI Event",
+      "description": "The React button handler extracts plain cart items and an idempotency key from UI state, then calls the inbound domain function without passing DOM events.",
+      "codeHighlight": "await submitOrder(cartItems, idempotencyKey);",
+      "state": {
+        "dependencyDirection": "outer -> inner",
+        "payloadType": "Plain Domain Command",
+        "domLeaked": false
+      },
+      "visualNodes": [
+        {
+          "id": "composition-root",
+          "label": "Composition Root",
+          "status": "done"
+        },
+        {
+          "id": "ui-adapter",
+          "label": "UI Driving Adapter",
+          "status": "active"
+        },
+        {
+          "id": "domain-core",
+          "label": "Pure Domain Core",
+          "status": "idle"
+        },
+        {
+          "id": "driven-adapter",
+          "label": "Driven Adapter (HTTP / Fake)",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "3. Pure Domain Enforces Invariants",
+      "description": "Domain logic computes totalCents and rejects empty orders on the JS heap with zero network, storage, or framework coupling.",
+      "codeHighlight": "if (total <= 0) throw new Error('EMPTY_ORDER');",
+      "state": {
+        "totalCents": 4900,
+        "invariantPassed": true,
+        "jsdomRequired": false
+      },
+      "visualNodes": [
+        {
+          "id": "composition-root",
+          "label": "Composition Root",
+          "status": "done"
+        },
+        {
+          "id": "ui-adapter",
+          "label": "UI Driving Adapter",
+          "status": "done"
+        },
+        {
+          "id": "domain-core",
+          "label": "Pure Domain Core",
+          "status": "active"
+        },
+        {
+          "id": "driven-adapter",
+          "label": "Driven Adapter (HTTP / Fake)",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "4. Outbound Port Dispatches to Driven Adapter",
+      "description": "The domain invokes gateway.charge(4900, key). The driven adapter executes fetch(), validates the JSON response schema, and strips HTTP details.",
+      "codeHighlight": "return gateway.charge(total, key);",
+      "state": {
+        "adapterMode": "fetch POST /v1/charges",
+        "boundaryValidated": true,
+        "httpStatusExposed": false
+      },
+      "visualNodes": [
+        {
+          "id": "composition-root",
+          "label": "Composition Root",
+          "status": "done"
+        },
+        {
+          "id": "ui-adapter",
+          "label": "UI Driving Adapter",
+          "status": "done"
+        },
+        {
+          "id": "domain-core",
+          "label": "Pure Domain Core",
+          "status": "done"
+        },
+        {
+          "id": "driven-adapter",
+          "label": "Driven Adapter (HTTP / Fake)",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "label": "5. Clean Result Returns to UI",
+      "description": "The validated domain receipt { receiptId } returns to the UI adapter for rendering. Swapping fetch for an in-memory fake changes zero lines in steps 2-3.",
+      "codeHighlight": "setReceipt(result.receiptId);",
+      "state": {
+        "receiptId": "rcpt_9f2a1",
+        "testExecutionMs": 0.4,
+        "domainFilesChangedOnSdkSwap": 0
+      },
+      "visualNodes": [
+        {
+          "id": "composition-root",
+          "label": "Composition Root",
+          "status": "done"
+        },
+        {
+          "id": "ui-adapter",
+          "label": "UI Driving Adapter",
+          "status": "active"
+        },
+        {
+          "id": "domain-core",
+          "label": "Pure Domain Core",
+          "status": "done"
+        },
+        {
+          "id": "driven-adapter",
+          "label": "Driven Adapter (HTTP / Fake)",
+          "status": "done"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "concept_id": "roving-tabindex-focus-order",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/#kbd_roving_tabindex",
+      "spec_section": "WAI-ARIA Authoring Practices Guide — Roving tabindex",
+      "quote": "A composite widget places tabindex='0' on only its currently active descendant and tabindex='-1' on all other items, moving focus via Arrow keys so Tab exits the widget in one step."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "Full tabindex / focus()",
+    "firefox": "Full tabindex / focus()",
+    "safari": "Full tabindex / focus()"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Sequential Focus Navigation Order (tabindex=0 vs >0)",
+      "Programmatic Focusable Removal (tabindex=-1)",
+      "Arrow Key Roving Pointer Update"
+    ],
+    "mechanism_summary": "The browser's sequential focus navigation walks DOM order for tabindex='0' elements while skipping tabindex='-1' nodes, letting composite widgets own Arrow-key navigation."
+  },
+  "production_failures": [
+    {
+      "symptom": "Keyboard users must press Tab 48 times to cross a toolbar or tablist",
+      "root_cause": "Every item inside a composite widget has tabindex='0' or native <button> without roving tabindex management.",
+      "mitigation": "Maintain tabindex='0' on only the active item and tabindex='-1' on siblings, moving focus with ArrowLeft/ArrowRight."
+    },
+    {
+      "symptom": "Positive tabindex='5' breaks visual reading order across a refactored layout",
+      "root_cause": "Positive tabindex values override DOM order globally and drift out of sync whenever components reorder.",
+      "mitigation": "Ban positive tabindex (> 0) entirely; align DOM order with visual layout and use only 0 and -1."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex",
+    "https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/"
+  ]
+}

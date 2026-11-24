@@ -1,0 +1,52 @@
+{
+  "type": "step-machine",
+  "id": "realtime-streams-backpressure-jitter",
+  "title": "Stream Backpressure & Full-Jitter Reconnect",
+  "description": "Trace how consumer backpressure throttles socket reads and how full-jitter backoff spreads reconnects.",
+  "steps": [
+    {
+      "label": "1. Consumer Stalls (desiredSize <= 0)",
+      "description": "UI renderer pauses reader.read() during a heavy frame, filling the ReadableStream highWaterMark.",
+      "codeHighlight": "if (controller.desiredSize <= 0) socketReader.pause();",
+      "state": {
+        "desiredSize": 0,
+        "tcpWindow": "shrinking",
+        "heapMb": 42
+      },
+      "visualNodes": [
+        { "id": "edge", "label": "Edge Server", "status": "active" },
+        { "id": "stream", "label": "ReadableStream", "status": "error" },
+        { "id": "ui", "label": "UI Consumer", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Drop & Full-Jitter Window",
+      "description": "Socket closes with 1006; client samples a uniform random delay in [0, min(30s, 500ms * 2^attempt)].",
+      "codeHighlight": "const delay = Math.random() * Math.min(30000, 500 * 2 ** attempt);",
+      "state": {
+        "attempt": 3,
+        "maxWindowMs": 4000,
+        "sampledDelayMs": 2380
+      },
+      "visualNodes": [
+        { "id": "edge", "label": "Edge Server", "status": "idle" },
+        { "id": "stream", "label": "Backoff Timer", "status": "active" },
+        { "id": "ui", "label": "UI Consumer", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Decorrelated Resume",
+      "description": "Client reconnects with Last-Event-ID or cursor, or aborts cleanly if AbortSignal fires during the sleep.",
+      "codeHighlight": "fetch(url, { signal, headers: { 'Last-Event-ID': lastId } });",
+      "state": {
+        "connected": true,
+        "resumedFrom": "evt-9042"
+      },
+      "visualNodes": [
+        { "id": "edge", "label": "Edge Server", "status": "done" },
+        { "id": "stream", "label": "ReadableStream", "status": "done" },
+        { "id": "ui", "label": "UI Consumer", "status": "done" }
+      ]
+    }
+  ]
+}

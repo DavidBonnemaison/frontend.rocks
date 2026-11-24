@@ -1,0 +1,155 @@
+{
+  "type": "step-machine",
+  "id": "browser-rendering-pipeline",
+  "title": "Frame Execution in Blink (16.6 ms at 60 Hz)",
+  "description": "Observe which pipeline phases activate depending on the mutation type.",
+  "steps": [
+    {
+      "label": "1. JS Mutation (width)",
+      "description": "Script sets el.style.width = '320px'. The node is marked dirty for Style and Layout.",
+      "codeHighlight": "card.style.width = '320px';",
+      "state": {
+        "dirtyFlags": "STYLE | LAYOUT | PAINT",
+        "mainThread": "Blocked",
+        "compositorThread": "Waiting"
+      },
+      "visualNodes": [
+        {
+          "id": "js",
+          "label": "JS",
+          "status": "active"
+        },
+        {
+          "id": "style",
+          "label": "Style",
+          "status": "idle"
+        },
+        {
+          "id": "layout",
+          "label": "Layout",
+          "status": "idle"
+        },
+        {
+          "id": "paint",
+          "label": "Paint",
+          "status": "idle"
+        },
+        {
+          "id": "comp",
+          "label": "Composite",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "2. Recalc Style + Layout",
+      "description": "Engine recomputes resolved styles and geometry for all affected descendants.",
+      "codeHighlight": "// Internal phase before rAF / commit",
+      "state": {
+        "nodesRecalculated": 42,
+        "layoutDurationMs": 6.8,
+        "paintInvalidated": true
+      },
+      "visualNodes": [
+        {
+          "id": "js",
+          "label": "JS",
+          "status": "done"
+        },
+        {
+          "id": "style",
+          "label": "Style",
+          "status": "done"
+        },
+        {
+          "id": "layout",
+          "label": "Layout",
+          "status": "active"
+        },
+        {
+          "id": "paint",
+          "label": "Paint",
+          "status": "idle"
+        },
+        {
+          "id": "comp",
+          "label": "Composite",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "3. Paint & Raster",
+      "description": "Emits DisplayItems and rasterizes invalidated tiles.",
+      "state": {
+        "displayItems": 18,
+        "tilesRasterized": 4,
+        "gpuUpload": "OK"
+      },
+      "visualNodes": [
+        {
+          "id": "js",
+          "label": "JS",
+          "status": "done"
+        },
+        {
+          "id": "style",
+          "label": "Style",
+          "status": "done"
+        },
+        {
+          "id": "layout",
+          "label": "Layout",
+          "status": "done"
+        },
+        {
+          "id": "paint",
+          "label": "Paint",
+          "status": "active"
+        },
+        {
+          "id": "comp",
+          "label": "Composite",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "4. Composite (GPU)",
+      "description": "Compositor Thread assembles layers. With transform/opacity alone, steps 2 and 3 are skipped.",
+      "codeHighlight": "card.style.transform = 'translateX(40px)';",
+      "state": {
+        "frameTimeMs": 11.4,
+        "budgetRemainingMs": 5.2,
+        "droppedFrames": 0
+      },
+      "visualNodes": [
+        {
+          "id": "js",
+          "label": "JS",
+          "status": "done"
+        },
+        {
+          "id": "style",
+          "label": "Style",
+          "status": "done"
+        },
+        {
+          "id": "layout",
+          "label": "Layout",
+          "status": "done"
+        },
+        {
+          "id": "paint",
+          "label": "Paint",
+          "status": "done"
+        },
+        {
+          "id": "comp",
+          "label": "Composite",
+          "status": "active"
+        }
+      ]
+    }
+  ]
+}

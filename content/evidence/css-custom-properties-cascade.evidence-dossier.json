@@ -1,0 +1,41 @@
+{
+  "concept_id": "css-custom-properties-cascade",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-variables-1/",
+      "spec_section": "3. Using Cascading Variables: the var() notation",
+      "quote": "If a property contains one or more var() functions, and those functions are syntactically valid, the entire property’s grammar must be assumed to be valid at parse time."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "49+",
+    "firefox": "31+",
+    "safari": "9.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Parse (Token Storage)",
+      "Inheritance Propagation",
+      "Computed-Value Substitution"
+    ],
+    "mechanism_summary": "Engine stores --var as raw tokens; var() substitutes at computed-value time and falls back to initial/inherited (IACVT) if invalid."
+  },
+  "production_failures": [
+    {
+      "symptom": "Property using var(--bad-token) ignores the previous fallback declaration and resets to transparent",
+      "root_cause": "Invalid At Computed Value Time (IACVT): parse-time fallback rules were already discarded before var() substituted.",
+      "mitigation": "Provide a fallback inside var(--token, #2563eb) rather than a separate fallback line above it."
+    },
+    {
+      "symptom": "Mutating --scroll-y on :root triggers a 15ms style recalculation across 3,000 nodes",
+      "root_cause": "Custom properties inherit by default, so changing a :root variable invalidates ComputedStyle on the entire document.",
+      "mitigation": "Scope frequently mutated variables to the smallest subtree or register them with @property { inherits: false }."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-variables-1/",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties"
+  ]
+}

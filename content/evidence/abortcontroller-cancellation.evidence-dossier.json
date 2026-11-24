@@ -1,0 +1,42 @@
+{
+  "concept_id": "abortcontroller-cancellation",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://dom.spec.whatwg.org/#interface-abortcontroller",
+      "spec_section": "3.2 Interface AbortController",
+      "quote": "To signal abort on an AbortSignal signal with an optional reason: if signal is aborted, return; set signal's abort reason and run abort algorithms."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "66+",
+    "firefox": "57+",
+    "safari": "12.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Signal State Initialization (aborted = false)",
+      "Abort Algorithm Registration (fetch, listeners, streams)",
+      "Idempotent abort(reason) Broadcast",
+      "Listener & Socket Teardown"
+    ],
+    "mechanism_summary": "AbortController mutates an associated AbortSignal once, invoking registered C++ and JS abort algorithms to cancel sockets, timers, and listeners."
+  },
+  "production_failures": [
+    {
+      "symptom": "Stale search response overwrites newer query results in UI",
+      "root_cause": "Racing fetch() calls without aborting the previous AbortController allows slow earlier responses to resolve last.",
+      "mitigation": "Abort the previous controller before issuing the next request and ignore AbortError in catch."
+    },
+    {
+      "symptom": "Memory leak from long-lived shared AbortSignal",
+      "root_cause": "Attaching thousands of temporary listeners to a single app-wide AbortSignal retains every callback until the signal aborts.",
+      "mitigation": "Scope AbortControllers per component or request lifecycle, or combine with AbortSignal.any()."
+    }
+  ],
+  "sources": [
+    "https://dom.spec.whatwg.org/#interface-abortcontroller",
+    "https://developer.mozilla.org/en-US/docs/Web/API/AbortController"
+  ]
+}

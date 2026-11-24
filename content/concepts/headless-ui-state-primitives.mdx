@@ -1,0 +1,69 @@
+---
+id: headless-ui-state-primitives
+title: "Headless UI Primitives & Compound State Contracts"
+domain: framework-internals
+maturity_status: baseline-widely
+summary_tldr: "Styled component libraries couple design tokens to fragile DOM wrappers, forcing 40 KB overrides when designs diverge. Headless primitives expose pure ARIA state machines, keyboard navigation, and top-layer anchoring without owning a single pixel."
+relations:
+  - target_id: accessibility-tree-aria
+    type: requires
+    note: "Headless primitives wire aria-expanded, aria-controls, and unique IDs automatically across compound parts."
+  - target_id: roving-tabindex-focus-order
+    type: requires
+    note: "Composite widgets like menus and tabs manage arrow-key focus via roving tabindex contracts."
+  - target_id: browser-top-layer
+    type: requires
+    note: "Floating popovers and dialogs promote into the browser top layer or portals to escape overflow clipping."
+sources:
+  - "https://www.w3.org/WAI/ARIA/apg/patterns/"
+  - "https://html.spec.whatwg.org/multipage/popover.html"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "headless ui"
+  - "compound components"
+  - "aria contracts"
+  - "roving tabindex"
+---
+
+## TL;DR
+
+Headless UI primitives separate behavioral state machines from visual markup. Compound subcomponents share an implicit context that wires [Accessibility Tree & ARIA](/concepts/accessibility-tree-aria) attributes, manages [Roving Tabindex](/concepts/roving-tabindex-focus-order) keyboard navigation, and promotes overlays to the [Browser Top Layer](/concepts/browser-top-layer).
+
+## Interactive Lab
+
+Trace compound context registration, `aria-controls` linking, and keyboard state transitions in `StepMachineLab`.
+
+## Under the Hood
+
+Instead of passing 30 configuration props to a monolithic `<Dropdown options={...} />`, compound primitives compose shared state through Context or state-machine hooks.
+
+1. **ID & ARIA Linking**: The root primitive generates deterministic `useId()` tokens, injecting `aria-controls` on `Trigger` and matching `id` + `role` on `Content`.
+2. **Controlled vs Uncontrolled State**: A `useControllableState` hook supports both internal state (`defaultOpen`) and external state (`open` + `onOpenChange`) without dual-source desync.
+3. **Focus & Dismissal Guards**: Opening `Content` traps or moves focus, binds `Escape` and `pointerdown` outside listeners, and restores focus to `Trigger` on close.
+
+```tsx
+const MenuContext = createContext<{ open: boolean; toggle: () => void; menuId: string } | null>(null);
+
+function MenuRoot({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const menuId = useId();
+  return (
+    <MenuContext.Provider value={{ open, toggle: () => setOpen((o) => !o), menuId }}>
+      {children}
+    </MenuContext.Provider>
+  );
+}
+```
+
+## Problem Genealogy
+
+- **2016 (Monolithic UI Kits)**: Bootstrap/Material wrappers shipped 60–120 KB of opinionated CSS and rigid props, requiring brittle `!important` overrides for custom design systems.
+- **2020 (Headless Compound Primitives)**: Radix, Reach UI, and React Aria extracted WAI-ARIA APG state machines into unstyled composable primitives.
+- **2024 (Native `popover` & `dialog` Convergence)**: Native HTML top-layer APIs offloaded z-index stacking and light-dismissal from JS portals to Blink/Gecko C++ engines.
+
+## Production Pitfalls
+
+- **Swallowing `ref` or Event Handlers on `asChild`**: Cloning a custom child element without merging `ref` and `onClick` breaks trigger dismissal and focus restoration.
+- **Animating Unmounted Portals**: Unmounting `Content` immediately when `open` flips `false` kills CSS exit transitions unless `forceMount` or `@starting-style` + `Presence` waits for `animationend`.
+- **When not to use a JS headless library**: Never import a 15 KB JS popover/dialog primitive for simple non-modal disclosure tooltips or basic alerts where native HTML `<dialog>` or `popover="auto"` handles focus and dismissal in 0 KB of JS.

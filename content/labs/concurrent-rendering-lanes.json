@@ -1,0 +1,53 @@
+{
+  "type": "step-machine",
+  "id": "concurrent-rendering-lanes",
+  "title": "Priority Lanes & Time-Slicing",
+  "description": "Trace how a 5 ms time-sliced render yields to an urgent keystroke and resumes.",
+  "steps": [
+    {
+      "label": "1. Schedule TransitionLane Work",
+      "description": "Filtering 2,000 rows assigns TransitionLane (0b1000000) and starts a 5 ms slice.",
+      "codeHighlight": "startTransition(() => setFilter(query));",
+      "state": {
+        "activeLane": "TransitionLane",
+        "fibersProcessed": 420,
+        "sliceMs": 5
+      },
+      "visualNodes": [
+        { "id": "sync", "label": "SyncLane: Empty", "status": "idle" },
+        { "id": "trans", "label": "TransitionLane: 420/2000", "status": "active" },
+        { "id": "main", "label": "Main Thread: 5 ms", "status": "active" }
+      ]
+    },
+    {
+      "label": "2. Yield & Preempt on Keystroke",
+      "description": "Deadline expires at 5 ms; user types 'a' on SyncLane, preempting the transition.",
+      "codeHighlight": "if (performance.now() >= deadline) return yieldToMain();",
+      "state": {
+        "activeLane": "SyncLane",
+        "preemptedTransition": true,
+        "inpMs": 12
+      },
+      "visualNodes": [
+        { "id": "sync", "label": "SyncLane: Keystroke Committed", "status": "done" },
+        { "id": "trans", "label": "TransitionLane: Paused", "status": "idle" },
+        { "id": "main", "label": "Paint Frame (12 ms)", "status": "done" }
+      ]
+    },
+    {
+      "label": "3. Resume & Commit Transition",
+      "description": "Scheduler restarts the stale TransitionLane with the latest filter and commits.",
+      "codeHighlight": "commitRoot(finishedWork);",
+      "state": {
+        "activeLane": "None",
+        "fibersProcessed": 2000,
+        "committed": true
+      },
+      "visualNodes": [
+        { "id": "sync", "label": "SyncLane: Empty", "status": "idle" },
+        { "id": "trans", "label": "TransitionLane: Committed", "status": "done" },
+        { "id": "main", "label": "Main Thread: Idle", "status": "done" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+name: Leak scan
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: leak-scan-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GITLEAKS_VERSION: '8.28.0'
+
+jobs:
+  leak-scan:
+    # Only meaningful once the repo holds public files only (after the split, US-52.5).
+    # In the private repo every private file would match the patterns.
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install gitleaks (pinned release, checksum verified)
+        run: |
+          set -euo pipefail
+          BASE_URL="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          ARCHIVE="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$ARCHIVE" "$BASE_URL/$ARCHIVE"
+          curl -fsSL -o "$RUNNER_TEMP/checksums.txt" "$BASE_URL/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          (cd "$RUNNER_TEMP" && grep " $ARCHIVE\$" checksums.txt | sha256sum -c -)
+          tar -xzf "$RUNNER_TEMP/$ARCHIVE" -C "$RUNNER_TEMP" gitleaks
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: gitleaks on the tree
+        run: gitleaks dir . --no-banner --exit-code 1
+      - name: Leak patterns on tracked files
+        run: node scripts/ci/leak-patterns.mjs files
+      - name: Leak patterns on PR title, body, branch name and commit messages
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: node scripts/ci/leak-patterns.mjs meta

@@ -1,0 +1,42 @@
+{
+  "concept_id": "scroll-driven-animations",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/scroll-animations-1/",
+      "spec_section": "3. Scroll Progress Timelines",
+      "quote": "A scroll progress timeline maps the scroll offset of a scroll container along a specified axis to a percentage progress value from 0% to 100%."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "interop-experimental",
+    "chrome": "115+",
+    "firefox": "Behind flag (layout.css.scroll-driven-animations.enabled)",
+    "safari": "26+",
+    "notes": "Supported in Chromium and Safari 26; Firefox implementation in progress. Guard with @supports (animation-timeline: scroll())."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Compositor Scroll Offset",
+      "Timeline Progress Mapping",
+      "Layer Transform Update"
+    ],
+    "mechanism_summary": "Compositor Thread reads scroll offset directly and samples the linked animation timeline at 60/120fps without waking JS."
+  },
+  "production_failures": [
+    {
+      "symptom": "Elements animated with view() remain invisible (opacity: 0) in browsers without support",
+      "root_cause": "Unconditional keyframes set initial opacity: 0 without @supports feature detection.",
+      "mitigation": "Wrap scroll-driven animation rules in @supports (animation-timeline: view()) so unsupported browsers keep default visibility."
+    },
+    {
+      "symptom": "Scroll-linked animation lags one frame behind scroll on touch devices",
+      "root_cause": "Animating a layout-inducing property like width or top forces main-thread round-trips instead of compositor execution.",
+      "mitigation": "Animate scaleX() instead of width, or translateY() instead of top."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/scroll-animations-1/",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/animation-timeline"
+  ]
+}

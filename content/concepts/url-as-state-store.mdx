@@ -1,0 +1,63 @@
+---
+id: url-as-state-store
+title: "URL as a State Store"
+domain: state-architecture
+maturity_status: baseline-widely
+summary_tldr: "Persists shareable, reload-safe view state (filters, tabs, pagination) in URLSearchParams—using pushState for discrete steps and replaceState for continuous edits."
+relations:
+  - target_id: bfcache-navigation
+    type: under_the_hood
+    note: "Same-document pushState/replaceState updates mutate session history entries without triggering full document unloads."
+  - target_id: stale-closures-hooks
+    type: contrasts_with
+    note: "Reading state from URLSearchParams + popstate gives a single external source of truth across tabs and reloads."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/History_API"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "urlsearchparams"
+  - "pushstate"
+  - "replacestate"
+  - "history-api"
+  - "deep-linking"
+---
+
+## TL;DR
+
+Storing filters, sort order, and active tabs in React `useState` evaporates on page reload and breaks link sharing. Encoding view state in `URLSearchParams` makes the browser's address bar your single source of truth, provided you separate `pushState` (Back-worthy steps) from `replaceState` (live edits).
+
+## Interactive Lab
+
+Compare `pushState` history pollution against clean `replaceState` + `URLSearchParams` updates using `PatternComparatorLab`.
+
+## Under the Hood
+
+The browser's session history stack is an ordered list of `(URL, state)` tuples that survives reloads and integrates with [bfcache](/concepts/bfcache-navigation). Treating the URL as a state store means avoiding [Stale Closures](/concepts/stale-closures-hooks) by deriving UI directly from the parsed location rather than mirroring it into duplicate component state.
+
+1. Parse `new URLSearchParams(window.location.search)` through a strict validator that coerces types and falls back to safe defaults on malformed query strings.
+2. Call `history.pushState()` for discrete, Back-navigable transitions (switching tabs, advancing page 1 -> page 2).
+3. Call `history.replaceState()` for continuous or noisy edits (search-as-you-type, map pan coordinates) so the user's Back button still exits cleanly.
+
+```js
+function updateSearchParam(key, value, { replace = false } = {}) {
+  const url = new URL(window.location.href);
+  value ? url.searchParams.set(key, value) : url.searchParams.delete(key);
+  const method = replace ? 'replaceState' : 'pushState';
+  window.history[method](null, '', url);
+}
+```
+
+## Problem Genealogy
+
+- **2008 (Hashbangs `#!`)**: Stuffed SPA routes after `#` because mutating paths forced full-page reloads.
+- **2011 (HTML5 History API `pushState`)**: Allowed clean path/query updates without reloads, though developers routinely mirrored URL state into Redux and watched the two drift out of sync.
+- **2022+ (Navigation API & Typed Routers)**: Added centralized `navigate` interception and schema-validated search parameters.
+
+## Production Pitfalls
+
+- **Dual-source-of-truth desync**: Copying `?sort=price` into `useState('price')` on mount and forgetting to listen to `popstate` leaves the UI stale when the user clicks Back.
+- **Calling `pushState` on every keystroke**: Pushing 12 history entries for a 12-letter search query traps users inside your search bar.
+- **When not to use the URL as a state store**: Never put sensitive tokens, PII, ephemeral hover/drag coordinates, or multi-kilobyte payloads in the URL (browsers and proxies cap URL lengths around 2–8 KB).

@@ -1,0 +1,66 @@
+---
+id: view-transitions-api
+title: "View Transitions API"
+domain: rendering-pipeline
+maturity_status: baseline-newly
+summary_tldr: "document.startViewTransition() snapshots old and new DOM states as rasterized textures and cross-fades or morphs them automatically."
+relations:
+  - target_id: paint-rasterization
+    type: requires
+    note: "View transitions capture rasterized GPU snapshots of old and new element states."
+  - target_id: gpu-compositor-layers
+    type: requires
+    note: "The ::view-transition pseudo-element tree animates captured textures on the compositor."
+  - target_id: user-preference-media-queries
+    type: requires
+    note: "Root morph transitions must respect prefers-reduced-motion: reduce to avoid vestibular discomfort."
+sources:
+  - "https://drafts.csswg.org/css-view-transitions-1/"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/View_Transition_API"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "startViewTransition"
+  - "view-transition-name"
+  - "SPA transition"
+  - "snapshot"
+web_feature_id: view-transitions
+---
+
+## TL;DR
+
+`document.startViewTransition()` captures rasterized textures of the current DOM, runs your update callback, and animates a `::view-transition` pseudo-element tree between the old snapshot and the new live DOM, turning state swaps into smooth hero morphs without duplicate DOM nodes.
+
+## Interactive Lab
+
+Step through the snapshot, DOM swap, and pseudo-tree animation phases in `StepMachineLab`.
+
+## Under the Hood
+
+Instead of keeping two competing UI trees alive in memory during a route change, the engine takes a photograph of the outgoing room, swaps the furniture, and cross-fades the photo into reality.
+
+1. **Snapshot Phase**: Elements with a unique `view-transition-name` are captured during [Paint & Rasterization](/concepts/paint-rasterization) as isolated textures.
+2. **Mutation Phase**: Rendering pauses while the callback mutates the DOM.
+3. **Pseudo-Tree Morph**: The engine injects `::view-transition-group`, `-old`, and `-new` pseudo-elements over the viewport, animating size, transform, and opacity on [GPU Compositor Layers](/concepts/gpu-compositor-layers).
+
+```js
+function navigateToCard(card, nextHtml) {
+  if (!document.startViewTransition) return (main.innerHTML = nextHtml);
+  card.style.viewTransitionName = 'active-card';
+  const vt = document.startViewTransition(() => {
+    main.innerHTML = nextHtml;
+  });
+  vt.finished.finally(() => { card.style.viewTransitionName = ''; });
+}
+```
+
+## Problem Genealogy
+
+- **2015–2022**: Shared-element transitions in SPAs required FLIP measurements, cloning DOM nodes into portals, and manual cleanup.
+- **2023–2025**: View Transitions Level 1 standardized native snapshot-and-morph transitions for same-document updates.
+
+## Production Pitfalls
+
+- **Duplicate `view-transition-name`**: Two visible elements with the same `view-transition-name` abort the entire transition.
+- **Async network calls inside the callback**: Awaiting `fetch()` inside `startViewTransition()` freezes user input until the network responds.
+- **When not to use View Transitions**: Avoid wrapping high-frequency micro-interactions (hover states, typing) in `startViewTransition()`; reserve it for route or panel transitions, and gate motion behind [User-Preference Media Queries](/concepts/user-preference-media-queries) (`prefers-reduced-motion`).

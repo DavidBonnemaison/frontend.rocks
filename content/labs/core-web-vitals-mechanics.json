@@ -1,0 +1,35 @@
+{
+  "type": "constraint-simulator",
+  "id": "core-web-vitals-mechanics",
+  "title": "INP Budget: Input Delay + Handler + Presentation",
+  "description": "Adjust main-thread blocking task duration and DOM mutation size to see if INP stays under the 200ms Good threshold.",
+  "presetMode": "inp-budget",
+  "controls": [
+    {
+      "key": "inputDelayMs",
+      "label": "Queued Main-Thread Input Delay",
+      "kind": "range",
+      "min": 0,
+      "max": 250,
+      "step": 10,
+      "defaultValue": 30,
+      "unit": "ms"
+    },
+    {
+      "key": "handlerDurationMs",
+      "label": "Event Handler JS Duration",
+      "kind": "range",
+      "min": 5,
+      "max": 250,
+      "step": 5,
+      "defaultValue": 45,
+      "unit": "ms"
+    },
+    {
+      "key": "yieldBeforeRender",
+      "label": "Yield Non-Urgent Work (scheduler.yield)",
+      "kind": "toggle",
+      "defaultValue": true
+    }
+  ]
+}

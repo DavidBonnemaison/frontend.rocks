@@ -1,0 +1,43 @@
+{
+  "concept_id": "react-portal-zindex-legacy",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/interactive-elements.html#the-dialog-element",
+      "spec_section": "4.11.4 The dialog element",
+      "quote": "A modal dialog is rendered in the top layer and makes all other elements in the document inert."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "superseded",
+    "chrome": "114+",
+    "firefox": "125+",
+    "safari": "17+",
+    "notes": "React createPortal + manual z-index layering is superseded by native <dialog>.showModal() and [popover] Top Layer primitives."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "DOM Reparenting to document.body",
+      "Global z-index Token Escalation",
+      "Manual Scroll Lock & Focus Trap JS",
+      "Synthetic React Event Bubbling"
+    ],
+    "mechanism_summary": "createPortal teleports DOM nodes to document.body to escape local overflow clipping, yet still fights global z-index tokens and requires manual focus trapping."
+  },
+  "production_failures": [
+    {
+      "symptom": "Toast notification renders behind a modal opened by a third-party widget",
+      "root_cause": "Both components use createPortal into document.body with competing hardcoded z-index values (z-50 vs z-[9999]).",
+      "mitigation": "Migrate overlays to native <dialog>.showModal() and [popover] so the Browser Top Layer manages stacking order."
+    },
+    {
+      "symptom": "Screen reader and Tab key escape an open portal modal into background page links",
+      "root_cause": "createPortal moves the DOM node to document.body without marking sibling subtrees inert or trapping focus.",
+      "mitigation": "Use <dialog>.showModal() which automatically applies modal inertness and focus restoration."
+    }
+  ],
+  "sources": [
+    "https://html.spec.whatwg.org/multipage/interactive-elements.html#the-dialog-element",
+    "https://react.dev/reference/react-dom/createPortal"
+  ]
+}

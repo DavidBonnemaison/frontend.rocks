@@ -1,0 +1,42 @@
+{
+  "concept_id": "intersection-observer",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://w3c.github.io/IntersectionObserver/",
+      "spec_section": "4. Processing Model",
+      "quote": "Run the update intersection observations steps as part of the rendering pipeline after layout and before paint."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "58+",
+    "firefox": "55+",
+    "safari": "12.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Post-Layout Geometry Calculation",
+      "RootMargin & Threshold Comparison",
+      "Asynchronous IntersectionObserverEntry Batching",
+      "Main-Thread Callback Delivery"
+    ],
+    "mechanism_summary": "IntersectionObserver reads already-computed layout boxes inside the rendering pipeline and delivers batched visibility deltas asynchronously without triggering synchronous reflow."
+  },
+  "production_failures": [
+    {
+      "symptom": "Scroll performance degrades to 20fps with forced synchronous layouts",
+      "root_cause": "Replacing IntersectionObserver with a scroll listener calling getBoundingClientRect() on 50 cards triggers Layout Thrashing on every scroll tick.",
+      "mitigation": "Observe target elements with a single shared IntersectionObserver instance."
+    },
+    {
+      "symptom": "Sticky header intersection callback never fires or fires at wrong offset",
+      "root_cause": "Observing visibility against the wrong root or omitting rootMargin when a fixed 64px header covers the top of the viewport.",
+      "mitigation": "Pass rootMargin: '-64px 0px 0px 0px' or observe a 1px sentinel element."
+    }
+  ],
+  "sources": [
+    "https://w3c.github.io/IntersectionObserver/",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API"
+  ]
+}

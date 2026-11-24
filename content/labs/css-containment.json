@@ -1,0 +1,37 @@
+{
+  "type": "live-sandbox",
+  "id": "css-containment",
+  "title": "CSS Containment Boundary Sandbox",
+  "description": "Toggle contain: layout, paint, and size to observe live browser containing-block trapping, paint clipping, and intrinsic height collapse.",
+  "height": 250,
+  "html": "<div class=\"stage\"><div class=\"card\" id=\"card\"><span class=\"overflow-badge\">Overflow (-16px)</span><div class=\"card-title\">Contained Subtree</div><p class=\"card-body\">This card holds normal flow text, a negative-offset badge, and a position: fixed chip.</p><div class=\"fixed-chip\">position: fixed chip</div></div><div class=\"readout mono\" id=\"readout\"></div></div>",
+  "css": ".stage { position: relative; min-height: 215px; padding: 20px 14px 40px; border: 1px dashed #334155; border-radius: 6px; background: #0d1016; }\n.card { position: relative; border: 2px solid #38bdf8; border-radius: 8px; padding: 12px; background: rgba(56, 189, 248, 0.08); width: 82%; }\n#sandbox-root.contain-layout .card { contain: layout; border-color: #34d399; }\n#sandbox-root.contain-paint .card { contain: paint; border-color: #f59e0b; }\n#sandbox-root.contain-size .card { contain: size; border-color: #f87171; }\n#sandbox-root.contain-layout.contain-paint .card { contain: layout paint; }\n#sandbox-root.contain-layout.contain-size .card { contain: layout size; }\n#sandbox-root.contain-paint.contain-size .card { contain: paint size; }\n#sandbox-root.contain-layout.contain-paint.contain-size .card { contain: layout paint size; }\n.overflow-badge { position: absolute; top: -14px; right: -16px; background: #fb923c; color: #090b0f; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; }\n.card-title { font-weight: 600; color: #f8fafc; margin-bottom: 4px; }\n.card-body { margin: 0; font-size: 12px; color: #cbd5e1; }\n.fixed-chip { position: fixed; right: 12px; bottom: 44px; background: #a78bfa; color: #090b0f; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }\n.readout { position: absolute; left: 10px; right: 10px; bottom: 8px; font-size: 11px; color: #cbd5e1; background: #090b0f; border: 1px solid #1e293b; border-radius: 4px; padding: 5px 8px; }",
+  "js": "var c = document.getElementById('card'); var r = document.getElementById('readout'); if (c && r) { var cs = getComputedStyle(c); var rect = c.getBoundingClientRect(); r.textContent = 'contain: ' + cs.contain + ' | computed box height: ' + Math.round(rect.height) + 'px'; }",
+  "controls": [
+    {
+      "key": "containLayout",
+      "label": "contain: layout",
+      "kind": "toggle",
+      "target": "class",
+      "className": "contain-layout",
+      "defaultValue": true
+    },
+    {
+      "key": "containPaint",
+      "label": "contain: paint",
+      "kind": "toggle",
+      "target": "class",
+      "className": "contain-paint",
+      "defaultValue": false
+    },
+    {
+      "key": "containSize",
+      "label": "contain: size",
+      "kind": "toggle",
+      "target": "class",
+      "className": "contain-size",
+      "defaultValue": false
+    }
+  ],
+  "expectedObservation": "Enabling contain: layout traps the position: fixed chip inside the card. Enabling contain: paint clips the overflowing orange badge at the card's border box. Enabling contain: size causes the auto-height card to collapse as if it had zero children."
+}

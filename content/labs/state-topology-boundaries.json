@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "state-topology-boundaries",
+  "title": "Monolithic Global Store vs Four-Tier State Topology",
+  "description": "Compare coupling all state in one global store against routing each state kind to its native owner.",
+  "before": {
+    "label": "Monolithic Store (Single Global Slice)",
+    "code": "const store = {\n  users: [], isFetchingUsers: false, // stale server cache\n  sortBy: 'name',                    // breaks Back button\n  isFilterModalOpen: false,          // global re-render on toggle\n  unsavedNote: localStorage.getItem('note') // sync main-thread I/O\n};",
+    "metrics": {
+      "lines": 5,
+      "reflows": "Global subscribers notified on modal toggle",
+      "dependencies": "Manual sync between URL, cache, and storage"
+    },
+    "previewNote": "Deep-linking loses sortBy, stale users linger without TTL, and localStorage blocks INP."
+  },
+  "after": {
+    "label": "Four-Tier Topology (Explicit Owners)",
+    "code": "const sortBy = new URLSearchParams(location.search).get('sort');\nconst { data: users } = useServerCache('/api/users', { staleMs: 30_000 });\nconst [modalOpen, setModalOpen] = useState(false);\nawait idbStore.put('drafts', unsavedNote);",
+    "metrics": {
+      "lines": 4,
+      "reflows": "Scoped updates per tier",
+      "dependencies": "Native URL, IDB, and cache invalidation"
+    },
+    "previewNote": "Back button restores sortBy, cache revalidates stale users, and modal toggles stay local."
+  }
+}

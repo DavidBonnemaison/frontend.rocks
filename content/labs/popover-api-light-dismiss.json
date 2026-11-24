@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "popover-api-light-dismiss",
+  "title": "Dropdown: Global Listeners vs HTML popover",
+  "before": {
+    "label": "useEffect click outside + Escape",
+    "code": "useEffect(() => {\n  const onDocClick = (e) => { /* contains check */ };\n  document.addEventListener('pointerdown', onDocClick);\n  return () => document.removeEventListener('pointerdown', onDocClick);\n}, [open]);",
+    "metrics": {
+      "lines": 18,
+      "reflows": "Portal required",
+      "dependencies": "JS Runtime"
+    },
+    "previewNote": "Breaks if a child component calls stopPropagation()."
+  },
+  "after": {
+    "label": "Native HTML popover Attribute",
+    "code": "<button popovertarget=\"menu\">Options</button>\n<div id=\"menu\" popover=\"auto\">\n  <a href=\"/settings\">Settings</a>\n</div>",
+    "metrics": {
+      "lines": 4,
+      "reflows": "Isolated Top Layer",
+      "dependencies": "0 JS"
+    },
+    "previewNote": "Native light-dismiss and Escape without global listeners."
+  }
+}

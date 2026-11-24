@@ -1,0 +1,50 @@
+{
+  "type": "step-machine",
+  "id": "hierarchical-statecharts-actors",
+  "title": "Hierarchical Statechart Exit & Actor Teardown",
+  "description": "Trace how a parent-level ABORT event bubbles from a child state and tears down an active async actor.",
+  "steps": [
+    {
+      "label": "1. Active Child State & Spawned Actor",
+      "description": "Machine sits in 'editing.payment' while a spawned 'stripeIntent' actor polls payment status.",
+      "codeHighlight": "state: { editing: 'payment' }, actors: ['stripeIntent']",
+      "state": {
+        "activePath": "checkout.editing.payment",
+        "actorStatus": "running"
+      },
+      "visualNodes": [
+        { "id": "parent", "label": "editing (Parent)", "status": "active" },
+        { "id": "child", "label": "payment (Child)", "status": "active" },
+        { "id": "actor", "label": "stripeIntent Actor", "status": "active" }
+      ]
+    },
+    {
+      "label": "2. Event Bubbles to Parent Handler",
+      "description": "Child 'payment' has no ABORT transition, so the interpreter resolves ABORT on parent 'editing'.",
+      "codeHighlight": "send({ type: 'ABORT' }) // handled by editing.on.ABORT",
+      "state": {
+        "activePath": "checkout.editing.payment",
+        "matchedTransition": "editing -> cancelled"
+      },
+      "visualNodes": [
+        { "id": "parent", "label": "editing (Matched ABORT)", "status": "active" },
+        { "id": "child", "label": "payment (No Match)", "status": "idle" },
+        { "id": "actor", "label": "stripeIntent Actor", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Exit Subtree & Stop Actor",
+      "description": "Exiting 'editing' runs child exit actions, aborts the 'stripeIntent' actor, and enters 'cancelled'.",
+      "codeHighlight": "onExit: () => actorCtrl.abort(); // zero orphaned polls",
+      "state": {
+        "activePath": "checkout.cancelled",
+        "actorStatus": "stopped"
+      },
+      "visualNodes": [
+        { "id": "parent", "label": "cancelled (Final)", "status": "done" },
+        { "id": "child", "label": "payment (Exited)", "status": "done" },
+        { "id": "actor", "label": "stripeIntent Stopped", "status": "done" }
+      ]
+    }
+  ]
+}

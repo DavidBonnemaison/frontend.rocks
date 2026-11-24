@@ -1,0 +1,42 @@
+{
+  "concept_id": "shared-array-buffer-atomics",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://tc39.es/ecma262/#sec-sharedarraybuffer-objects",
+      "spec_section": "ECMA-262 §25.2 SharedArrayBuffer Objects",
+      "quote": "A SharedArrayBuffer represents a fixed-length raw binary data buffer that can be referenced concurrently by multiple agents via TypedArray views and synchronized using Atomics."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "68+",
+    "firefox": "79+",
+    "safari": "15.2+",
+    "notes": "Requires crossOriginIsolated === true (COOP + COEP headers) since Spectre mitigations."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "COOP/COEP Gate Check",
+      "Shared Backing Store Allocation",
+      "Hardware Atomic CAS & Futex Wait/Notify"
+    ],
+    "mechanism_summary": "Multiple JS isolates map the same virtual memory pages and coordinate reads/writes using CPU atomic instructions and OS futex queues."
+  },
+  "production_failures": [
+    {
+      "symptom": "ReferenceError: SharedArrayBuffer is not defined in production despite working on localhost",
+      "root_cause": "Missing Cross-Origin-Opener-Policy: same-origin and Cross-Origin-Embedder-Policy: require-corp response headers on the document.",
+      "mitigation": "Serve COOP/COEP headers on the HTML document and verify window.crossOriginIsolated before constructing SharedArrayBuffer."
+    },
+    {
+      "symptom": "Main thread freezes indefinitely with Uncaught TypeError: Atomics.wait cannot be called in this context",
+      "root_cause": "Calling blocking Atomics.wait() on the browser main thread, which the spec forbids to prevent UI deadlocks.",
+      "mitigation": "Use Atomics.wait() only inside workers, or use Atomics.waitAsync() on the main thread."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer",
+    "https://tc39.es/ecma262/#sec-atomics-object"
+  ]
+}

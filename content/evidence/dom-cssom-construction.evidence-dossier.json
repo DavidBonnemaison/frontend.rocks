@@ -1,0 +1,43 @@
+{
+  "concept_id": "dom-cssom-construction",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/parsing.html",
+      "spec_section": "13.2 Parsing HTML documents",
+      "quote": "When a classic script element is encountered without async or defer, the HTML parser pauses until any pending style sheets finish loading and the script executes."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+",
+    "firefox": "1+",
+    "safari": "1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Bytes",
+      "Characters",
+      "Tokens",
+      "Nodes",
+      "DOM / CSSOM Trees"
+    ],
+    "mechanism_summary": "HTML and CSS parsers run separate state machines; synchronous scripts serialize them because JS can query computed styles."
+  },
+  "production_failures": [
+    {
+      "symptom": "Blank white screen for 2+ seconds on initial navigation despite tiny HTML payload",
+      "root_cause": "A synchronous <script> tag placed after a large external <link rel=\"stylesheet\"> blocks HTML parsing until the stylesheet downloads and parses.",
+      "mitigation": "Add defer to scripts, inline critical CSS, and split non-critical stylesheets with media attributes."
+    },
+    {
+      "symptom": "Unstyled content flash (FOUC) followed by jarring layout shift",
+      "root_cause": "Stylesheets loaded dynamically via JavaScript bypass render-blocking heuristics and arrive after first paint.",
+      "mitigation": "Declare critical stylesheets statically in <head> so CSSOM blocks first paint intentionally."
+    }
+  ],
+  "sources": [
+    "https://html.spec.whatwg.org/multipage/parsing.html",
+    "https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/Critical_rendering_path"
+  ]
+}

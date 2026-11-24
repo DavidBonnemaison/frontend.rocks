@@ -1,0 +1,41 @@
+{
+  "concept_id": "device-pixel-ratio-subpixel",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-values-4/#reference-pixel",
+      "spec_section": "6.1 Absolute lengths",
+      "quote": "The reference pixel is the visual angle of one pixel on a device with a pixel density of 96dpi and a distance from the reader of an arm’s length."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+",
+    "firefox": "1+",
+    "safari": "4+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Layout (Subpixel Float)",
+      "Pixel Snapping",
+      "Rasterization (Physical Pixels)"
+    ],
+    "mechanism_summary": "Layout uses fixed-point subpixel units (1/64th px in Blink); Paint snaps borders to device pixels while transforms may land between pixels."
+  },
+  "production_failures": [
+    {
+      "symptom": "HTML5 <canvas> drawings and text look blurry on Retina/HiDPI screens",
+      "root_cause": "Canvas backing store width/height attributes default to CSS pixels (1x) instead of scaling by window.devicePixelRatio.",
+      "mitigation": "Multiply canvas.width/height by devicePixelRatio, keep CSS size unchanged, and call ctx.scale(dpr, dpr)."
+    },
+    {
+      "symptom": "Text inside a centered modal turns blurry during or after a CSS transform",
+      "root_cause": "translate(-50%, -50%) on an odd-pixel element height produces a 0.5px physical offset.",
+      "mitigation": "Prefer Flexbox/Grid centering over translate(-50%, -50%) or round transform offsets to device-pixel boundaries."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-values-4/#reference-pixel",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio"
+  ]
+}

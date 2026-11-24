@@ -1,0 +1,43 @@
+{
+  "concept_id": "scheduler-api-yield",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://wicg.github.io/scheduling-apis/#dom-scheduler-yield",
+      "spec_section": "4.2.2 Scheduler.yield()",
+      "quote": "yield() returns a promise that resolves after yielding control to the event loop, preserving current task priority and inheritance."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "interop-experimental",
+    "chrome": "129+",
+    "firefox": "In development",
+    "safari": "No",
+    "notes": "Feature-detect 'scheduler' in globalThis && 'yield' in scheduler; fall back to setTimeout(0) or MessageChannel."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Long Task Chunk Execution",
+      "scheduler.yield() Continuation Enqueue",
+      "Input & Render Frame Opportunity",
+      "High-Priority Continuation Resume"
+    ],
+    "mechanism_summary": "scheduler.yield() suspends an async task and places its continuation in a priority-inherited continuation queue ahead of normal third-party tasks."
+  },
+  "production_failures": [
+    {
+      "symptom": "Yielding with setTimeout(fn, 0) delays hydration by 400ms on ad-heavy pages",
+      "root_cause": "setTimeout(0) sends the continuation to the back of the macrotask queue behind third-party analytics and ad scripts, and incurs 4ms clamping after 5 nested calls.",
+      "mitigation": "Use scheduler.yield() where supported so first-party continuations resume ahead of unrelated background tasks."
+    },
+    {
+      "symptom": "Unconditional yield() inside a tight 100k-item loop slows total completion by 10x",
+      "root_cause": "Yielding on every iteration pays a full event loop round-trip per item instead of batching work up to a 5ms-16ms frame budget.",
+      "mitigation": "Check navigator.scheduling?.isInputPending() or elapsed performance.now() >= 16 before awaiting scheduler.yield()."
+    }
+  ],
+  "sources": [
+    "https://wicg.github.io/scheduling-apis/#dom-scheduler-yield",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Scheduler/yield"
+  ]
+}

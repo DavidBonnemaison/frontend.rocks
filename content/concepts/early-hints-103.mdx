@@ -1,0 +1,62 @@
+---
+id: early-hints-103
+title: "103 Early Hints"
+domain: network-perf
+maturity_status: baseline-newly
+summary_tldr: "Sends an interim HTTP 103 frame with Link preload headers while the server is still rendering HTML, overlapping subresource fetches with origin think time."
+relations:
+  - target_id: preload-scanner-hints
+    type: requires
+    note: "103 Early Hints feed the same speculative preload queue before the HTML parser even starts."
+  - target_id: http2-http3-multiplexing
+    type: requires
+    note: "Browsers only honor 103 informational responses over HTTP/2 or HTTP/3."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/103"
+  - "https://developer.chrome.com/docs/web-platform/early-hints"
+  - "https://www.rfc-editor.org/rfc/rfc8297"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "103"
+  - "early-hints"
+  - "link-preload"
+  - "ttfb"
+  - "fcp"
+---
+
+## TL;DR
+
+`103 Early Hints` is an interim HTTP status sent before `200 OK` while the origin server is still querying databases or rendering SSR HTML. It carries `Link: rel=preload` and `rel=preconnect` headers so the browser fetches critical CSS and fonts during server think time.
+
+## Interactive Lab
+
+Step through the `103` interim frame and `200 OK` overlap timeline using `StepMachineLab`.
+
+## Under the Hood
+
+Without Early Hints, a 400 ms SSR database query leaves the client's network card sitting idle, waiting for byte zero of HTML so the [Preload Scanner](/concepts/preload-scanner-hints) can discover `<link rel="stylesheet">`. `103` acts like a restaurant handing you the breadbasket while the kitchen still cooks your entrée.
+
+1. The browser sends a navigation `GET` over [HTTP/2 & HTTP/3](/concepts/http2-http3-multiplexing).
+2. The CDN edge immediately flushes a `103 Early Hints` frame containing `Link` headers for critical CSS, fonts, or API origins.
+3. The browser's speculative fetcher opens TLS connections and downloads those assets in parallel with origin SSR execution.
+4. When `200 OK` HTML finally arrives, render-blocking stylesheets are already sitting in the memory cache.
+
+```http
+HTTP/2 103 Early Hints
+Link: </assets/critical.css>; rel=preload; as=style
+Link: </assets/inter.woff2>; rel=preload; as=font; crossorigin
+Link: <https://api.example.com>; rel=preconnect
+```
+
+## Problem Genealogy
+
+- **2015 (HTTP/2 Server Push)**: Attempted to push unsolicited bytes down the pipe, but broke browser caches when clients already held the asset; eventually removed from Chromium.
+- **2017 (RFC 8297 `103 Early Hints`)**: Replaced blind pushing with a polite `Link` hint, letting the client skip assets it already cached.
+- **2022–2025 (Multi-Engine Rollout)**: Chrome, Firefox, and Safari converged on `103` over HTTP/2 and HTTP/3.
+
+## Production Pitfalls
+
+- **Mismatched `crossorigin` on fonts**: Omitting `crossorigin` in the `103` `Link` header causes the browser to fetch the font twice, once anonymously in `103`, once with CORS in CSS.
+- **Over-hinting non-critical scripts**: Pushing 12 low-priority chunks in `103` saturates the initial TCP/QUIC congestion window and delays the `200 OK` HTML itself.
+- **When not to use `103`**: On static pages served from CDN edge cache in under 20 ms, `103` adds an extra header frame with near-zero overlap benefit.

@@ -1,0 +1,43 @@
+{
+  "concept_id": "regexp-backtracking-unicode",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://tc39.es/ecma262/#sec-regexp-regular-expression-objects",
+      "spec_section": "22.2 RegExp (Regular Expression) Objects",
+      "quote": "With the u or v flag enabled, patterns match full Unicode code points and support Unicode property escapes."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "112+",
+    "firefox": "116+",
+    "safari": "17+",
+    "notes": "UTF-16 RegExp + /u is universal; /v (unicodeSets) reached Baseline Newly/Widely in 2023-2024."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Irregexp Bytecode / Native Machine Code Compilation",
+      "UTF-16 Code Unit vs Code Point (/u, /v) Decoding",
+      "NFA Backtracking Stack Exploration",
+      "Failure & Backtrack Exhaustion"
+    ],
+    "mechanism_summary": "JS RegExp engines use backtracking NFA execution; nested quantifiers like (a+)+ trigger exponential O(2^n) backtracking on non-matching suffixes."
+  },
+  "production_failures": [
+    {
+      "symptom": "Main thread freezes for 30+ seconds (ReDoS) on malformed email or URL input",
+      "root_cause": "Nested ambiguous quantifiers like /^([a-zA-Z0-9]+)*$/ cause O(2^n) backtracking in V8's Irregexp engine when a trailing character fails to match.",
+      "mitigation": "Eliminate nested quantifiers, use atomic/possessive-like patterns, or validate length before executing RegExp."
+    },
+    {
+      "symptom": "Emoji or accented characters split in half or fail character-class matching",
+      "root_cause": "Without the /u or /v flag, RegExp operates on 16-bit UTF-16 code units, splitting surrogate pairs (e.g., emoji).",
+      "mitigation": "Always add the /u or /v flag when matching user text, emoji, or Unicode properties (\\p{L})."
+    }
+  ],
+  "sources": [
+    "https://tc39.es/ecma262/#sec-regexp-regular-expression-objects",
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions"
+  ]
+}

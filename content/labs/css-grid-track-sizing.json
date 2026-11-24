@@ -1,0 +1,89 @@
+{
+  "type": "step-machine",
+  "id": "css-grid-track-sizing",
+  "title": "CSS Grid 4-Pass Track Sizing",
+  "description": "Step through how the Grid engine resolves fixed, intrinsic, and fr tracks.",
+  "steps": [
+    {
+      "label": "1. Initialize Track Base & Limits",
+      "description": "Fixed tracks (e.g., 240px) lock both base size and growth limit; 1fr starts as minmax(auto, 1fr).",
+      "codeHighlight": "grid-template-columns: 240px minmax(0, 1fr) 2fr;",
+      "state": {
+        "track1": "240px",
+        "track2": "0..inf",
+        "track3": "0..inf"
+      },
+      "visualNodes": [
+        {
+          "id": "init",
+          "label": "Init Tracks",
+          "status": "active"
+        },
+        {
+          "id": "intrinsic",
+          "label": "Intrinsic",
+          "status": "idle"
+        },
+        {
+          "id": "fr",
+          "label": "Distribute fr",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "2. Resolve Intrinsic Track Sizes",
+      "description": "Engine measures min-content and max-content of spanning items to raise track base sizes.",
+      "state": {
+        "track1": "240px",
+        "track2Min": "0px (clamped)",
+        "track3Min": "120px"
+      },
+      "visualNodes": [
+        {
+          "id": "init",
+          "label": "Init Tracks",
+          "status": "done"
+        },
+        {
+          "id": "intrinsic",
+          "label": "Intrinsic",
+          "status": "active"
+        },
+        {
+          "id": "fr",
+          "label": "Distribute fr",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "3. Distribute Free Space to fr Tracks",
+      "description": "Remaining container width (minus gaps and fixed tracks) divides across 1fr + 2fr = 3 shares.",
+      "state": {
+        "containerPx": 960,
+        "gapPx": 20,
+        "track1": "240px",
+        "track2": "226.7px",
+        "track3": "453.3px"
+      },
+      "visualNodes": [
+        {
+          "id": "init",
+          "label": "Init Tracks",
+          "status": "done"
+        },
+        {
+          "id": "intrinsic",
+          "label": "Intrinsic",
+          "status": "done"
+        },
+        {
+          "id": "fr",
+          "label": "Distribute fr",
+          "status": "active"
+        }
+      ]
+    }
+  ]
+}

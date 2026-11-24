@@ -1,0 +1,41 @@
+{
+  "concept_id": "flexbox-intrinsic-sizing",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-flexbox-1/#min-size-auto",
+      "spec_section": "4.5 Implied Minimum Size of Flex Items",
+      "quote": "To provide a more reasonable default minimum size for flex items, the used value of a main axis automatic minimum size on a flex item that is not a scroll container is a content-based minimum size."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "29+",
+    "firefox": "28+",
+    "safari": "9+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Intrinsic Size Pass (min/max-content)",
+      "Flex Base Size",
+      "Resolve Flexible Lengths"
+    ],
+    "mechanism_summary": "Flex layout computes hypothetical main sizes from flex-basis, clamps against min-width: auto (min-content), and distributes remaining space."
+  },
+  "production_failures": [
+    {
+      "symptom": "Long unbreakable URL or <pre> code block blows out a flex row past 100% viewport width",
+      "root_cause": "Default min-width: auto clamps flex-shrink at the item’s min-content width.",
+      "mitigation": "Set min-width: 0 (or overflow: hidden) on the flex item so text-overflow: ellipsis or wrapping can engage."
+    },
+    {
+      "symptom": "Equal-looking flex items render at unequal widths despite flex: 1",
+      "root_cause": "flex: 1 sets flex-basis: 0%, but forgotten flex-grow: 1 with default flex-basis: auto distributes only leftover space after content width.",
+      "mitigation": "Use flex: 1 (flex-basis: 0%) for equal shares, or flex: 0 1 auto for content-proportional sizing."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-flexbox-1/#min-size-auto",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_flexible_box_layout"
+  ]
+}

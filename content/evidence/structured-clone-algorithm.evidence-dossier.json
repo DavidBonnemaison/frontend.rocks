@@ -1,0 +1,42 @@
+{
+  "concept_id": "structured-clone-algorithm",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/structured-data.html#structuredserializeinternal",
+      "spec_section": "2.7.3 StructuredSerializeInternal",
+      "quote": "If Type(value) is Object and value has a [[Call]] internal method, then throw a DataCloneError DOMException."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "98+",
+    "firefox": "94+",
+    "safari": "15.4+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Cycle-Tracking Memory Map Lookup",
+      "Internal Slot Type Tagging",
+      "Recursive Field Serialization",
+      "Target Realm Deserialization / Transfer"
+    ],
+    "mechanism_summary": "StructuredSerialize walks object graphs with a cycle-detection map, preserving Map/Set/Date/RegExp/TypedArray types while rejecting functions and DOM nodes."
+  },
+  "production_failures": [
+    {
+      "symptom": "DOMException: DataCloneError crashes postMessage or structuredClone",
+      "root_cause": "Passing an object containing a method, Proxy, Error cause closure, or DOM Element into structuredClone() or worker.postMessage().",
+      "mitigation": "Strip non-cloneable fields or serialize plain DTOs before crossing worker or IndexedDB boundaries."
+    },
+    {
+      "symptom": "Main thread freezes for 300ms when sending state to a Web Worker",
+      "root_cause": "Cloning a 50MB ArrayBuffer without a transfer list copies every byte instead of transferring ownership.",
+      "mitigation": "Pass the underlying ArrayBuffer in the transfer array: postMessage(buf, [buf])."
+    }
+  ],
+  "sources": [
+    "https://html.spec.whatwg.org/multipage/structured-data.html#structuredserializeinternal",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm"
+  ]
+}

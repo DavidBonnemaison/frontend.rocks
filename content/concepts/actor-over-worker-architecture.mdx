@@ -1,0 +1,69 @@
+---
+id: actor-over-worker-architecture
+title: Actor-over-Worker Architecture (Off-Main-Thread UI)
+domain: web-apis
+maturity_status: baseline-widely
+summary_tldr: "Stop freezing 60fps UI frames with Redux reducers and SQLite queries on the main thread. Isolated Worker actors serialize state mutations behind message mailboxes, keeping the main thread exclusively for DOM commits and input."
+relations:
+  - target_id: dedicated-web-workers
+    type: requires
+    note: "Actor isolation relies on dedicated OS-backed worker threads with independent V8 isolates."
+  - target_id: opfs-origin-private-fs
+    type: requires
+    note: "Stateful worker actors persist snapshots synchronously using OPFS createSyncAccessHandle."
+  - target_id: typed-arrays-zero-copy
+    type: requires
+    note: "Large state diffs transfer across worker mailboxes via Transferable ArrayBuffers without copying."
+sources:
+  - "https://html.spec.whatwg.org/multipage/workers.html"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "actor-model"
+  - "web-workers"
+  - "off-main-thread"
+  - "messagechannel"
+---
+
+## TL;DR
+
+Move state machines, indexed caches, and sync engines off the main thread into [Dedicated Web Workers](/concepts/dedicated-web-workers) modeled as actors. The main thread only dispatches intent messages and renders diffs, preventing 100ms computation spikes from dropping input frames.
+
+## Interactive Lab
+
+Trace actor mailbox queuing, `MessageChannel` RPC correlation, and main-thread frame isolation in `StepMachineLab`.
+
+## Under the Hood
+
+Blink runs each Worker in a separate OS thread with its own V8 isolate and event loop, so actor memory is physically unreachable from `window`. Actors communicate strictly through asynchronous `postMessage` mailboxes and `MessageChannel` ports.
+
+1. **Single-Writer Mailbox**: Incoming commands queue in FIFO order on the Worker event loop, eliminating mutexes and race conditions around local caches or [OPFS](/concepts/opfs-origin-private-fs) handles.
+2. **Request-Response Correlation**: Attaching a `MessageChannel` port or monotonic `requestId` turns fire-and-forget `postMessage` into typed `Promise` RPC.
+3. **Zero-Copy Diffs**: Passing [Transferable `ArrayBuffer`s](/concepts/typed-arrays-zero-copy) detaches ownership from the Worker to the main thread in O(1) time without structured-clone overhead.
+
+```js
+// main.js: typed RPC proxy over a MessageChannel mailbox
+function callActor(worker, method, payload, transfer = []) {
+  return new Promise((resolve, reject) => {
+    const { port1, port2 } = new MessageChannel();
+    port1.onmessage = ({ data }) => {
+      port1.close();
+      data.error ? reject(new Error(data.error)) : resolve(data.result);
+    };
+    worker.postMessage({ method, payload, replyPort: port2 }, [port2, ...transfer]);
+  });
+}
+```
+
+## Problem Genealogy
+
+- **2015 (Main-Thread Monolith)**: Single-page apps ran 40 KB+ state stores, normalizers, and optimistic-UI queues on the UI thread, causing 50-200ms INP stalls during user typing.
+- **2018 (Comlink & RPC Proxies)**: ES6 `Proxy` wrappers hid `postMessage` plumbing, cutting worker boilerplate by ~80% while exposing async boundaries.
+- **2024 (Local-First Actor Engines)**: Apps pair Worker actors with OPFS SQLite, keeping 60fps scroll even under 50,000-row client queries.
+
+## Production Pitfalls
+
+- **Chatty Per-Keystroke RPC**: Sending an actor message on every `pointermove` or keystroke saturates structured cloning and adds 0.5-2ms IPC latency per hop. Batch high-frequency inputs or keep ephemeral hover state on the main thread.
+- **Unbounded Mailbox Growth**: Firing `postMessage` faster than the Worker drains its queue bloats memory silently. Track pending `requestId` counts and drop stale intermediate commands.
+- **When not to use Actor-over-Worker**: Do not offload trivial CRUD apps or sub-1ms state updates where `postMessage` serialization plus async frame delay (1-4ms) exceeds the computation itself.

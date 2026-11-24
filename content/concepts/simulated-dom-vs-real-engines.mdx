@@ -1,0 +1,66 @@
+---
+id: simulated-dom-vs-real-engines
+title: "Simulated DOM (JSDOM/HappyDOM) vs Real Browser Engines"
+domain: testing-verification
+maturity_status: baseline-widely
+summary_tldr: "Green JSDOM tests ship broken layouts because Node.js DOM shims lack a layout engine, returning zeros for geometry and ignoring stacking contexts and CORS."
+relations:
+  - target_id: render-tree-layout
+    type: requires
+    note: "Real browser engines compute box geometry during layout; simulated DOMs return static zeros."
+  - target_id: css-stacking-context
+    type: requires
+    note: "Hit-testing and pointer interception depend on stacking context paint order absent in JSDOM."
+  - target_id: cors-preflight-samesite
+    type: requires
+    note: "Simulated fetch mocks bypass browser CORS preflight and SameSite cookie enforcement."
+sources:
+  - "https://html.spec.whatwg.org/multipage/dom.html"
+  - "https://github.com/jsdom/jsdom"
+  - "https://playwright.dev/docs/browsers"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "jsdom"
+  - "happydom"
+  - "headless-browser"
+  - "layout-engine"
+  - "testing"
+---
+
+## TL;DR
+
+Simulated DOMs (JSDOM, HappyDOM) execute DOM tree mutations in Node.js without a style, layout, or paint pipeline. They return `0` for `getBoundingClientRect()`, skip [CSS Stacking Context](/concepts/css-stacking-context) hit-testing, and bypass [CORS Preflight](/concepts/cors-preflight-samesite) checks that only real browser engines enforce.
+
+## Interactive Lab
+
+Compare how a simulated DOM and a real Blink engine evaluate element geometry, stacking order, and network boundaries in `StepMachineLab`.
+
+## Under the Hood
+
+Blink, Gecko, and WebKit run a multi-stage C++ pipeline from HTML parsing to GPU compositing. Simulated DOM libraries reimplement only the JavaScript object model in Node.js and stub out geometry.
+
+1. **No CSSOM or Box Tree**: JSDOM parses inline styles into strings but never runs cascade resolution or [Render Tree Layout](/concepts/render-tree-layout), so `offsetWidth` and `getBoundingClientRect()` return `0`.
+2. **Missing Hit-Testing**: `elementFromPoint()` and synthetic clicks in JSDOM dispatch DOM events directly on the target node without checking `pointer-events: none`, `z-index` occlusion, or `overflow: hidden` clipping.
+3. **Permissive Network Stack**: Node.js `undici` or mocked `fetch()` skips browser origin policies, `SameSite` cookie jars, and mixed-content blocks.
+
+```ts
+// JSDOM passes even when an overlay blocks the button
+test('submit button geometry', () => {
+  document.body.innerHTML = `<button style="width:120px">Save</button>`;
+  const btn = document.querySelector('button')!;
+  expect(btn.getBoundingClientRect().width).toBe(0); // JSDOM stub
+});
+```
+
+## Problem Genealogy
+
+- **2010 (JSDOM in Node.js)**: Eliminated 1.5s-3s per-suite browser startup overhead, cutting pure JS unit test suites from minutes to sub-second runs.
+- **2019 (HappyDOM)**: Traded spec completeness for 2x-4x faster HTML parsing in SSR and component tests, while keeping geometry stubbed at `0`.
+- **2022 (Vitest Browser Mode & Playwright CT)**: Reintroduced real Chromium/WebKit frames over WebDriver BiDi and CDP, adding ~300ms worker boot cost in exchange for authentic layout and security boundaries.
+
+## Production Pitfalls
+
+- **Invisible Occlusion Bugs**: A modal backdrop with `z-index: 50` covers a submit button in production, yet JSDOM `fireEvent.click(btn)` succeeds because it never executes hit-testing.
+- **False-Negative ResizeObserver Tests**: Components relying on `ResizeObserver` or `IntersectionObserver` never receive real viewport intersections in Node.js unless manually mocked, hiding infinite-loop layout bugs.
+- **When not to use Simulated DOMs**: Never validate sticky positioning, scroll-snap thresholds, `getBoundingClientRect()` measurements, focus-trap visibility, or [CORS](/concepts/cors-preflight-samesite) cookie flows in JSDOM or HappyDOM; execute those assertions inside a real headless browser engine.

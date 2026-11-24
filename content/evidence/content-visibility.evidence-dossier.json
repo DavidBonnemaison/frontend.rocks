@@ -1,0 +1,42 @@
+{
+  "concept_id": "content-visibility",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-contain-2/#content-visibility",
+      "spec_section": "4. Suppressing An Element’s Contents: the content-visibility property",
+      "quote": "When content-visibility is auto, the user agent skips the element’s contents when it is not relevant to the user, applying size, layout, and paint containment."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-newly",
+    "chrome": "85+",
+    "firefox": "125+",
+    "safari": "18+",
+    "notes": "Baseline Newly Available (2024). Progressive enhancement: unsupported browsers simply render normally."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Viewport Relevance Check",
+      "Containment Enforcement",
+      "Deferred Layout & Paint"
+    ],
+    "mechanism_summary": "Engine tracks intersection proximity; irrelevant subtrees skip Layout and Paint while preserving find-in-page and accessibility tree indexing."
+  },
+  "production_failures": [
+    {
+      "symptom": "Scrollbar thumb jumps erratically while scrolling down a long page",
+      "root_cause": "Off-screen sections with content-visibility: auto collapse to 0px height when contain-intrinsic-size is omitted.",
+      "mitigation": "Pair content-visibility: auto with contain-intrinsic-size: auto <estimated-height>."
+    },
+    {
+      "symptom": "Scrolling stutters right before a heavy section enters the viewport",
+      "root_cause": "A single massive section (e.g., 5,000 rows) becomes relevant all at once and triggers a 120ms layout burst.",
+      "mitigation": "Chunk long lists into smaller wrapper sections of 20-50 items each."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-contain-2/#content-visibility",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/content-visibility"
+  ]
+}

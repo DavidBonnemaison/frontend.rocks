@@ -1,0 +1,42 @@
+{
+  "concept_id": "passive-event-listeners",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://dom.spec.whatwg.org/#dom-addeventlisteneroptions-passive",
+      "spec_section": "2.9 AddEventListenerOptions.passive",
+      "quote": "When set to true, indicates that the function specified by listener will never call preventDefault()."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "51+",
+    "firefox": "49+",
+    "safari": "10+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Compositor Thread Scroll/Wheel Hit-Test",
+      "Main-Thread Blocking Region Check",
+      "Immediate Compositor Scroll (if passive)",
+      "Asynchronous JS Listener Notification"
+    ],
+    "mechanism_summary": "Non-passive wheel/touch listeners force the compositor thread to wait for main-thread JS to check preventDefault(); { passive: true } unlocks immediate compositor scrolling."
+  },
+  "production_failures": [
+    {
+      "symptom": "Mobile scroll stutters by 100ms+ on touchstart even when listener only logs analytics",
+      "root_cause": "Attaching a touchstart/wheel listener on a non-root element without { passive: true } forces the compositor to block scrolling until JS finishes.",
+      "mitigation": "Pass { passive: true } to every wheel, touchstart, and touchmove listener that does not call preventDefault()."
+    },
+    {
+      "symptom": "Unable to preventDefault() inside document.addEventListener('wheel', fn)",
+      "root_cause": "Browsers default wheel and touchstart/touchmove listeners on window, document, and body to passive: true, ignoring preventDefault() with a console warning.",
+      "mitigation": "Explicitly pass { passive: false } only on the specific interactive canvas or element that must intercept scrolling."
+    }
+  ],
+  "sources": [
+    "https://dom.spec.whatwg.org/#dom-addeventlisteneroptions-passive",
+    "https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#passive"
+  ]
+}

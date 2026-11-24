@@ -1,0 +1,43 @@
+{
+  "concept_id": "cdn-edge-cache-keys",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://www.rfc-editor.org/rfc/rfc9111#section-4.1",
+      "spec_section": "RFC 9111 Section 4.1: Calculating Cache Keys with Vary",
+      "quote": "When a cache receives a request that can be satisfied by a stored response that has a Vary header field, it MUST NOT use that stored response unless all selecting header fields match."
+    },
+    {
+      "source_url": "https://www.rfc-editor.org/rfc/rfc9211",
+      "spec_section": "RFC 9211: The Cache-Status HTTP Response Header Field",
+      "quote": "The Cache-Status header field conveys how caches handled a request, including hit/miss state and time-to-live."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+ (HTTP/Edge semantics)",
+    "firefox": "1+ (HTTP/Edge semantics)",
+    "safari": "1+ (HTTP/Edge semantics)"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Request Normalization", "Cache Key Hash (Host+Path+Query+Vary)", "Edge POP Lookup", "Origin Shield / Stale-While-Revalidate"],
+    "mechanism_summary": "Computes a deterministic tuple key at CDN edge PoPs to serve shared responses, where unstripped query parameters or broad Vary headers fragment hit ratios."
+  },
+  "production_failures": [
+    {
+      "symptom": "CDN cache hit ratio collapses below 10% during ad campaigns",
+      "root_cause": "Marketing links append unique ?fbclid= or ?utm_source= query parameters that were included in the CDN cache key.",
+      "mitigation": "Strip tracking query parameters (utm_*, fbclid, gclid) from the CDN cache key normalization rule."
+    },
+    {
+      "symptom": "Logged-in user A sees user B's personalized HTML dashboard",
+      "root_cause": "Edge CDN cached a response containing Set-Cookie or user-specific HTML because Cache-Control: public was set without Vary: Cookie or private.",
+      "mitigation": "Mark personalized responses Cache-Control: private, no-cache and strip Set-Cookie from any shared edge-cacheable route."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Vary",
+    "https://www.rfc-editor.org/rfc/rfc9111",
+    "https://web.dev/articles/http-cache"
+  ]
+}

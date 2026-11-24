@@ -1,0 +1,64 @@
+---
+id: gpu-compositor-layers
+title: GPU Compositor Layers and will-change
+domain: rendering-pipeline
+maturity_status: baseline-widely
+summary_tldr: "Promotion of a DOM subtree to a dedicated GPU texture allowing the Compositor Thread to animate transform and opacity without Layout or Paint."
+relations:
+  - target_id: browser-rendering-pipeline
+    type: requires
+    note: "Promotion happens after Paint during the Layerize phase prior to GPU upload."
+  - target_id: device-pixel-ratio-subpixel
+    type: requires
+    note: "Compositor layer textures rasterize at devicePixelRatio scale and snap subpixel transforms to physical pixels."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/will-change"
+  - "https://web.dev/articles/animations-guide"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "will-change"
+  - "GPU"
+  - "VRAM"
+  - "layer explosion"
+---
+
+## TL;DR
+
+Promoting an element to a compositor layer isolates its pixels in a separate GPU texture. The Compositor Thread transforms or fades that texture at 60/120 FPS even while the main thread runs JavaScript.
+
+## Interactive Lab
+
+Simulate GPU VRAM allocation based on the number of layers promoted via `will-change` in `ConstraintSimulatorLab`.
+
+## Under the Hood
+
+Like pre-printing actors onto transparent acetate cels before filming, layer promotion caches a subtree's rasterized bitmap in VRAM so the GPU only shifts or fades the cel instead of redrawing the entire scene.
+
+1. During the `Layerize` phase of the [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline), Blink decides which `PaintLayer` objects receive their own `CompositedLayer` (`transform: translate3d`, `will-change: transform`, `<video>`, `<canvas>`).
+2. The engine rasterizes each layer's tiles and uploads them to GPU memory (VRAM).
+3. Subsequent frames only update the layer's transformation matrix on the GPU without recalculating Style, Layout, or Paint.
+
+```css
+/* Promote only on intent, not permanently across 500 cards */
+.card:hover {
+  will-change: transform;
+}
+
+.card.is-animating {
+  transform: translate3d(0, -4px, 0);
+  transition: transform 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+```
+
+## Problem Genealogy
+
+- **2011 (`translateZ(0)` hack)**: Developers discovered that a zeroed 3D transform tricked WebKit into GPU promotion, soon copy-pasted onto `* { transform: translateZ(0); }` with predictable VRAM consequences.
+- **2015 (`will-change`)**: Standardized hint warning the engine before an animation starts.
+- **2022+ (Blink Auto-compositing)**: Automatic promotion strictly for the active duration of CSS/WAAPI animations.
+
+## Production Pitfalls
+
+- **Layer Explosion**: Elements overlapping an animated layer inside the same [CSS Stacking Context](/concepts/css-stacking-context) are often promoted as well, silently multiplying VRAM consumption on mobile GPUs.
+- **Blurry text or lost subpixel antialiasing**: On some operating systems, a promoted layer switches from LCD subpixel rendering to grayscale antialiasing, and fractional transforms misalign [Device Pixel Ratio & Subpixel](/concepts/device-pixel-ratio-subpixel) boundaries.
+- **When not to use `will-change`**: Never place `will-change: transform` on generic selectors (`.card`) in static CSS; apply it only on `:hover` or via JS right before animation.

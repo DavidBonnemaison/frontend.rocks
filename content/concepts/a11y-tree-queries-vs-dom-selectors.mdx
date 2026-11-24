@@ -1,0 +1,63 @@
+---
+id: a11y-tree-queries-vs-dom-selectors
+title: "Accessibility-Tree Queries vs DOM Implementation Coupling"
+domain: testing-verification
+maturity_status: baseline-widely
+summary_tldr: "CSS and data-testid selectors pass on clickable divs that screen readers and keyboards cannot reach; querying by computed ARIA role and accessible name tests the user-facing contract."
+relations:
+  - target_id: accessibility-tree-aria
+    type: requires
+    note: "Role and accessible-name queries resolve against WAI-ARIA role mappings and AccName computation."
+  - target_id: inert-attribute-focus
+    type: requires
+    note: "Accessibility-tree queries respect aria-hidden and inert subtrees when filtering exposed controls."
+sources:
+  - "https://www.w3.org/TR/accname-1.2/"
+  - "https://www.w3.org/TR/wai-aria-1.2/"
+  - "https://testing-library.com/docs/queries/byrole/"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "accessibility-tree"
+  - "getbyrole"
+  - "aria"
+  - "testing-library"
+  - "playwright"
+---
+
+## TL;DR
+
+Querying tests with `.btn-primary` or `data-testid` couples assertions to private markup while passing on inaccessible `<div onClick>` elements. Resolving controls by computed [Accessibility Tree](/concepts/accessibility-tree-aria) role and accessible name enforces semantic HTML, excludes [inert](/concepts/inert-attribute-focus) subtrees, and survives DOM refactors.
+
+## Interactive Lab
+
+Compare how a CSS selector and a computed ARIA role query resolve against broken markup in `PatternComparatorLab`.
+
+## Under the Hood
+
+Role-based locators in Playwright and Testing Library run a subset of the browser's WAI-ARIA role and AccName 1.2 algorithms on the DOM subtree before matching.
+
+1. **Implicit & Explicit Role Resolution**: The locator maps native elements (`<button>`, `<a href>`, `<input type="checkbox">`) to implicit ARIA roles unless overridden by an explicit `role` attribute.
+2. **AccName 1.2 Computation**: The query walks `aria-labelledby`, `aria-label`, associated `<label>`, inner text, and `alt` attributes in strict spec priority to compute the accessible name.
+3. **Subtree Pruning**: Nodes inside `display: none`, `visibility: hidden`, `aria-hidden="true"`, or [inert](/concepts/inert-attribute-focus) containers are excluded from the queryable tree.
+
+```ts
+// Fails if <div onClick> replaces <button> or label text disappears
+await page.getByRole('button', { name: 'Confirm order' }).click();
+
+// Fails if dialog lacks role="dialog" or accessible heading
+const modal = page.getByRole('dialog', { name: 'Payment' });
+await expect(modal).toBeVisible();
+```
+
+## Problem Genealogy
+
+- **2014 (CSS Selector Suites in Selenium/Enzyme)**: Tests queried `.header > div:nth-child(2) > span`, breaking on every CSS refactor and passing when buttons were non-focusable `<div>` tags.
+- **2018 (`data-testid` Everywhere)**: Eliminated CSS class coupling, yet still masked missing `<label>` associations and broken `aria-hidden` states in 40%+ of audited forms.
+- **2020 (`getByRole` Default)**: Standardized AccName 1.2 queries in Testing Library and Playwright, turning accessibility regressions into immediate test failures.
+
+## Production Pitfalls
+
+- **Slow `getByRole` Scans on Huge DOMs**: Running `getByRole` across 5,000+ unvirtualized table cells in JSDOM executes JS AccName traversal synchronously and can add 150ms-400ms per query.
+- **Overusing `name` Regexes on Dynamic Badges**: Matching `/save/i` against a button containing an unread count badge or icon `aria-label` breaks when copy changes unless scoped cleanly.
+- **When not to use `getByRole`**: Never force `getByRole` for purely decorative `<canvas>` charts, third-party SVG primitives without semantic roles, or unlabelled layout containers; use `data-testid` explicitly for non-interactive visual anchors.

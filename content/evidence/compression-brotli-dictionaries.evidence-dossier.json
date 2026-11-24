@@ -1,0 +1,44 @@
+{
+  "concept_id": "compression-brotli-dictionaries",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://www.rfc-editor.org/rfc/rfc7932",
+      "spec_section": "RFC 7932: Brotli Compressed Data Format",
+      "quote": "Brotli is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling."
+    },
+    {
+      "source_url": "https://www.rfc-editor.org/rfc/rfc9842",
+      "spec_section": "RFC 9842: Compression Dictionary Transport",
+      "quote": "Compression Dictionary Transport defines a mechanism for using designated HTTP responses as an external dictionary for compressing future HTTP responses."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-newly",
+    "chrome": "130+",
+    "firefox": "148+ (Brotli: 44+)",
+    "safari": "26.4+ (Brotli: 11+)",
+    "notes": "Static Brotli (br) is widely supported; Compression Dictionary Transport (dcb/dcz) is newly available in Chromium and rolling out across engines."
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Accept-Encoding Negotiation", "Use-As-Dictionary Registration", "Available-Dictionary Hash Match", "Delta Decompression Stream"],
+    "mechanism_summary": "Compresses text payloads with Brotli (br) and uses previously cached responses as shared LZ77 dictionaries (dcb/dcz) for incremental bundle updates."
+  },
+  "production_failures": [
+    {
+      "symptom": "Origin TTFB spikes by 300ms under load when serving dynamic SSR HTML",
+      "root_cause": "Reverse proxy was configured to run Brotli at quality 11 synchronously on every dynamic HTML response instead of quality 4-5.",
+      "mitigation": "Pre-compress static assets at Brotli quality 11 at build time, and cap dynamic SSR compression at quality 4 or 5."
+    },
+    {
+      "symptom": "Shared dictionary never activates on subsequent app releases",
+      "root_cause": "The dictionary asset lacked a stable match pattern or was served with Cache-Control: no-store, preventing dictionary storage.",
+      "mitigation": "Emit Use-As-Dictionary: match=\"/assets/app.*.js\" with long-lived Cache-Control headers and Vary: Available-Dictionary."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Compression_dictionaries",
+    "https://developer.chrome.com/blog/compression-dictionary-transport",
+    "https://www.rfc-editor.org/rfc/rfc7932"
+  ]
+}

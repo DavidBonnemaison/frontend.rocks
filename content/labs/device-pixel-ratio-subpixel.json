@@ -1,0 +1,44 @@
+{
+  "type": "live-sandbox",
+  "id": "device-pixel-ratio-subpixel",
+  "title": "CSS Pixel to Physical Pixel Rasterizer Sandbox",
+  "description": "Inspect magnified physical device pixel coverage for a 1 CSS-px line at fractional offsets across devicePixelRatio values.",
+  "height": 250,
+  "html": "<div class=\"wrap\"><canvas id=\"grid\" width=\"340\" height=\"150\"></canvas><div class=\"readout mono\" id=\"readout\"></div></div>",
+  "css": ".wrap { display: flex; flex-direction: column; gap: 8px; }\ncanvas { width: 100%; height: 150px; border: 1px solid #1e293b; border-radius: 6px; background: #0d1016; display: block; }\n.readout { font-size: 11px; color: #cbd5e1; background: #0d1016; border: 1px solid #1e293b; border-radius: 4px; padding: 6px 8px; }",
+  "js": "var root = document.getElementById('sandbox-root'); var cv = document.getElementById('grid'); var out = document.getElementById('readout'); if (root && cv && out) { var dpr = parseFloat(root.dataset.dpr || '2'); var rawOff = parseFloat(root.dataset.cssoffset || '0.5'); var snap = root.classList.contains('snap-device'); var effOff = snap ? Math.round(rawOff * dpr) / dpr : rawOff; var physStart = effOff * dpr; var physWidth = 1 * dpr; var physEnd = physStart + physWidth; var ctx = cv.getContext('2d'); var cols = Math.ceil(4 * dpr); var cellW = cv.width / cols; var cellH = 84; var topY = 28; ctx.clearRect(0, 0, cv.width, cv.height); for (var i = 0; i < cols; i++) { var overlap = Math.max(0, Math.min(i + 1, physEnd) - Math.max(i, physStart)); if (overlap > 0) { ctx.fillStyle = 'rgba(56, 189, 248, ' + (0.15 + overlap * 0.8) + ')'; ctx.fillRect(i * cellW + 1, topY + 1, cellW - 2, cellH - 2); } ctx.strokeStyle = '#334155'; ctx.lineWidth = 1; ctx.strokeRect(i * cellW, topY, cellW, cellH); ctx.fillStyle = '#94a3b8'; ctx.font = '10px monospace'; ctx.fillText(Math.round(overlap * 100) + '%', i * cellW + 4, topY + cellH + 16); } ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.strokeRect(physStart * cellW, topY - 4, physWidth * cellW, cellH + 8); var frac = Math.abs(physStart - Math.round(physStart)); var crisp = frac < 0.001 && Math.abs(physWidth - Math.round(physWidth)) < 0.001; out.textContent = 'DPR: ' + dpr + 'x | physical range: [' + physStart.toFixed(2) + ', ' + physEnd.toFixed(2) + '] px | raster: ' + (crisp ? 'CRISP (integer-aligned)' : 'BLURRED (subpixel anti-alias)'); }",
+  "controls": [
+    {
+      "key": "dpr",
+      "label": "devicePixelRatio",
+      "kind": "range",
+      "target": "css-var",
+      "cssVar": "--dpr",
+      "min": 1,
+      "max": 3,
+      "step": 0.5,
+      "defaultValue": 2
+    },
+    {
+      "key": "cssOffset",
+      "label": "CSS offset",
+      "kind": "range",
+      "target": "css-var",
+      "cssVar": "--css-offset",
+      "min": 0,
+      "max": 2,
+      "step": 0.25,
+      "unit": "px",
+      "defaultValue": 0.25
+    },
+    {
+      "key": "snapToDevice",
+      "label": "Snap to device pixel",
+      "kind": "toggle",
+      "target": "class",
+      "className": "snap-device",
+      "defaultValue": false
+    }
+  ],
+  "expectedObservation": "At fractional physical coordinates (such as 0.25 CSS px on 2x DPR -> 0.50 device px), the 1 CSS-px stroke straddles adjacent physical pixels at 50% coverage, producing anti-aliased blur. Snapping to Math.round(offset * dpr) / dpr aligns the amber bounds onto integer device pixels at 100% coverage."
+}

@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "web-animations-api",
+  "title": "rAF Transform Loop vs element.animate()",
+  "description": "Compare main-thread rAF animation against compositor-offloaded WAAPI.",
+  "before": {
+    "label": "Manual rAF Interpolation",
+    "code": "function slide(start) {\n  requestAnimationFrame((now) => {\n    const p = Math.min(1, (now - start) / 300);\n    el.style.transform = `translateX(${p * 120}px)`;\n    if (p < 1) slide(start);\n  });\n}",
+    "metrics": {
+      "lines": 7,
+      "reflows": "0 (stalls if JS blocks)",
+      "dependencies": "Main-thread rAF loop"
+    },
+    "previewNote": "Freezes whenever a 50ms JS task blocks the main thread."
+  },
+  "after": {
+    "label": "Native WAAPI (Compositor)",
+    "code": "const anim = el.animate(\n  [{ transform: 'translateX(0)' }, { transform: 'translateX(120px)' }],\n  { duration: 300, easing: 'ease-out' }\n);\nawait anim.finished;",
+    "metrics": {
+      "lines": 5,
+      "reflows": "0 (Compositor Thread)",
+      "dependencies": "0 main-thread ticks"
+    },
+    "previewNote": "Runs smoothly on the GPU Compositor Thread even during JS work."
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "concept_id": "broadcast-channel-web-locks",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/web-messaging.html#broadcasting-to-other-browsing-contexts",
+      "spec_section": "HTML Living Standard §9.5 Broadcasting to other browsing contexts",
+      "quote": "A BroadcastChannel object allows scripts from the same origin in different browsing contexts or workers to send and receive messages on a named channel."
+    },
+    {
+      "source_url": "https://w3c.github.io/web-locks/#api-lock-manager",
+      "spec_section": "Web Locks API §4 Lock Managers",
+      "quote": "navigator.locks.request() grants an exclusive or shared lock for a named resource and releases it automatically when the callback's returned Promise settles or the tab terminates."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "54+ (BroadcastChannel), 69+ (Web Locks)",
+    "firefox": "38+ (BroadcastChannel), 96+ (Web Locks)",
+    "safari": "15.4+ (BroadcastChannel & Web Locks)"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Origin-Scoped Pub/Sub Router (BroadcastChannel)",
+      "Cross-Process Lock Queue (Web Locks)",
+      "Automatic Lease Release on Tab Crash"
+    ],
+    "mechanism_summary": "The browser process maintains an origin-partitioned pub/sub bus and an async mutex queue that automatically releases locks if a renderer process crashes or closes."
+  },
+  "production_failures": [
+    {
+      "symptom": "Duplicate background token refreshes racing across 5 open tabs and invalidating the refresh token",
+      "root_cause": "Each tab runs its own interval timer and posts refresh requests concurrently without cross-tab mutual exclusion.",
+      "mitigation": "Wrap the token refresh inside navigator.locks.request('auth-refresh', { ifAvailable: false }, ...) and broadcast the new token via BroadcastChannel."
+    },
+    {
+      "symptom": "Deadlock when Lock A awaits Lock B in Tab 1 while Lock B awaits Lock A in Tab 2",
+      "root_cause": "Nested navigator.locks.request() calls acquired in inconsistent order across tabs.",
+      "mitigation": "Enforce a strict global lock ordering or use { ifAvailable: true } / AbortSignal timeouts."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/Broadcast_Channel_API",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API"
+  ]
+}

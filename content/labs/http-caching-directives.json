@@ -1,0 +1,38 @@
+{
+  "type": "step-machine",
+  "id": "http-caching-directives",
+  "title": "HTTP Cache Freshness & Revalidation",
+  "description": "Trace how the browser cache evaluates max-age, no-cache, ETag revalidation, and immutable assets.",
+  "steps": [
+    {
+      "label": "1. Cache Key Lookup",
+      "description": "Browser hashes URL + Vary headers + top-level site partition key to check the disk cache.",
+      "codeHighlight": "Cache-Control: public, max-age=31536000, immutable",
+      "state": {
+        "cacheEntryFound": true,
+        "networkPartition": "same-site",
+        "requestSent": false
+      }
+    },
+    {
+      "label": "2. Freshness Check (HTML vs Hashed JS)",
+      "description": "HTML uses no-cache (stale immediately); hashed JS uses immutable (fresh for 1 year).",
+      "codeHighlight": "Cache-Control: no-cache\nETag: \"v42-9f8a\"",
+      "state": {
+        "htmlFresh": false,
+        "jsFresh": true,
+        "action": "Revalidate HTML with If-None-Match"
+      }
+    },
+    {
+      "label": "3. Conditional 304 Not Modified",
+      "description": "Origin compares ETag; if unchanged, returns 304 with zero body bytes and resets freshness.",
+      "codeHighlight": "HTTP/2 304 Not Modified\nETag: \"v42-9f8a\"",
+      "state": {
+        "status": 304,
+        "bodyBytesTransferred": 0,
+        "reusedFromDisk": true
+      }
+    }
+  ]
+}

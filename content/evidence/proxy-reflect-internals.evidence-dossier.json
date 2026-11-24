@@ -1,0 +1,42 @@
+{
+  "concept_id": "proxy-reflect-internals",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://tc39.es/ecma262/#sec-proxy-object-internal-methods-and-internal-slots",
+      "spec_section": "10.5 Proxy Object Internal Methods and Internal Slots",
+      "quote": "A Proxy exotic object intercepts internal methods such as [[Get]], [[Set]], and [[HasProperty]] via user-supplied handler traps."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "49+",
+    "firefox": "18+",
+    "safari": "10+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Exotic Proxy Dispatch",
+      "Handler Trap Invocation",
+      "Invariant Validation Check",
+      "Reflect Forwarding to Target"
+    ],
+    "mechanism_summary": "Proxy replaces ordinary object internal slots with exotic traps that bypass V8 Inline Caches and enforce target invariants via Reflect."
+  },
+  "production_failures": [
+    {
+      "symptom": "TypeError: Cannot read private member #x from an object whose class did not declare it",
+      "root_cause": "Calling a class method through a Proxy passes the Proxy as 'this' (Receiver), which lacks the target's internal private-field slot.",
+      "mitigation": "Bind methods to the underlying target in the get trap or avoid wrapping classes with private fields in Proxies."
+    },
+    {
+      "symptom": "50x slowdown in tight numerical array loops",
+      "root_cause": "Wrapping hot data arrays in reactive Proxies bypasses V8 Inline Caches and executes JS trap functions on every index read.",
+      "mitigation": "Mark large immutable/numerical collections as raw (e.g. shallow/non-proxied) before entering tight loops."
+    }
+  ],
+  "sources": [
+    "https://tc39.es/ecma262/#sec-proxy-object-internal-methods-and-internal-slots",
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy"
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "type": "step-machine",
+  "id": "shadow-dom-encapsulation",
+  "title": "Shadow Boundary Style Scoping & Event Retargeting",
+  "description": "Trace how composed events retarget from an inner shadow button to the shadow host.",
+  "steps": [
+    {
+      "label": "1. Inner Click Fires in Shadow Tree",
+      "description": "Inside shadowRoot, event.target is the internal <button> element.",
+      "codeHighlight": "// Inside shadowRoot: e.target === innerButton",
+      "state": {
+        "phase": "AT_TARGET (shadow)",
+        "eventTarget": "<button.save>",
+        "composed": true
+      },
+      "visualNodes": [
+        { "id": "inner", "label": "<button.save> (Shadow)", "status": "active" },
+        { "id": "boundary", "label": "ShadowRoot Boundary", "status": "idle" },
+        { "id": "doc", "label": "Document Listener", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Cross Boundary & Retarget",
+      "description": "Composed event crosses ShadowRoot; engine rewrites event.target to <ui-card> host.",
+      "codeHighlight": "// Non-composed events (composed: false) stop here",
+      "state": {
+        "phase": "BUBBLING (light DOM)",
+        "eventTarget": "<ui-card>",
+        "retargeted": true
+      },
+      "visualNodes": [
+        { "id": "inner", "label": "<button.save> (Shadow)", "status": "done" },
+        { "id": "boundary", "label": "ShadowRoot (Retarget)", "status": "active" },
+        { "id": "doc", "label": "Document Listener", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Document Listener Sees Host",
+      "description": "Document sees e.target === <ui-card>, while e.composedPath() exposes the full path if mode is 'open'.",
+      "codeHighlight": "document.addEventListener('click', (e) => e.target); // <ui-card>",
+      "state": {
+        "eventTarget": "<ui-card>",
+        "composedPathFirst": "<button.save>"
+      },
+      "visualNodes": [
+        { "id": "inner", "label": "<button.save> (Shadow)", "status": "done" },
+        { "id": "boundary", "label": "ShadowRoot (Retarget)", "status": "done" },
+        { "id": "doc", "label": "Document (target=<ui-card>)", "status": "done" }
+      ]
+    }
+  ]
+}

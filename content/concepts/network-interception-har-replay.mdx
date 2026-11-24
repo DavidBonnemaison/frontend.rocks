@@ -1,0 +1,63 @@
+---
+id: network-interception-har-replay
+title: "Deterministic Network Interception & HAR Replay"
+domain: testing-verification
+maturity_status: baseline-widely
+summary_tldr: "Live staging APIs flake tests on rate limits and drifting data, while stubbing window.fetch hides serialization and streaming bugs; intercepting at the browser network layer replays real HTTP frames deterministically."
+relations:
+  - target_id: service-worker-lifecycle
+    type: requires
+    note: "Service Worker fetch interception handles real browser Request/Response objects in-process."
+  - target_id: streams-api-backpressure
+    type: requires
+    note: "Network-layer mocks must preserve ReadableStream chunking and backpressure for streaming responses."
+sources:
+  - "https://w3c.github.io/ServiceWorker/"
+  - "https://playwright.dev/docs/mock#mocking-with-har-files"
+  - "https://mswjs.io/docs/"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "har-replay"
+  - "network-interception"
+  - "msw"
+  - "playwright-route"
+  - "streams"
+---
+
+## TL;DR
+
+Mocking `globalThis.fetch` in JavaScript bypasses browser CORS, cookie jars, and [ReadableStream](/concepts/streams-api-backpressure) decoding. Intercepting requests at the browser network layer via CDP `page.route()`, HAR replay, or a [Service Worker](/concepts/service-worker-lifecycle) exercises real HTTP serialization with zero staging-server flakiness.
+
+## Interactive Lab
+
+Trace request interception, HAR entry matching, and streamed response playback in `StepMachineLab`.
+
+## Under the Hood
+
+Browser-level interception hooks below the `fetch()` and `XMLHttpRequest` bindings, keeping header normalization, status handling, and stream decoding intact.
+
+1. **CDP / WebDriver BiDi Interception**: `page.route()` pauses the browser network stack before socket dispatch (`Fetch.requestPaused`), matching URL, method, and headers against handlers or an indexed `.har` archive.
+2. **Service Worker Interception**: Tools like MSW register a [Service Worker](/concepts/service-worker-lifecycle) on `self.onfetch`, intercepting outgoing requests across tabs and returning synthetic `Response` objects with real `ReadableStream` bodies.
+3. **HAR Replay Matching**: A recorded `.har` file stores timestamped request/response pairs, headers, and base64 payloads so tests replay exact server responses offline.
+
+```ts
+// Replay recorded HTTP traffic including headers and status codes
+await page.routeFromHAR('tests/fixtures/checkout.har', {
+  url: '**/api/v2/**',
+  update: false,
+  notFound: 'abort',
+});
+```
+
+## Problem Genealogy
+
+- **2015 (`sinon.stub(window, 'fetch')`)**: Fast unit mocks broke whenever code switched to `XMLHttpRequest`, `sendBeacon`, or `Response.body.getReader()` streams.
+- **2018 (Record-and-Replay HTTP Proxies like PollyJS)**: Saved real wire payloads, but required managing external proxy ports and TLS certificates in CI.
+- **2020 (MSW Service Workers & Playwright `routeFromHAR`)**: Moved deterministic HTTP replay directly into the browser network pipeline with zero external proxy processes.
+
+## Production Pitfalls
+
+- **Stale HAR Drift**: Replaying a 6-month-old `.har` file hides breaking backend schema changes until production; pair HAR tests with schema contract validation.
+- **Broken Streaming Simulation**: Returning a single `JSON.stringify()` string in a naive mock masks [backpressure](/concepts/streams-api-backpressure) and incremental chunk-parsing bugs in SSE or AI-stream UIs.
+- **When not to use Network Interception**: Never mock or HAR-replay authentication redirects, CDN cache-control headers, or WebSocket upgrade handshakes in release-gate E2E suites; those require a real backend or staging environment.

@@ -1,0 +1,42 @@
+{
+  "concept_id": "inert-attribute-focus",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/interaction.html#the-inert-attribute",
+      "spec_section": "6.3 The inert attribute",
+      "quote": "When a node is inert, user agent ignore input events, focusability, find-in-page, and accessibility tree exposure for that node."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "102+",
+    "firefox": "112+",
+    "safari": "15.5+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Inert Subtree Flag Propagation",
+      "Hit-Test Pointer Event Suppression",
+      "Tabindex & Focusability Exclusion",
+      "Accessibility Tree Pruning"
+    ],
+    "mechanism_summary": "The HTML inert attribute instructs the engine to suppress pointer events, keyboard focus, text selection, find-in-page, and accessibility tree nodes for an entire subtree."
+  },
+  "production_failures": [
+    {
+      "symptom": "Keyboard users tab into hidden off-screen drawer links while aria-hidden='true' is set",
+      "root_cause": "aria-hidden='true' hides elements from screen readers but leaves buttons and links in the keyboard Tab order and clickable.",
+      "mitigation": "Replace aria-hidden='true' + tabindex='-1' hacks with the native inert attribute on collapsed drawers and background shells."
+    },
+    {
+      "symptom": "Accidental inert on ancestor locks out the open modal itself",
+      "root_cause": "Placing inert on <body> or a shared wrapper that also contains the active modal makes the modal unclickable.",
+      "mitigation": "Mount the modal in a sibling subtree or use <dialog>.showModal() which automatically makes everything outside the Top Layer inert."
+    }
+  ],
+  "sources": [
+    "https://html.spec.whatwg.org/multipage/interaction.html#the-inert-attribute",
+    "https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/inert"
+  ]
+}

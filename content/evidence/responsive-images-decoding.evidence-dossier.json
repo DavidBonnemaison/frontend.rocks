@@ -1,0 +1,43 @@
+{
+  "concept_id": "responsive-images-decoding",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/images.html#updating-the-image-data",
+      "spec_section": "WHATWG HTML: Images — srcset, sizes, and decoding",
+      "quote": "The decoding attribute hints to the user agent whether to decode the image synchronously or asynchronously off the main thread."
+    },
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/embedded-content.html#attr-img-fetchpriority",
+      "spec_section": "WHATWG HTML: fetchpriority & loading",
+      "quote": "The loading attribute controls lazy loading of offscreen images, while fetchpriority hints relative network urgency for the LCP candidate."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "101+",
+    "firefox": "132+",
+    "safari": "17.2+"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Preload Scanner srcset Match", "Network Fetch (fetchpriority)", "Off-Thread Bitmap Decode", "GPU Texture Upload"],
+    "mechanism_summary": "Selects resolution-appropriate AVIF/WebP candidates via srcset/sizes, decodes bitmaps off the main thread, and reserves aspect-ratio boxes to prevent CLS."
+  },
+  "production_failures": [
+    {
+      "symptom": "LCP image starts downloading 2 seconds late after JS hydration",
+      "root_cause": "Hero <img> had loading=\"lazy\" applied globally, deferring the LCP image until layout computed viewport intersection.",
+      "mitigation": "Never put loading=\"lazy\" on above-the-fold LCP images; set loading=\"eager\" and fetchpriority=\"high\"."
+    },
+    {
+      "symptom": "Mobile devices download 2400px desktop hero JPEGs",
+      "root_cause": "<img> omitted sizes attribute alongside srcset, causing the preload scanner to default sizes to 100vw or pick an oversized candidate.",
+      "mitigation": "Provide accurate media-conditioned sizes (e.g., (max-width: 768px) 100vw, 50vw) and intrinsic width/height attributes."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/HTML/Guides/Responsive_images",
+    "https://web.dev/articles/optimize-lcp",
+    "https://html.spec.whatwg.org/multipage/images.html"
+  ]
+}

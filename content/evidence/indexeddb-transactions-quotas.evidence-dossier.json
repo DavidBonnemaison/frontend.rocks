@@ -1,0 +1,42 @@
+{
+  "concept_id": "indexeddb-transactions-quotas",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://w3c.github.io/IndexedDB/#transaction-lifetime-concept",
+      "spec_section": "IndexedDB API 3.0 §2.4 Transactions",
+      "quote": "A transaction created using transaction() is active immediately upon creation, and auto-commits as soon as the event loop finishes executing requests and no new requests are placed against it."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "24+",
+    "firefox": "16+",
+    "safari": "10+",
+    "notes": "StorageManager.estimate() is Baseline Widely Available across all modern engines."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Scope Lock Acquisition (readonly / readwrite)",
+      "IDBRequest Queue Execution",
+      "Auto-Commit on Microtask Drain"
+    ],
+    "mechanism_summary": "IndexedDB serializes overlapping readwrite transactions per object store and auto-commits any transaction left idle across an async await boundary."
+  },
+  "production_failures": [
+    {
+      "symptom": "TransactionInactiveError thrown right after await fetch() inside an IDB transaction",
+      "root_cause": "Awaiting a network or macrotask promise yields control of the event loop, causing the IDB transaction to auto-commit before the next store.put() runs.",
+      "mitigation": "Complete all fetch/async work before opening db.transaction(), or wrap only synchronous/IDB-request chains inside the transaction."
+    },
+    {
+      "symptom": "QuotaExceededError on Safari Private Browsing or low-disk devices",
+      "root_cause": "Origin storage quota is dynamic (percentage of free disk) and Best-Effort storage can be evicted under disk pressure.",
+      "mitigation": "Check navigator.storage.estimate(), request navigator.storage.persist(), and handle QuotaExceededError with LRU pruning."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB",
+    "https://w3c.github.io/IndexedDB/"
+  ]
+}

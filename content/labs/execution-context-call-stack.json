@@ -1,0 +1,50 @@
+{
+  "type": "step-machine",
+  "id": "execution-context-call-stack",
+  "title": "Call Stack & LexicalEnvironment Frame Lifecycle",
+  "description": "Step through creation, TDZ initialization, and stack unwinding across nested calls.",
+  "steps": [
+    {
+      "label": "1. Global Context Creation",
+      "description": "Engine allocates Global LexicalEnvironment and marks let/const bindings as uninitialized (TDZ).",
+      "codeHighlight": "const base = 10; compute(5);",
+      "state": {
+        "callStack": ["Global()"],
+        "lexicalEnv": { "base": "<uninitialized>" }
+      },
+      "visualNodes": [
+        { "id": "global", "label": "Global Frame", "status": "active" },
+        { "id": "compute", "label": "compute() Frame", "status": "idle" },
+        { "id": "heap", "label": "Closure Heap", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Push compute(5)",
+      "description": "Engine initializes base = 10, then pushes compute's Execution Context onto the Call Stack.",
+      "codeHighlight": "function compute(x) { return x + base; }",
+      "state": {
+        "callStack": ["Global()", "compute(5)"],
+        "lexicalEnv": { "x": 5, "outer": "Global" }
+      },
+      "visualNodes": [
+        { "id": "global", "label": "Global Frame", "status": "done" },
+        { "id": "compute", "label": "compute() Frame", "status": "active" },
+        { "id": "heap", "label": "Closure Heap", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Scope Chain Resolution & Pop",
+      "description": "compute() resolves base via outer LexicalEnvironment, returns 15, and pops its stack frame.",
+      "codeHighlight": "return x + base; // 15",
+      "state": {
+        "callStack": ["Global()"],
+        "returnValue": 15
+      },
+      "visualNodes": [
+        { "id": "global", "label": "Global Frame", "status": "active" },
+        { "id": "compute", "label": "compute() Frame", "status": "done" },
+        { "id": "heap", "label": "Closure Heap", "status": "done" }
+      ]
+    }
+  ]
+}

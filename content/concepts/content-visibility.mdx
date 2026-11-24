@@ -1,0 +1,60 @@
+---
+id: content-visibility
+title: "content-visibility & Skipping Offscreen Work"
+domain: rendering-pipeline
+maturity_status: baseline-newly
+summary_tldr: "content-visibility: auto skips layout and paint for off-screen subtrees while keeping them searchable in the DOM."
+relations:
+  - target_id: css-containment
+    type: requires
+    note: "content-visibility: auto internally activates layout, style, and paint containment."
+  - target_id: render-tree-layout
+    type: under_the_hood
+    note: "Skipped subtrees retain their DOM nodes but bypass Layout and Paint until near the viewport."
+sources:
+  - "https://drafts.csswg.org/css-contain-2/#content-visibility"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/content-visibility"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "content-visibility"
+  - "contain-intrinsic-size"
+  - "rendering performance"
+  - "offscreen"
+web_feature_id: content-visibility
+---
+
+## TL;DR
+
+`content-visibility: auto` instructs the engine to skip Style, Layout, and Paint for off-screen subtrees until they approach the viewport. Paired with `contain-intrinsic-size: auto`, it slashes initial rendering cost without removing nodes from the DOM or breaking `Ctrl+F` search.
+
+## Interactive Lab
+
+Compare eager full-document rendering against `content-visibility: auto` in `PatternComparatorLab`.
+
+## Under the Hood
+
+Like a stage crew only lighting sets as actors walk toward them, `content-visibility: auto` keeps DOM nodes intact while deferring pixel work.
+
+1. **Relevance Check**: The engine checks whether the element is near the viewport, focused, or selected.
+2. **Work Suppression**: When irrelevant, it enforces [CSS Containment](/concepts/css-containment) (`layout`, `style`, `paint`, `size`) and skips [Render Tree & Layout](/concepts/render-tree-layout) for descendants.
+3. **Placeholder Sizing**: `contain-intrinsic-size: auto 400px` supplies a fallback height until the element renders once, after which `auto` remembers its real measured height.
+
+```css
+.long-list-chunk {
+  content-visibility: auto;
+  /* Remembers real height after first render; 360px before */
+  contain-intrinsic-size: auto 360px;
+}
+```
+
+## Problem Genealogy
+
+- **2015–2019**: Developers built fragile JS virtual-scrollers that broke browser `Ctrl+F`, anchor links, and screen-reader navigation.
+- **2020–2024**: `content-visibility: auto` moved off-screen work skipping into the native C++ layout engine.
+
+## Production Pitfalls
+
+- **Missing `contain-intrinsic-size`**: Without an intrinsic size hint, skipped containers collapse to `0px`, causing the scrollbar thumb to jump as you scroll.
+- **One giant wrapper**: Wrapping 10,000 items in a single `content-visibility: auto` container defeats incremental rendering; chunk them into groups of 25–50.
+- **When not to use `content-visibility: auto`**: Do not apply it to small above-the-fold elements or containers with overflowing popovers (it implies `contain: paint`).

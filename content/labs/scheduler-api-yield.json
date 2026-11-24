@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "scheduler-api-yield",
+  "title": "setTimeout(0) Back-of-Queue vs scheduler.yield()",
+  "before": {
+    "label": "Legacy setTimeout(0) Chunking",
+    "code": "for (const item of items) {\n  process(item);\n  await new Promise((r) => setTimeout(r, 0));\n  // Drops to back of queue behind 3rd-party scripts + 4ms clamp\n}",
+    "metrics": {
+      "lines": 5,
+      "reflows": "4ms+ timer clamp",
+      "dependencies": "Preempted by 3P tasks"
+    },
+    "previewNote": "Resumes at the tail of the macrotask queue after unrelated scripts."
+  },
+  "after": {
+    "label": "scheduler.yield() With Budget Check",
+    "code": "let start = performance.now();\nfor (const item of items) {\n  process(item);\n  if (performance.now() - start > 16) {\n    await scheduler.yield();\n    start = performance.now();\n  }\n}",
+    "metrics": {
+      "lines": 8,
+      "reflows": "0ms continuation queue",
+      "dependencies": "Inherits task priority"
+    },
+    "previewNote": "Lets pending input and paint run, then resumes ahead of normal tasks."
+  }
+}

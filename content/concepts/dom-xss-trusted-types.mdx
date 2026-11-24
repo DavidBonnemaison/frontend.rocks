@@ -1,0 +1,63 @@
+---
+id: dom-xss-trusted-types
+title: DOM XSS Prevention with Trusted Types
+domain: security-a11y
+maturity_status: interop-experimental
+summary_tldr: "Type-enforced browser defense that locks dangerous DOM sinks (innerHTML, eval, script.src) against raw strings, permitting only objects minted by audited TrustedTypePolicy sanitizers."
+relations:
+  - target_id: browser-rendering-pipeline
+    type: requires
+    note: "DOM sinks invoke the HTML parser and script execution pipeline directly from JavaScript."
+  - target_id: csp-nonces-strict-dynamic
+    type: under_the_hood
+    note: "Trusted Types are activated and policy-allowlisted via Content-Security-Policy headers."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API"
+  - "https://w3c.github.io/trusted-types/dist/spec/"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "Trusted Types"
+  - "DOM XSS"
+  - "TrustedHTML"
+  - "innerHTML"
+web_feature_id: trusted-types
+---
+
+## TL;DR
+
+Trusted Types eliminates DOM-based Cross-Site Scripting by locking ~60 hazardous sinks (`innerHTML`, `document.write`, `script.src`, `eval`) at the browser engine boundary. When enforced via CSP, raw strings throw a `TypeError`; only `TrustedHTML`, `TrustedScript`, or `TrustedScriptURL` objects minted by named policies succeed.
+
+## Interactive Lab
+
+Compare an unguarded `innerHTML` sink against a `TrustedHTML`-enforced sanitizer policy.
+
+## Under the Hood
+
+Trusted Types acts like a factory safety interlock on a hydraulic press: the machine refuses to cycle unless the material carries a stamped inspection tag (`TrustedHTML`) from an approved quality gate (`trusted-types` CSP allowlist).
+
+1. **Sink Lockdown**: Adding `require-trusted-types-for 'script'` to [Content Security Policy](/concepts/csp-nonces-strict-dynamic) instructs the DOM bindings to reject plain `string` arguments at every injection sink.
+2. **Named Policies**: `trustedTypes.createPolicy('app-html', { createHTML })` centralizes sanitization (such as DOMPurify) into one auditable call site.
+3. **Parser Isolation**: Even if an attacker controls URL parameters or `postMessage` data, the [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline) never parses raw markup unless it passes through a policy.
+
+```js
+// Requires CSP: require-trusted-types-for 'script'; trusted-types app-sanitizer;
+const sanitizer = trustedTypes.createPolicy('app-sanitizer', {
+  createHTML: (input) => DOMPurify.sanitize(input),
+});
+
+container.innerHTML = sanitizer.createHTML(userBio);
+// container.innerHTML = userBio; -> throws TypeError!
+```
+
+## Problem Genealogy
+
+- **2005–2018 (Manual Sanitization)**: Teams sprinkled `sanitize()` calls ad hoc; one forgotten `innerHTML` in 500 components reopened DOM XSS.
+- **2019 (Google Trusted Types)**: Shifted DOM XSS defense from "find every sink" to "type-lock all sinks in the engine."
+- **2024+ (W3C Standardization)**: Expanded beyond Chromium into cross-engine interop baselines.
+
+## Production Pitfalls
+
+- **Registering a pass-through `default` policy**: Writing `createHTML: (s) => s` silences errors while keeping every XSS vulnerability wide open.
+- **Enabling enforcement without Report-Only rollout**: Turning on `require-trusted-types-for 'script'` immediately breaks third-party scripts that assign strings to `innerHTML`; audit with `Content-Security-Policy-Report-Only` first.
+- **When not to use `innerHTML` at all**: For plain text or structured UI updates, assign `element.textContent` or render framework JSX nodes, they never invoke the HTML parser and need zero policies.

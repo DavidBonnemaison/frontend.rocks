@@ -1,0 +1,42 @@
+{
+  "concept_id": "hydration-mismatch-mechanics",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://react.dev/reference/react-dom/client/hydrateRoot",
+      "spec_section": "Hydrating server-rendered HTML & Recovering from errors",
+      "quote": "If a hydration mismatch occurs inside a Suspense boundary, React discards the server HTML inside that boundary and re-renders it on the client."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "60+",
+    "firefox": "55+",
+    "safari": "11+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Server HTML Parse & Initial Paint",
+      "Hydration Cursor Traversal (Tag & Text Verification)",
+      "Mismatch Detection & Boundary Escalation",
+      "Subtree DOM Discard & Client Re-Render"
+    ],
+    "mechanism_summary": "A DOM cursor walks server-rendered nodes alongside virtual tree execution; any structural divergence aborts hydration up to the nearest Suspense boundary and falls back to client DOM creation."
+  },
+  "production_failures": [
+    {
+      "symptom": "Flash of unstyled content and 300 ms INP spike right after page load",
+      "root_cause": "Rendering timezone-dependent dates during SSR causes a hydration mismatch without a Suspense boundary, discarding and rebuilding the entire root DOM.",
+      "mitigation": "Render a deterministic UTC fallback during SSR and first client pass, then format locale strings inside useEffect."
+    },
+    {
+      "symptom": "Hydration fails only for users with grammar or password-manager extensions",
+      "root_cause": "Mounting the application root directly onto document.body exposes the hydration cursor to extension-injected sibling nodes.",
+      "mitigation": "Mount the application inside a dedicated wrapper element such as <div id=\"root\">."
+    }
+  ],
+  "sources": [
+    "https://react.dev/reference/react-dom/client/hydrateRoot",
+    "https://html.spec.whatwg.org/multipage/parsing.html"
+  ]
+}

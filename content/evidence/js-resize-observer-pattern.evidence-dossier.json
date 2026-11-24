@@ -1,0 +1,40 @@
+{
+  "concept_id": "js-resize-observer-pattern",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/resize-observer/",
+      "spec_section": "ResizeObserver Lifetime",
+      "quote": "ResizeObserver notifications are delivered after layout and before paint."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "superseded",
+    "chrome": "64+",
+    "firefox": "69+",
+    "safari": "13.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Initial Layout",
+      "ResizeObserver Callback",
+      "Re-Layout"
+    ],
+    "mechanism_summary": "Double Layout/Paint pass when the JS callback toggles CSS classes."
+  },
+  "production_failures": [
+    {
+      "symptom": "Console warning ResizeObserver loop limit exceeded",
+      "root_cause": "DOM mutation inside the callback alters the observed element's dimensions.",
+      "mitigation": "Replace with CSS @container queries."
+    },
+    {
+      "symptom": "High CLS on SSR page load",
+      "root_cause": "Container width is unknown until client-side JS mounts.",
+      "mitigation": "Use @container so layout applies directly from initial HTML/CSS."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver"
+  ]
+}

@@ -1,0 +1,64 @@
+---
+id: microfrontend-isolation-models
+title: "Micro-Frontend Isolation: Shadow DOM, Iframes & Module Graphs"
+domain: framework-internals
+maturity_status: baseline-widely
+summary_tldr: "Naive script concatenation leaks global CSS, clobbers window state, and ships duplicate React runtimes. Choosing between Shadow DOM, sandboxed iframes, and shared ES module graphs defines your blast radius and memory budget."
+relations:
+  - target_id: shadow-dom-encapsulation
+    type: requires
+    note: "Shadow DOM provides style and DOM tree scoping without allocating a separate browsing context."
+  - target_id: es-modules-live-bindings
+    type: requires
+    note: "Import maps and Module Federation share singleton framework runtimes across micro-frontends via ES module bindings."
+sources:
+  - "https://html.spec.whatwg.org/multipage/iframe-embed-object.html"
+  - "https://html.spec.whatwg.org/multipage/webappapis.html#import-maps"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "micro-frontends"
+  - "shadow dom"
+  - "iframe isolation"
+  - "import maps"
+---
+
+## TL;DR
+
+Micro-frontends trade isolation strength against memory and UX friction. [Shadow DOM](/concepts/shadow-dom-encapsulation) scopes CSS inside one browsing context, [ES Modules](/concepts/es-modules-live-bindings) import maps deduplicate shared runtimes, and `<iframe>` enforces full origin and JS heap boundaries.
+
+## Interactive Lab
+
+Compare CSS scoping, JS global isolation, and memory overhead across isolation boundaries in `StepMachineLab`.
+
+## Under the Hood
+
+Each isolation primitive enforces a different boundary inside the browser's renderer process.
+
+1. **Module Federation & Import Maps**: Shares a single `window`, `document`, and JS heap; a central dependency resolver negotiates singleton versions (e.g., `react@19`) so remotes do not download duplicate 45 KB runtimes.
+2. **Shadow DOM + Proxy Sandbox**: `attachShadow({ mode: 'open' })` blocks outer CSS selectors from bleeding inward, while a `Proxy(window)` sandbox intercepts global property writes per sub-app.
+3. **Cross-Origin `<iframe>`**: Allocates an isolated browsing context (and often a separate OS site-isolation process via COOP/COEP), communicating strictly over `postMessage()` structured clones.
+
+```html
+<script type="importmap">
+  {
+    "imports": {
+      "react": "https://cdn.example.com/react@19/index.js",
+      "@billing/widget": "https://billing.example.com/widget.js"
+    }
+  }
+</script>
+<billing-shell></billing-shell>
+```
+
+## Problem Genealogy
+
+- **2016 (Iframes & Portal Shells)**: Guaranteed fault and CSS isolation, but broke URL deep-linking, accessibility focus, and modal overlays at iframe viewport edges.
+- **2020 (Webpack Module Federation)**: Shared singletons dynamically across independently deployed builds, risking runtime crashes when teams drifted on incompatible peer dependencies.
+- **2024 (Import Maps + Shadow DOM)**: Native browser module resolution paired with declarative Shadow DOM eliminated bundler-specific runtime loaders.
+
+## Production Pitfalls
+
+- **Dual-Framework Heap Bloat**: Loading both React 18 and React 19 remotes without singleton version negotiation duplicates event delegation listeners on `document` and doubles baseline JS memory.
+- **Portal Escape Through Shadow Boundaries**: Rendering a modal via `document.body.appendChild` breaks out of the Shadow DOM root and loses all scoped component styles.
+- **When not to use micro-frontends**: Never split an application owned by fewer than 3 independent teams into runtime micro-frontends; cross-team version skew, duplicate shared chunks, and `postMessage` serialization latency cost more than a modular monorepo.

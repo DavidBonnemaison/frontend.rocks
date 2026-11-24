@@ -1,0 +1,83 @@
+{
+  "type": "step-machine",
+  "id": "zombie-bundle-after-deploy",
+  "title": "Zombie Bundle: Deploy Skew & IndexedDB Corruption",
+  "description": "Step through how a live deploy splits HTML, ESM chunks, bfcache snapshots, and IndexedDB schema versions across open tabs.",
+  "steps": [
+    {
+      "label": "1. Service Worker & HTML Skew",
+      "description": "Deploy v2 lands on the CDN. Tab A still runs v1 under the active Service Worker while Tab B loads v2.",
+      "codeHighlight": "// sw-v1.js still serves cached index.html (referencing chunk-v1.js)",
+      "state": {
+        "tabAVersion": "v1 (SW controlled)",
+        "tabBVersion": "v2 (fresh load)",
+        "idbVersion": 1
+      },
+      "visualNodes": [
+        { "id": "sw", "label": "SW v1 (Active)", "status": "active" },
+        { "id": "cdn", "label": "CDN v2", "status": "done" },
+        { "id": "idb", "label": "IndexedDB v1", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. HTTP Cache & Missing Chunks",
+      "description": "Tab A navigates lazily. Cached index.html requests chunk-8f2a.js, which CDN v2 purged, or mixes immutable v1 modules with v2.",
+      "codeHighlight": "GET /assets/chunk-8f2a.js -> 404 (ChunkLoadError)",
+      "state": {
+        "tabAVersion": "v1 (broken lazy import)",
+        "tabBVersion": "v2",
+        "idbVersion": 1
+      },
+      "visualNodes": [
+        { "id": "sw", "label": "Cached HTML v1", "status": "error" },
+        { "id": "cdn", "label": "CDN v2 (404)", "status": "error" },
+        { "id": "idb", "label": "IndexedDB v1", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Live ESM Binding Mismatch",
+      "description": "Where v1 modules remain in the module map, live ESM bindings expose old state shapes to newly fetched v2 helpers.",
+      "codeHighlight": "export let schemaRev = 1; // stale live binding read by v2 consumer",
+      "state": {
+        "tabAVersion": "v1/v2 hybrid graph",
+        "tabBVersion": "v2",
+        "idbVersion": 1
+      },
+      "visualNodes": [
+        { "id": "sw", "label": "ESM Module Map", "status": "error" },
+        { "id": "cdn", "label": "Mixed Chunks", "status": "error" },
+        { "id": "idb", "label": "IndexedDB v1", "status": "idle" }
+      ]
+    },
+    {
+      "label": "4. bfcache + Schema Bump",
+      "description": "Tab B upgrades IndexedDB to v2. User hits Back in Tab A: bfcache restores the frozen v1 JS heap without firing a network check.",
+      "codeHighlight": "window.addEventListener('pageshow', (e) => e.persisted /* true */);",
+      "state": {
+        "tabAVersion": "v1 (restored from bfcache)",
+        "tabBVersion": "v2 (upgraded DB)",
+        "idbVersion": 2
+      },
+      "visualNodes": [
+        { "id": "sw", "label": "bfcache Heap v1", "status": "error" },
+        { "id": "cdn", "label": "Tab B v2", "status": "done" },
+        { "id": "idb", "label": "IndexedDB v2", "status": "active" }
+      ]
+    },
+    {
+      "label": "5. Silent IndexedDB Corruption",
+      "description": "The zombie v1 runtime in Tab A writes v1-shaped records into the v2 object store, bypassing migration invariants.",
+      "codeHighlight": "store.put({ id: 42, legacyPayload: '...' }); // corrupts v2 index",
+      "state": {
+        "tabAVersion": "v1 zombie writer",
+        "tabBVersion": "v2",
+        "idbVersion": "2 (corrupted)"
+      },
+      "visualNodes": [
+        { "id": "sw", "label": "Zombie Tab A", "status": "error" },
+        { "id": "cdn", "label": "Tab B v2", "status": "done" },
+        { "id": "idb", "label": "Corrupted Store", "status": "error" }
+      ]
+    }
+  ]
+}

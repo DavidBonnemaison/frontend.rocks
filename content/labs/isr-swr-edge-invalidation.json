@@ -1,0 +1,53 @@
+{
+  "type": "step-machine",
+  "id": "isr-swr-edge-invalidation",
+  "title": "ISR & Edge Cache Regeneration",
+  "description": "Trace Edge HIT, STALE single-flight rebuild, and Cache-Tag purge propagation.",
+  "steps": [
+    {
+      "label": "1. Fresh Edge HIT (< s-maxage)",
+      "description": "Visitor hits CDN PoP within 60 s s-maxage window; HTML returns in 15 ms with 0 origin load.",
+      "codeHighlight": "Cache-Control: public, s-maxage=60, stale-while-revalidate=86400",
+      "state": {
+        "edgeStatus": "HIT",
+        "originHits": 0,
+        "ttfbMs": 15
+      },
+      "visualNodes": [
+        { "id": "edge", "label": "CDN PoP: HIT", "status": "done" },
+        { "id": "lock", "label": "Rebuild Lock: Idle", "status": "idle" },
+        { "id": "origin", "label": "Origin: 0 reqs", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. STALE + Single-Flight Rebuild",
+      "description": "TTL expires; edge serves stale HTML in 15 ms and acquires one origin lock to regenerate.",
+      "codeHighlight": "edge.serveStale(); origin.rebuildOnce('/products/42');",
+      "state": {
+        "edgeStatus": "STALE",
+        "originHits": 1,
+        "ttfbMs": 15
+      },
+      "visualNodes": [
+        { "id": "edge", "label": "CDN PoP: STALE (15 ms)", "status": "active" },
+        { "id": "lock", "label": "Single-Flight Lock", "status": "active" },
+        { "id": "origin", "label": "1 Async Rebuild", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. On-Demand Cache-Tag Purge",
+      "description": "CMS webhook purges Cache-Tag: product-42, invalidating all matching edge keys globally.",
+      "codeHighlight": "POST /purge { tags: ['product-42'] }",
+      "state": {
+        "edgeStatus": "PURGED",
+        "tag": "product-42",
+        "nextHitFresh": true
+      },
+      "visualNodes": [
+        { "id": "edge", "label": "CDN PoP: Evicted", "status": "done" },
+        { "id": "lock", "label": "Rebuild Lock: Ready", "status": "done" },
+        { "id": "origin", "label": "Fresh HTML Stored", "status": "done" }
+      ]
+    }
+  ]
+}

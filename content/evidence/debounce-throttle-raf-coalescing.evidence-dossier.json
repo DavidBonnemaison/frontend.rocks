@@ -1,0 +1,43 @@
+{
+  "concept_id": "debounce-throttle-raf-coalescing",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html#animation-frames",
+      "spec_section": "WHATWG HTML: requestAnimationFrame",
+      "quote": "requestAnimationFrame schedules a callback to run immediately before the browser performs the next repaint for the active document."
+    },
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame",
+      "spec_section": "MDN requestAnimationFrame()",
+      "quote": "The callback frequency generally matches the display refresh rate (60Hz, 120Hz) and pauses automatically in background tabs."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "24+ (rAF)",
+    "firefox": "23+ (rAF)",
+    "safari": "6.1+ (rAF)"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["High-Frequency Input Stream (120-240Hz)", "Timer/rAF Gate", "Latest-Value Coalescing", "Single Frame Commit"],
+    "mechanism_summary": "Limits high-frequency event reactions: debounce waits for quietness (network search), throttle caps fixed intervals, and rAF coalescing aligns DOM writes to display VSync."
+  },
+  "production_failures": [
+    {
+      "symptom": "Typing in a search input feels laggy or drops characters when debounced incorrectly",
+      "root_cause": "Both the controlled <input> value and the API fetch were debounced together, delaying keystroke echo by 300ms.",
+      "mitigation": "Update the input state synchronously on every keystroke and debounce only the outbound network request."
+    },
+    {
+      "symptom": "Drag-and-drop janks on 120Hz displays when throttled with setTimeout(..., 16)",
+      "root_cause": "Fixed 16ms setTimeout drifts out of phase with 8.3ms (120Hz) or 16.6ms (60Hz) VSync, causing double-updates in one frame and skipped updates in the next.",
+      "mitigation": "Use requestAnimationFrame coalescing (one pending rAF flag storing latest pointer coordinates) for all visual DOM updates."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame",
+    "https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html#animation-frames",
+    "https://web.dev/articles/optimize-javascript-execution"
+  ]
+}

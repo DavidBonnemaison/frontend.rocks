@@ -1,0 +1,11 @@
+title = "frontend.rocks"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Cloudflare Web Analytics beacon token: public by design, it ships in the HTML of every page."
+condition = "AND"
+paths = ['''src/app/\(site\)/layout\.tsx$''']
+regexTarget = "line"
+regexes = ['''data-cf-beacon''']

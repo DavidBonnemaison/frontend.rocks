@@ -1,0 +1,42 @@
+{
+  "concept_id": "headless-ui-state-primitives",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://www.w3.org/WAI/ARIA/apg/patterns/",
+      "spec_section": "ARIA Authoring Practices Guide — Menu & Dialog Patterns",
+      "quote": "A disclosure or menu trigger must expose aria-expanded and aria-controls referencing the controlled container, and return focus to the trigger upon dismissal."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "60+",
+    "firefox": "55+",
+    "safari": "12+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Deterministic ID & ARIA Relationship Binding",
+      "Controlled/Uncontrolled State Synchronization",
+      "Roving Tabindex & Keyboard Navigation Dispatch",
+      "Top-Layer Promotion & Focus Restoration"
+    ],
+    "mechanism_summary": "Compound primitives share an implicit state machine via Context, synchronizing ARIA attributes, keyboard focus order, and dismissal listeners without prescribing CSS."
+  },
+  "production_failures": [
+    {
+      "symptom": "Dropdown fails to close on outside click or loses keyboard focus",
+      "root_cause": "Passing a custom component to asChild without forwarding refs and merging onClick/onKeyDown handlers drops the primitive's event listeners.",
+      "mitigation": "Ensure custom trigger components spread props and forward refs via React.forwardRef or ref props."
+    },
+    {
+      "symptom": "Controlled modal flickers or ignores close button",
+      "root_cause": "Mixing defaultOpen with open props triggers dual-state desynchronization between internal and parent state.",
+      "mitigation": "Enforce a single source of truth via a controllable state hook that locks to either internal or external state."
+    }
+  ],
+  "sources": [
+    "https://www.w3.org/WAI/ARIA/apg/patterns/",
+    "https://html.spec.whatwg.org/multipage/popover.html"
+  ]
+}

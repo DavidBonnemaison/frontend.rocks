@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "opfs-origin-private-fs",
+  "title": "Binary Persistence: IndexedDB Blobs vs OPFS SyncAccessHandle",
+  "before": {
+    "label": "IndexedDB Async Transaction",
+    "code": "const tx = db.transaction('chunks', 'readwrite');\ntx.objectStore('chunks').put(uint8Chunk, offset);\n// Serializes via structuredClone per write",
+    "metrics": {
+      "lines": 3,
+      "reflows": "Async IDB + Clone",
+      "dependencies": "0 kB"
+    },
+    "previewNote": "Incurs structuredClone + B-tree transaction commit per chunk."
+  },
+  "after": {
+    "label": "OPFS Worker SyncAccessHandle",
+    "code": "const handle = await fileHandle.createSyncAccessHandle();\nhandle.write(uint8Chunk, { at: offset });\nhandle.flush();\nhandle.close();",
+    "metrics": {
+      "lines": 4,
+      "reflows": "Direct OS syscall",
+      "dependencies": "0 kB"
+    },
+    "previewNote": "Zero structuredClone; synchronous byte-range I/O in a worker."
+  }
+}

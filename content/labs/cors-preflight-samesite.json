@@ -1,0 +1,49 @@
+{
+  "type": "step-machine",
+  "id": "cors-preflight-samesite",
+  "title": "CORS Preflight & Credentialed Fetch Flow",
+  "description": "Trace how a cross-origin JSON POST triggers an OPTIONS preflight and SameSite cookie check.",
+  "steps": [
+    {
+      "label": "1. Browser Classifies Request",
+      "description": "fetch('https://api.example.com/v1', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' } }) is non-simple because of application/json.",
+      "codeHighlight": "fetch('https://api.example.com/v1', { method: 'POST', credentials: 'include', ... });",
+      "state": {
+        "simpleRequest": false,
+        "preflightRequired": true,
+        "cookiesAttached": "PENDING"
+      },
+      "visualNodes": [
+        { "id": "browser", "label": "Browser Fetch Layer", "status": "active" },
+        { "id": "api", "label": "api.example.com", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. OPTIONS Preflight & Cache",
+      "description": "Browser sends OPTIONS without cookies. Server responds 204 with Access-Control-Allow-Origin: https://app.example.com, Allow-Credentials: true, and Max-Age: 7200.",
+      "codeHighlight": "Access-Control-Allow-Credentials: true\nAccess-Control-Max-Age: 7200",
+      "state": {
+        "preflightStatus": 204,
+        "preflightCachedSeconds": 7200,
+        "originMatched": true
+      },
+      "visualNodes": [
+        { "id": "browser", "label": "Preflight Verified", "status": "done" },
+        { "id": "api", "label": "204 + ACAO Exact Origin", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Actual POST + SameSite Check",
+      "description": "Browser dispatches the POST. SameSite=None; Secure cookies attach; SameSite=Lax cookies are withheld if cross-site.",
+      "codeHighlight": "Set-Cookie: sid=abc; SameSite=None; Secure; HttpOnly",
+      "state": {
+        "postDispatched": true,
+        "responseReadableByJs": true
+      },
+      "visualNodes": [
+        { "id": "browser", "label": "JS Receives JSON", "status": "done" },
+        { "id": "api", "label": "200 OK", "status": "done" }
+      ]
+    }
+  ]
+}

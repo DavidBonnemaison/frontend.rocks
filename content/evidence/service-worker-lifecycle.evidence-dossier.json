@@ -1,0 +1,43 @@
+{
+  "concept_id": "service-worker-lifecycle",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://w3c.github.io/ServiceWorker/#service-worker-lifecycle",
+      "spec_section": "W3C Service Workers: Lifecycle",
+      "quote": "A service worker has an associated state, which is one of parsed, installing, installed, activating, activated, or redundant."
+    },
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers",
+      "spec_section": "MDN Service Worker Lifecycle",
+      "quote": "Until all pages controlled by the previous service worker are closed, the new worker remains in the waiting state unless skipWaiting() is invoked."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "40+",
+    "firefox": "44+",
+    "safari": "11.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Register & Byte-Check", "Install (waitUntil precache)", "Waiting (Tab Lock)", "Activate (clients.claim) & Fetch Intercept"],
+    "mechanism_summary": "Runs an event-driven worker thread decoupled from any DOM tab that intercepts origin fetches and enforces single-version tab ownership until old clients unload."
+  },
+  "production_failures": [
+    {
+      "symptom": "Users stuck on broken mixed-version app after deploy (old HTML + new chunk URLs or vice versa)",
+      "root_cause": "Calling self.skipWaiting() unconditionally caused the new service worker to take over an already-loaded tab whose DOM referenced old asset hashes.",
+      "mitigation": "Prompt the user to reload when a waiting worker is detected, or ensure all chunk URLs are content-hashed and retained across overlapping deploys."
+    },
+    {
+      "symptom": "Service worker update never installs even after deploying new code",
+      "root_cause": "sw.js itself was served with Cache-Control: max-age=86400 or its byte-for-byte contents didn't change.",
+      "mitigation": "Serve sw.js with Cache-Control: no-cache (or max-age=0) so the browser always revalidates the worker script on navigation."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers",
+    "https://web.dev/articles/service-worker-lifecycle",
+    "https://w3c.github.io/ServiceWorker/"
+  ]
+}

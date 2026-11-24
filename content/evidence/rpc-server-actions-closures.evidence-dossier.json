@@ -1,0 +1,42 @@
+{
+  "concept_id": "rpc-server-actions-closures",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://react.dev/reference/rsc/server-actions",
+      "spec_section": "Server Functions & Security",
+      "quote": "Server Functions create public HTTP endpoints and should be treated with the same security assumptions as any public API route, validating both authentication and arguments."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-newly",
+    "chrome": "105+",
+    "firefox": "105+",
+    "safari": "16+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Build-Time Action ID & Client Stub Extraction",
+      "Lexical Closure Encryption & .bind() Attachment",
+      "POST Wire Serialization (Multipart / Flight)",
+      "Server Action Lookup, Auth Check & Streamed Response"
+    ],
+    "mechanism_summary": "Bundlers compile 'use server' functions into opaque action IDs with encrypted bound closures, dispatching POST requests that return updated UI trees in one round-trip."
+  },
+  "production_failures": [
+    {
+      "symptom": "Unauthorized data mutation via replayed POST requests",
+      "root_cause": "Assuming a Server Action hidden inside an admin component cannot be invoked directly without checking session permissions inside the action body.",
+      "mitigation": "Always authenticate the caller and verify resource ownership at the top of every 'use server' function."
+    },
+    {
+      "symptom": "Runtime crash: 'Only plain objects can be passed to Server Functions'",
+      "root_cause": "Invoking a Server Action with a DOM SyntheticEvent, class instance, or function reference that fails wire serialization.",
+      "mitigation": "Extract plain primitives or FormData before calling the Server Action."
+    }
+  ],
+  "sources": [
+    "https://react.dev/reference/rsc/server-actions",
+    "https://html.spec.whatwg.org/multipage/structured-data.html"
+  ]
+}

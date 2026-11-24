@@ -1,0 +1,66 @@
+---
+id: web-animations-api
+title: "Web Animations API (WAAPI)"
+domain: rendering-pipeline
+maturity_status: baseline-widely
+summary_tldr: "element.animate() exposes the browser’s native compositor animation engine to JavaScript with pause, reverse, and finished promises."
+relations:
+  - target_id: requestanimationframe-vsync
+    type: requires
+    note: "WAAPI replaces manual rAF loops for imperative keyframe animations."
+  - target_id: gpu-compositor-layers
+    type: requires
+    note: "Compositor-friendly properties (transform, opacity) run off the main thread."
+  - target_id: view-transitions-api
+    type: contrasts_with
+    note: "WAAPI animates live DOM properties on one tree, whereas View Transitions crossfade rasterized old/new snapshots."
+sources:
+  - "https://drafts.csswg.org/web-animations-1/"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Web_Animations_API"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "WAAPI"
+  - "element.animate"
+  - "Animation"
+  - "compositor"
+  - "keyframes"
+web_feature_id: web-animations
+---
+
+## TL;DR
+
+The Web Animations API (WAAPI) lets JavaScript drive the exact same C++ animation engine that powers CSS `@keyframes`. Calling `element.animate()` with compositor properties offloads interpolation to the GPU thread while giving JS a Promise-based `Animation` controller.
+
+## Interactive Lab
+
+Compare a main-thread [rAF](/concepts/requestanimationframe-vsync) loop against compositor-offloaded `element.animate()` in `PatternComparatorLab`.
+
+## Under the Hood
+
+A manual rAF loop is a pilot hand-flying every millisecond; WAAPI files a flight plan with the autopilot on the Compositor Thread and steps out of the cockpit.
+
+1. **Keyframe Serialization**: When keyframes only touch [GPU Compositor Layers](/concepts/gpu-compositor-layers) properties (`transform`, `opacity`, `filter`, `clip-path`), the engine ships the timing curve to the Compositor Thread.
+2. **Playback Control**: `anim.pause()`, `anim.reverse()`, `anim.playbackRate`, and `await anim.finished` synchronize with the underlying timeline without polling.
+3. **Commit & Cleanup**: Avoid leaving `fill: 'forwards'` active forever; persist final values with `anim.commitStyles()` and release the animation.
+
+```js
+const anim = card.animate(
+  [{ transform: 'translateY(16px)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }],
+  { duration: 220, easing: 'cubic-bezier(0.2, 0, 0, 1)', fill: 'forwards' }
+);
+await anim.finished;
+anim.commitStyles();
+anim.cancel();
+```
+
+## Problem Genealogy
+
+- **2012–2016**: Developers either hacked CSS class toggles with fragile `transitionend` listeners or wrote heavy JS tweening libraries.
+- **2020+**: All major engines converged on WAAPI Level 1, unifying CSS animations, transitions, and JS-created animations under one timeline model.
+
+## Production Pitfalls
+
+- **`fill: 'forwards'` retention**: Completed filling animations stay in memory and override inline styles until explicitly canceled.
+- **Main-thread fallback**: Adding `height` or `margin` to a WAAPI keyframe silently demotes the entire animation to the main thread.
+- **When not to use WAAPI**: For simple state transitions (hover, focus, open/close), plain CSS `transition` is simpler and requires zero JavaScript; for route or DOM-swap morphs, use the [View Transitions API](/concepts/view-transitions-api).

@@ -1,0 +1,151 @@
+---
+id: indexeddb-versionchange-deadlock
+case_number: 14
+title: "Autopsy #14: The Schema Migration That Froze Every Open Tab"
+symptom: "After a routine IndexedDB version bump, every newly opened tab hangs indefinitely on the splash screen with zero network requests and no console errors."
+failure_mode: cascading-latency
+format: narrative
+case_type: composite
+cast:
+  - thomas
+  - karim
+  - marc
+traversed_concepts:
+  - concept_id: client-storage-schema-migrations
+    step_order: 1
+    role_in_chain: "Bumping indexedDB.open() to v4 requires an origin-wide versionchange lock that fires onblocked forever when older tabs omit db.onversionchange."
+  - concept_id: service-worker-lifecycle
+    step_order: 2
+    role_in_chain: "Calling self.skipWaiting() activates the v4 worker immediately, serving v4 bundles to new tabs while old tabs still hold v3 database handles."
+  - concept_id: bfcache-navigation
+    step_order: 3
+    role_in_chain: "Pages holding open IndexedDB connections block bfcache or stall versionchange handshakes unless db.close() runs on pagehide."
+  - concept_id: indexeddb-transactions-quotas
+    step_order: 4
+    role_in_chain: "Awaiting fetch() inside onupgradeneeded drains the microtask queue and auto-commits the versionchange transaction, throwing TransactionInactiveError."
+  - concept_id: broadcast-channel-web-locks
+    step_order: 5
+    role_in_chain: "BroadcastChannel notifies legacy tabs to prompt a clean reload after db.close(), while navigator.locks serializes the post-upgrade backfill to one tab."
+case_file:
+  trigger: "Bumped `indexedDB.open('workspace-db', 4)` to add a `byUpdated` search index without a `versionchange` handler in v3 tabs"
+  symptom: "Every newly opened tab hung indefinitely on the boot spinner with zero API calls and zero console errors"
+  root_cause: "Open v3 `IDBDatabase` handles held the origin-wide upgrade lock, firing `onblocked` on every v4 `open()` request"
+  bad_fixes:
+    - label: "`self.skipWaiting()` + `clients.claim()`"
+      outcome: "Accelerated the split-brain between v4 new tabs and v3 background tabs without closing a single DB handle"
+    - label: "3-second timeout calling `indexedDB.deleteDatabase()`"
+      outcome: "Also queued behind the open v3 handle, then wiped all offline drafts the instant the old tab closed"
+  fix: "Attach `db.onversionchange = () => db.close()`, close handles on `pagehide`, keep `onupgradeneeded` pure DDL, and coordinate reload and backfill via `BroadcastChannel` and `navigator.locks`"
+  how_to_spot: "DevTools → Application → IndexedDB shows version 3 while `open(4)` promises stay pending forever and `onblocked` fires"
+  deleted: "`self.skipWaiting()` hijack, `deleteDatabase()` timeout fallback, `await fetch()` inside `onupgradeneeded`"
+reading_time_min: 8
+sources:
+  - "https://w3c.github.io/IndexedDB/#upgrade-transaction-steps"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase/versionchange_event"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/IDBOpenDBRequest/blocked_event"
+  - "https://web.dev/articles/bfcache"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API"
+last_verified_at: "2026-11-18"
+proof_status: unverified
+lab_id: indexeddb-versionchange-deadlock
+---
+
+## One index, eight pinned tabs
+
+Thomas asked for one small improvement before the quarterly planning sprint: local search in our workspace app was taking 600 ms when he was offline on the train, and sorting results by `updatedAt` needed a proper index.
+
+The pull request was eleven lines long. We bumped `indexedDB.open('workspace-db', 4)` from version 3 to version 4 and added `store.createIndex('byUpdated', 'updatedAt')` inside `onupgradeneeded`. Local testing was spotless. Our Playwright suite opened a fresh browser profile, ran the migration in 4 ms, and turned green. Karim approved the PR on his phone while walking to the sandwich shop, and we deployed at 13:15.
+
+We had tested the upgrade with one tab open. Nobody in the company uses the app with one tab open, least of all Thomas, who keeps eight workspace tabs pinned in Chrome from Monday morning until Friday evening.
+
+## The splash screen that never blinked
+
+Eighteen minutes after deploy, Marc posted a Grafana chart in `#frontend` showing `/api/bootstrap` traffic dropping by nearly half even though the CDN was serving `200 OK` on every bundle.
+
+"Either everyone went home early," Marc wrote, "or the app forgot how to make HTTP requests."
+
+Two minutes later, Thomas replied from his desk. His seven pinned tabs were working fine. The eighth tab, which he had just opened from a Slack link, was sitting on the grey loading spinner. No red text in the Console. No failed call in the Network panel. Just a polite spinner waiting for `await openDatabase()` to resolve before mounting React.
+
+He tried opening a ninth tab to see if the eighth was a fluke. Now he had two polite spinners.
+
+## Two bad fixes before anyone opened DevTools
+
+Karim's first theory was a stale Service Worker serving half-old assets. He shipped a quick fix adding `self.skipWaiting()` and `clients.claim()` to `sw.js` so the new worker would take over immediately.
+
+That did not unblock a single spinner. Worse, under the [Service Worker lifecycle](/concepts/service-worker-lifecycle), forcing `v4` to hijack existing tabs meant new navigations loaded the v4 bundle immediately while Thomas's seven older tabs stayed alive in memory running v3 JavaScript with open v3 database connections. We had turned a gradual rollout into a guaranteed split-brain across every user with more than one tab.
+
+Karim's second idea was a 3-second timeout around `indexedDB.open()`: if the promise did not settle, call `indexedDB.deleteDatabase('workspace-db')` and retry from scratch. We tested it on staging with two tabs open. First, `deleteDatabase()` hung too, because deleting a database requires the exact same exclusive lock as upgrading one. Second, the moment we closed the old tab, `deleteDatabase()` unblocked and quietly erased 40 local drafts before reopening an empty v4 store. Marc quietly closed the PR without leaving a comment.
+
+## Knocking on a door with no doorbell
+
+<CausalChainStepper />
+
+The bug was sitting in plain sight in Chrome DevTools under Application → IndexedDB. The database was still at version 3. Our v4 `open()` request was not slow; it was deadlocked in `onblocked`.
+
+The [client storage schema migration](/concepts/client-storage-schema-migrations) rules in the IndexedDB specification enforce an origin-wide single-writer lock during schema changes. When Tab 8 calls `indexedDB.open('workspace-db', 4)`, the browser cannot start `onupgradeneeded` until every existing `IDBDatabase` handle on version 3 calls `db.close()`. To ask politely, the browser dispatches a `versionchange` event on every open v3 connection.
+
+Our v3 code had never attached `db.onversionchange`. It was like trying to remodel a conference room while seven people sit inside with the door bolted and nobody ever wired up the doorbell. The v4 request fired `onblocked`, which we also had no listener for, and then waited forever.
+
+While tracing the remaining blocked tabs in staging, we found a second quiet culprit: [Back/Forward Cache (bfcache)](/concepts/bfcache-navigation). Users who navigated away from the workspace to our docs site left a frozen page snapshot holding an open v3 `IDBDatabase` connection. Under browser bfcache rules, an active IndexedDB transaction prevents bfcache eligibility outright, and an idle open connection receiving `versionchange` while frozen forces eviction or stalls the handoff until the handle closes. Closing `db.close()` on `pagehide` and reopening lazily on `pageshow` when `event.persisted` is true kept both bfcache and schema upgrades clean.
+
+## First try: awaiting fetch inside upgradeneeded
+
+We added `db.onversionchange = () => db.close()` on every opened connection, added `pagehide` cleanup, and removed `self.skipWaiting()`. In our two-tab staging test, the v4 upgrade unblocked in 12 ms.
+
+Then we got ambitious. Because existing local records were missing a normalized search token needed by the new `byUpdated` view, we tried to fetch the missing metadata inside `onupgradeneeded` before the upgrade finished.
+
+```ts
+// First try: auto-commits during await fetch(), throws TransactionInactiveError
+req.onupgradeneeded = async () => {
+  const store = req.transaction!.objectStore('docs');
+  store.createIndex('byUpdated', 'updatedAt');
+  const tokens = await fetch('/api/search-tokens').then((r) => r.json());
+  for (const t of tokens) store.put(t); // TransactionInactiveError
+};
+```
+
+First try: the database silently committed to version 4, `store.put(t)` threw `TransactionInactiveError`, and the new search view came up empty.
+
+Under the [IndexedDB transaction model](/concepts/indexeddb-transactions-quotas), a `versionchange` transaction follows the same auto-commit rule as every other transaction: the instant the microtask queue drains with no pending `IDBRequest`, the browser commits and closes the transaction. While `await fetch()` was waiting 140 ms for the server, the event loop drained, the transaction committed and shut its own door, and `store.put(t)` threw `TransactionInactiveError` as an unhandled rejection.
+
+## Coordinating the handoff across tabs
+
+<FailureSimulator />
+
+We separated structural DDL from data backfill and wired a proper cross-tab handoff using [BroadcastChannel and Web Locks](/concepts/broadcast-channel-web-locks).
+
+1. `onupgradeneeded` now runs synchronous, idempotent store and index creation only, with zero `await` on non-IDB promises.
+2. Every tab attaches `db.onversionchange` immediately inside `onsuccess`, closes its handle, and listens on `BroadcastChannel('workspace-db-schema')` so older v3 tabs show a calm "Workspace updated, reload to continue" banner instead of failing on their next write.
+3. On `pagehide`, each tab closes its `IDBDatabase` handle so bfcache snapshots never hold stale locks.
+4. Once `open('workspace-db', 4)` resolves, a single tab acquires `navigator.locks.request('workspace-db-seed-v4', { ifAvailable: true }, ...)` to fetch and write the search tokens in a short `readwrite` transaction after the network call completes, so eight tabs never stampede Marc's API gateway at once.
+
+```ts
+const bus = new BroadcastChannel('workspace-db-schema');
+
+export function openWorkspaceDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('workspace-db', 4);
+    req.onupgradeneeded = (e) => {
+      if (e.oldVersion < 4) {
+        req.transaction!.objectStore('docs').createIndex('byUpdated', 'updatedAt');
+      }
+    };
+    req.onblocked = () => bus.postMessage({ type: 'UPGRADE_WAITING', version: 4 });
+    req.onsuccess = () => {
+      const db = req.result;
+      db.onversionchange = () => { db.close(); showReloadBanner(); };
+      window.addEventListener('pagehide', () => db.close(), { once: true });
+      resolve(db);
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+```
+
+## What stayed in the codebase
+
+<CaseFile />
+
+An IndexedDB version bump is not a single-tab migration; it is a distributed lock across every open tab on your origin.
+
+Thomas still keeps eight workspace tabs pinned from Monday to Friday, and Karim still approves eleven-line PRs on his way to the sandwich shop. The difference is that when version 5 ships next month, all eight tabs will actually answer the doorbell.

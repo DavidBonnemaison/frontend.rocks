@@ -1,0 +1,43 @@
+{
+  "concept_id": "long-tasks-and-inp",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://w3c.github.io/longtasks/",
+      "spec_section": "3.1 PerformanceLongTaskTiming",
+      "quote": "A long task is any task whose duration on the main thread exceeds 50 milliseconds."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "96+",
+    "firefox": "144+",
+    "safari": "14.1+",
+    "notes": "INP became a Core Web Vital in March 2024; Long Animation Frames (LoAF) extends Long Tasks in Chromium."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Input Hardware Dispatch (Click / Keydown)",
+      "Input Delay (Blocked by Active Long Task)",
+      "Processing Duration (Event Handlers)",
+      "Presentation Delay (Style, Layout, Paint, Composite)"
+    ],
+    "mechanism_summary": "INP measures the full latency from user input to next frame presentation: Input Delay + Processing Duration + Presentation Delay, dominated by >50ms Long Tasks."
+  },
+  "production_failures": [
+    {
+      "symptom": "INP P75 spikes above 450ms on product filter clicks",
+      "root_cause": "Synchronous React/DOM re-render of 2,000 list items blocks the main thread for 350ms, followed by a 100ms Layout/Paint pass.",
+      "mitigation": "Virtualize the list, defer non-urgent state updates, and yield before heavy post-click work."
+    },
+    {
+      "symptom": "Input Delay alone exceeds 200ms despite tiny click handler",
+      "root_cause": "Third-party tag manager or hydration script runs a 250ms Long Task when the user taps before hydration finishes.",
+      "mitigation": "Break hydration into <50ms chunks with scheduler.yield() and audit Long Animation Frames (LoAF)."
+    }
+  ],
+  "sources": [
+    "https://w3c.github.io/longtasks/",
+    "https://web.dev/articles/inp"
+  ]
+}

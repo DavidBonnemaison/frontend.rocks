@@ -1,0 +1,64 @@
+---
+id: async-determinism-fake-timers
+title: "Async Determinism, Fake Timers & Microtask Draining"
+domain: testing-verification
+maturity_status: baseline-widely
+summary_tldr: "Real setTimeout calls in tests bake CI CPU jitter into assertions; fake timers replace wall-clock APIs with a deterministic queue that still breaks if microtasks are not drained."
+relations:
+  - target_id: event-loop-tasks-microtasks
+    type: requires
+    note: "Advancing fake macrotask timers without draining the microtask queue leaves Promise continuations unresolved."
+  - target_id: requestanimationframe-vsync
+    type: requires
+    note: "Fake timers mock requestAnimationFrame at fixed 16ms intervals rather than hardware VSync signals."
+sources:
+  - "https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html"
+  - "https://vitest.dev/api/vi.html#vi-usefaketimers"
+  - "https://github.com/sinonjs/fake-timers"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "fake-timers"
+  - "microtasks"
+  - "determinism"
+  - "flaky-tests"
+  - "event-loop"
+---
+
+## TL;DR
+
+Fake timers replace `Date`, `setTimeout`, and `requestAnimationFrame` with a virtual priority queue so time-dependent code runs in milliseconds without OS scheduler jitter. Advancing virtual time synchronously still fails when callbacks schedule Promises on the [Microtask Queue](/concepts/event-loop-tasks-microtasks) unless you drain microtasks between ticks.
+
+## Interactive Lab
+
+Step through virtual clock advancement, macrotask execution, and microtask queue draining in `StepMachineLab`.
+
+## Under the Hood
+
+Calling `useFakeTimers()` monkey-patches global scheduling APIs on `globalThis` and maintains an integer `now` cursor plus a min-heap of pending timer records.
+
+1. **Clock Virtualization**: `setTimeout(fn, 300)` inserts `{ id, runAt: now + 300, fn }` into the heap instead of registering an OS kernel timer.
+2. **Synchronous vs Async Advancement**: `advanceTimersByTime(300)` pops and executes macrotask callbacks synchronously, whereas `advanceTimersByTimeAsync(300)` yields an `await Promise.resolve()` checkpoint after each timer so microtasks drain in spec order.
+3. **VSync Emulation**: Mocked [requestAnimationFrame](/concepts/requestanimationframe-vsync) schedules callbacks at fixed 16ms virtual offsets rather than waiting for compositor frame deadlines.
+
+```ts
+vi.useFakeTimers();
+let saved = false;
+setTimeout(() => Promise.resolve().then(() => { saved = true; }), 200);
+
+// Sync advance runs setTimeout, but Promise.then stays queued until await
+await vi.advanceTimersByTimeAsync(200);
+expect(saved).toBe(true);
+```
+
+## Problem Genealogy
+
+- **2012 (Real `sleep(500)` in Mocha/Jasmine)**: Suites accumulated 30s-120s of idle wall-clock wait time and flaked whenever CI runners throttled CPU shares.
+- **2015 (`lolex` / `@sinonjs/fake-timers`)**: Eliminated wall-clock waits, but synchronous `tick()` broke `async/await` chains by starving microtask checkpoints.
+- **2022 (`advanceTimersByTimeAsync`)**: Interleaved macrotask timer pops with microtask queue flushes, matching browser event-loop turn boundaries.
+
+## Production Pitfalls
+
+- **Deadlocked `waitFor` Polling**: Testing-library `waitFor()` polls with `setTimeout` internally; enabling fake timers without `advanceTimers` freezes `waitFor()` until the real test timeout kills the worker.
+- **Unpatched `queueMicrotask` or Worker Clocks**: Fake timers only patch globals in the main test realm; Web Workers and native C++ `fetch` timeouts keep reading real monotonic hardware clocks.
+- **When not to use Fake Timers**: Never enable fake timers for tests awaiting real network sockets, IndexedDB transactions, or multi-frame CSS animations driven by compositor timelines, because virtualizing `setTimeout` stalls internal polling loops and desynchronizes real I/O deadlines.

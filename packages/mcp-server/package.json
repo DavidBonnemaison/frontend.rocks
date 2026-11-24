@@ -1,0 +1,45 @@
+{
+  "name": "@frontend-rocks/mcp",
+  "version": "1.0.0",
+  "description": "Official zero-backend Model Context Protocol (MCP) server for frontend.rocks — browser internals, production failure autopsies, and pattern obsolescence intelligence.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "frontend-rocks-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node ./dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "frontend",
+    "browser-internals",
+    "web-platform",
+    "debugging",
+    "architecture-autopsies",
+    "frontend-rocks"
+  ],
+  "homepage": "https://frontend.rocks/agents/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DavidBonnemaison/frontend-rocks-skills.git",
+    "directory": "packages/mcp-server"
+  }
+}

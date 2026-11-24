@@ -1,0 +1,48 @@
+{
+  "concept_id": "hierarchical-statecharts-actors",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://www.w3.org/TR/scxml/",
+      "spec_section": "3.13 Selecting and Executing Transitions",
+      "quote": "Transitions are selected in document order starting from the innermost active atomic states; exiting a parent state exits all active descendant states."
+    },
+    {
+      "source_url": "https://stately.ai/docs/actors",
+      "spec_section": "Stately Docs: Actor Model",
+      "quote": "An actor is a self-contained entity with its own private state that communicates with other actors exclusively by sending and receiving asynchronous events."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+ (Pure JS Statechart / Actor Runtime)",
+    "firefox": "1+ (Pure JS Statechart / Actor Runtime)",
+    "safari": "1+ (Pure JS Statechart / Actor Runtime)"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Leaf-to-Root Event Resolution",
+      "LCCA (Least Common Compound Ancestor) Computation",
+      "Descendant Exit & Actor Teardown",
+      "Target Entry & Spawned Actor Initialization"
+    ],
+    "mechanism_summary": "Resolves events from deepest active child states up to ancestor states, exiting active subtrees and stopping spawned actors before entering target states."
+  },
+  "production_failures": [
+    {
+      "symptom": "User cancels multi-step upload wizard, yet Step 2 chunked upload continues consuming bandwidth",
+      "root_cause": "Parent transition to 'cancelled' did not invoke the child upload actor's AbortController cleanup on exit.",
+      "mitigation": "Invoke async uploads as child actors scoped to the 'uploading' state so SCXML exit rules cancel the actor automatically."
+    },
+    {
+      "symptom": "Main thread freezes with maximum call stack exceeded on form validation",
+      "root_cause": "Eventless 'always' transition oscillates between 'validating' and 'invalid' because the guard mutates context on every microstep.",
+      "mitigation": "Gate automatic transitions on explicit user events or immutable guard predicates that cannot re-fire in the same macrostep."
+    }
+  ],
+  "sources": [
+    "https://www.w3.org/TR/scxml/",
+    "https://stately.ai/docs/statecharts",
+    "https://stately.ai/docs/actors"
+  ]
+}

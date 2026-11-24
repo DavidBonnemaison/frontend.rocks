@@ -1,0 +1,62 @@
+---
+id: temporal-api-dates
+title: Temporal API and Timezone-Safe Dates
+domain: js-runtime
+maturity_status: interop-experimental
+summary_tldr: "Eliminate mutable Date bugs, 0-indexed month traps, and DST off-by-one-hour errors—Temporal separates physical Instants from wall-clock PlainDate and ZonedDateTime."
+relations:
+  - target_id: prototype-chain-lookup
+    type: requires
+    note: "Temporal types expose immutable value methods on dedicated prototypes without mutating receivers."
+  - target_id: structured-clone-algorithm
+    type: contrasts_with
+    note: "Unlike legacy Date, Temporal objects require explicit ISO string serialization across postMessage."
+sources:
+  - "https://tc39.es/proposal-temporal/docs/"
+  - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "temporal"
+  - "date"
+  - "timezone"
+  - "dst"
+web_feature_id: temporal
+---
+
+## TL;DR
+
+`Temporal` replaces JavaScript's mutable, zero-indexed `Date` with immutable domain types: `Temporal.Instant` for exact timestamps, `Temporal.PlainDate` for calendar dates without timezones, and `Temporal.ZonedDateTime` for IANA timezone and Daylight Saving Time arithmetic.
+
+## Interactive Lab
+
+Compare mutable `Date` UTC-offset traps against immutable `Temporal` types in `PatternComparatorLab`.
+
+## Under the Hood
+
+`Temporal` replaces `Date`'s single mutable epoch-millisecond slot with distinct immutable types: `Instant` for physical time, `PlainDate` for calendar dates, and `ZonedDateTime` backed by ICU4X IANA timezone tables. Engines enforce explicit conversions across these boundaries, eliminating silent UTC-offset and DST arithmetic bugs.
+
+1. **Strict Type Boundaries**: Engines enforce explicit conversions between `PlainDate` and `ZonedDateTime`, exposing immutable methods via dedicated [Prototype Chains](/concepts/prototype-chain-lookup).
+2. **ICU4X Timezone Rules**: `ZonedDateTime.add({ days: 1 })` consults IANA transition tables so 23-hour and 25-hour DST days keep the same wall-clock hour.
+3. **Serialization**: Unlike `Date` in [Structured Clone](/concepts/structured-clone-algorithm), `Temporal` values serialize cleanly via `.toString()` (RFC 9557) across workers and JSON.
+
+```js
+const nyMeeting = Temporal.ZonedDateTime.from(
+  '2026-03-08T09:00:00[America/New_York]'
+);
+// Crosses spring-forward DST cleanly at 09:00 local time
+const nextDay = nyMeeting.add({ days: 1 });
+console.log(nextDay.toString());
+```
+
+## Problem Genealogy
+
+- **1995 (ES1 `Date`)**: Copied `java.util.Date` with mutable setters, 0-indexed months, and no IANA timezone support.
+- **2012 (`Intl.DateTimeFormat`)**: Added formatting for IANA timezones, yet parsing and arithmetic stayed broken.
+- **2024+ (TC39 `Temporal`)**: Shipped immutable calendar/timezone primitives backed by ICU4X in browsers and polyfills.
+
+## Production Pitfalls
+
+- **Unpolyfilled Safari/Legacy Browsers**: Shipping `Temporal` directly without `@js-temporal/polyfill` throws `ReferenceError` on unsupported engines.
+- **Ambiguous DST Wall Times**: Repeating 01:30 AM during fall-back requires specifying `{ disambiguation: 'compatible' | 'earlier' | 'later' | 'reject' }`.
+- **When not to use `Temporal.Instant`**: Never use `Instant` for future birthdays or recurring 9 AM meetings, if a country changes its DST law, an `Instant` shifts on the local clock; store `PlainDate` or `ZonedDateTime` instead.

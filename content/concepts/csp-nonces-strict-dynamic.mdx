@@ -1,0 +1,60 @@
+---
+id: csp-nonces-strict-dynamic
+title: Content Security Policy Nonces and strict-dynamic
+domain: security-a11y
+maturity_status: baseline-widely
+summary_tldr: "HTTP-header script execution allowlist using per-response cryptographic nonces and 'strict-dynamic' trust propagation to block injected scripts without brittle domain allowlists."
+relations:
+  - target_id: preload-scanner-hints
+    type: requires
+    note: "The browser HTML parser and preload scanner evaluate script nonces before executing fetched scripts."
+  - target_id: dom-xss-trusted-types
+    type: under_the_hood
+    note: "Combining nonce-based CSP with Trusted Types blocks both initial script injection and runtime DOM sinks."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP"
+  - "https://w3c.github.io/webappsec-csp/"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "CSP"
+  - "strict-dynamic"
+  - "nonce"
+  - "XSS mitigation"
+---
+
+## TL;DR
+
+A nonce-based Content Security Policy (`script-src 'nonce-<random>' 'strict-dynamic'`) replaces porous domain allowlists with a per-response cryptographic token. Only scripts carrying the matching `nonce` (and child scripts they dynamically load) execute, neutralizing injected `<script>` tags and inline event handlers.
+
+## Interactive Lab
+
+Step through per-request nonce validation, `'strict-dynamic'` chunk inheritance, and blocked script injection.
+
+## Under the Hood
+
+Domain-allowlist CSPs are like checking guest IDs only by hometown ("anyone from `*.googleapis.com` may enter"); `'nonce-...' 'strict-dynamic'` issues a single-use wristband at the door and lets badged guests escort their own sub-bundles inside.
+
+1. **Header vs Parser**: Before the [Preload Scanner](/concepts/preload-scanner-hints) or JS engine runs a `<script>`, it verifies that the element's `nonce` attribute matches the HTTP response header token.
+2. **Trust Propagation**: `'strict-dynamic'` lets a nonce-verified root bundle append dynamic `<script>` chunks (such as Vite/Next.js code-split bundles) without stamping every chunk URL, pairing cleanly with [Trusted Types](/concepts/dom-xss-trusted-types).
+3. **Allowlist Bypass Closure**: When `'strict-dynamic'` is active, legacy host allowlists and `'unsafe-inline'` are ignored, closing JSONP and Angular-template bypasses on whitelisted CDNs.
+
+```http
+Content-Security-Policy:
+  default-src 'self';
+  script-src 'nonce-8fK2pQ9xL4mN7vR1' 'strict-dynamic';
+  object-src 'none';
+  base-uri 'none';
+```
+
+## Problem Genealogy
+
+- **2012 (CSP Level 1 Host Allowlists)**: Teams whitelisted CDN domains, only to discover hosted JSONP endpoints and `unsafe-inline` broke the policy.
+- **2016 (CSP Level 3 `'strict-dynamic'`)**: Introduced cryptographic nonces + transitive trust for dynamic module loaders.
+- **2022+ (Edge Middleware Nonces)**: Per-request nonces became standard in Next.js, Cloudflare Workers, and SSR frameworks.
+
+## Production Pitfalls
+
+- **Caching HTML with a baked-in nonce**: If a CDN serves the same `nonce` to multiple users, attackers can read it and craft matching `<script nonce="...">` payloads; mint nonces dynamically per response.
+- **Omitting `base-uri 'none'` and `object-src 'none'`**: Without `base-uri 'none'`, an injected `<base href="https://evil.test">` hijacks relative script URLs even under a strict nonce policy.
+- **When not to use CSP nonces**: Static SPAs served from an immutable CDN without edge compute should use SHA-256 script hashes (`'sha256-...'`) instead of nonces.

@@ -1,0 +1,67 @@
+---
+id: visual-regression-subpixel-rendering
+title: "Visual Regression Testing & Deterministic Rasterization"
+domain: testing-verification
+maturity_status: baseline-widely
+summary_tldr: "Screenshot diffs generated on macOS Retina fail in Linux CI because CoreText and FreeType rasterize subpixel glyph edges differently; pinning container rasterizers and fonts eliminates false diffs."
+relations:
+  - target_id: device-pixel-ratio-subpixel
+    type: requires
+    note: "Device pixel ratio and subpixel anti-aliasing alter edge pixel luminance across host GPUs."
+  - target_id: font-loading-cls
+    type: requires
+    note: "Capturing screenshots before document.fonts.ready produces fallback-font diffs and layout shifts."
+  - target_id: user-preference-media-queries
+    type: requires
+    note: "Forcing prefers-reduced-motion disables mid-frame CSS transitions during screenshot capture."
+sources:
+  - "https://playwright.dev/docs/test-snapshots"
+  - "https://drafts.csswg.org/css-font-loading/"
+  - "https://www.w3.org/TR/mediaqueries-5/#prefers-reduced-motion"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "visual-regression"
+  - "rasterization"
+  - "subpixel"
+  - "screenshots"
+  - "playwright"
+---
+
+## TL;DR
+
+Visual snapshot tests flake across developer laptops and Linux CI because macOS CoreText, Windows DirectWrite, and Linux FreeType rasterize [subpixel](/concepts/device-pixel-ratio-subpixel) glyph outlines differently. Pinning a containerized Chromium rasterizer, awaiting [font loading](/concepts/font-loading-cls), and disabling animations yields byte-stable screenshots.
+
+## Interactive Lab
+
+Step through host-OS rasterizer divergence and deterministic screenshot stabilization in `StepMachineLab`.
+
+## Under the Hood
+
+Blink's Skia backend delegates font shaping and glyph rasterization to the host OS text stack unless constrained by a uniform container environment.
+
+1. **OS Font Hinting Divergence**: macOS CoreText applies grayscale anti-aliasing at `devicePixelRatio: 2`, whereas Linux FreeType applies different hinting and LCD subpixel filtering at `devicePixelRatio: 1`.
+2. **Font & Image Readiness**: Capturing a frame before `await document.fonts.ready` or image decode causes FOUT fallback diffs across runs.
+3. **Animation & Caret Freezing**: Passing `animations: 'disabled'` and `reducedMotion: 'reduce'` ([prefers-reduced-motion](/concepts/user-preference-media-queries)) fast-forwards CSS transitions to their final keyframe and hides blinking text carets.
+
+```ts
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.evaluate(() => document.fonts.ready);
+
+await expect(page.getByTestId('pricing-card')).toHaveScreenshot({
+  animations: 'disabled',
+  maxDiffPixelRatio: 0.005,
+});
+```
+
+## Problem Genealogy
+
+- **2014 (PhantomJS / Host-OS Screenshots)**: Teams committed macOS baselines that failed 100% of Linux CI builds due to 1px-2px font baseline shifts.
+- **2018 (High `threshold: 0.2` Workarounds)**: Raising pixel tolerance to silence font noise let real 2px border regressions and broken icons pass undetected.
+- **2022 (Pinned Docker Chromium + `animations: 'disabled'`)**: Standardizing on identical Linux container images cut false-positive visual diffs below 0.5% while preserving strict pixel thresholds.
+
+## Production Pitfalls
+
+- **Non-Deterministic `<video>` and WebGL Frames**: Hardware-accelerated `<canvas>` and `<video>` elements decode at variable frame timestamps and GPU driver tolerances across runs.
+- **Dynamic Timestamps & Avatars**: Unmasked relative times (`2 minutes ago`) or external CDN images trigger constant pixel churn unless stubbed or passed in `mask: []`.
+- **When not to use Pixel-Diff Snapshots**: Never run strict pixel-diff assertions on WebGL scenes, live video streams, or unpinned host-OS browsers across macOS and Linux; use structural DOM/ARIA assertions or pinned container rasterizers instead.

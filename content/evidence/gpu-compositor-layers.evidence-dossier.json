@@ -1,0 +1,42 @@
+{
+  "concept_id": "gpu-compositor-layers",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-will-change-1/",
+      "spec_section": "CSS Will Change Module Level 1",
+      "quote": "Using will-change excessively can cause excessive memory consumption and degrade rendering performance."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "36+",
+    "firefox": "36+",
+    "safari": "9.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Layerize",
+      "Tile Rasterization",
+      "GPU Texture Upload",
+      "Composite"
+    ],
+    "mechanism_summary": "Each promoted layer allocates a dedicated GPU texture proportional to its pixel area."
+  },
+  "production_failures": [
+    {
+      "symptom": "Memory crash on iOS Safari across a 100-card grid",
+      "root_cause": "will-change: transform applied to all cards simultaneously.",
+      "mitigation": "Remove will-change outside active animations."
+    },
+    {
+      "symptom": "Blurry typography during hover",
+      "root_cause": "Promotion to a GPU texture without LCD subpixel antialiasing.",
+      "mitigation": "Avoid permanent layer promotion on static text blocks."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/will-change",
+    "https://web.dev/articles/animations-guide"
+  ]
+}

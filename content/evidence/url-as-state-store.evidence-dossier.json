@@ -1,0 +1,43 @@
+{
+  "concept_id": "url-as-state-store",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams",
+      "spec_section": "WHATWG URL Standard: URLSearchParams",
+      "quote": "The URLSearchParams interface defines utility methods to work with the query string of a URL."
+    },
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/API/History/pushState",
+      "spec_section": "WHATWG HTML: History.pushState vs replaceState",
+      "quote": "pushState() adds a new entry to the browser's session history stack, while replaceState() modifies the current history entry without creating a new Back step."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "49+",
+    "firefox": "44+",
+    "safari": "10.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["URLSearchParams Parse", "Schema Coercion & Validation", "pushState vs replaceState", "popstate / Navigation Sync"],
+    "mechanism_summary": "Stores shareable view state (filters, pagination, tabs) in URL search params, choosing pushState for Back-navigable steps and replaceState for continuous edits."
+  },
+  "production_failures": [
+    {
+      "symptom": "User must hit the Browser Back button 19 times to leave a search page",
+      "root_cause": "Every keystroke in the search input called history.pushState() instead of replaceState(), polluting the session history stack.",
+      "mitigation": "Use history.replaceState() for live search typing/slider scrubbing, and reserve pushState() for discrete commits like page changes or tab switches."
+    },
+    {
+      "symptom": "Malicious or malformed ?page=-999&sort=invalid crashes the table component",
+      "root_cause": "Component read raw query strings from URLSearchParams without runtime schema parsing or fallback defaults.",
+      "mitigation": "Parse and clamp all URL search parameters through a strict schema validator (e.g., Zod) with safe defaults."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams",
+    "https://developer.mozilla.org/en-US/docs/Web/API/History_API",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API"
+  ]
+}

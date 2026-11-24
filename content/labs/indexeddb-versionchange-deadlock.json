@@ -1,0 +1,93 @@
+{
+  "type": "step-machine",
+  "id": "indexeddb-versionchange-deadlock",
+  "title": "IndexedDB versionchange Deadlock vs Cooperative Multi-Tab Handoff",
+  "description": "Step through how an unclosed v3 IndexedDB handle deadlocks a v4 schema upgrade across tabs, and how onversionchange, pagehide, and Web Locks resolve it cleanly.",
+  "steps": [
+    {
+      "label": "1. Legacy Tab Holds Open v3 Handle",
+      "description": "Tab A stays open after deploy running v3 JS with an active IDBDatabase connection and no onversionchange handler.",
+      "codeHighlight": "const db = await openDb('workspace-db', 3); // no db.onversionchange attached",
+      "state": {
+        "dbVersion": 3,
+        "tabAHandle": "open (v3)",
+        "tabBRequest": "idle",
+        "upgradeStatus": "not-started"
+      },
+      "visualNodes": [
+        { "id": "tab-a", "label": "Tab A (v3 Open)", "status": "active" },
+        { "id": "sw", "label": "Service Worker", "status": "idle" },
+        { "id": "idb", "label": "IDB Lock (v3)", "status": "active" },
+        { "id": "tab-b", "label": "Tab B (v4)", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. New Tab Requests v4 and Hits onblocked",
+      "description": "Tab B loads v4 JS (accelerated by skipWaiting) and calls indexedDB.open('workspace-db', 4). Because Tab A ignores versionchange, Tab B fires onblocked and hangs forever.",
+      "codeHighlight": "const req = indexedDB.open('workspace-db', 4); // hangs in onblocked",
+      "state": {
+        "dbVersion": 3,
+        "tabAHandle": "open (ignored versionchange)",
+        "tabBRequest": "blocked",
+        "apiBootstrapCalls": 0
+      },
+      "visualNodes": [
+        { "id": "tab-a", "label": "Tab A (Blocking)", "status": "error" },
+        { "id": "sw", "label": "SW v4 (skipWaiting)", "status": "error" },
+        { "id": "idb", "label": "versionchange Blocked", "status": "error" },
+        { "id": "tab-b", "label": "Tab B (Spinner)", "status": "error" }
+      ]
+    },
+    {
+      "label": "3. Cooperative Close on versionchange & pagehide",
+      "description": "Tab A wires db.onversionchange = () => db.close() and closes handles on pagehide so neither live tabs nor bfcache snapshots hold stale v3 locks.",
+      "codeHighlight": "db.onversionchange = () => { db.close(); showReloadBanner(); };",
+      "state": {
+        "dbVersion": 3,
+        "tabAHandle": "closed",
+        "bfcacheEligible": true,
+        "tabBRequest": "unblocked"
+      },
+      "visualNodes": [
+        { "id": "tab-a", "label": "Tab A (Closed)", "status": "done" },
+        { "id": "sw", "label": "BroadcastChannel", "status": "active" },
+        { "id": "idb", "label": "Lock Released", "status": "done" },
+        { "id": "tab-b", "label": "Tab B (Unblocked)", "status": "active" }
+      ]
+    },
+    {
+      "label": "4. Pure Synchronous DDL Inside upgradeneeded",
+      "description": "Tab B runs createIndex('byUpdated', 'updatedAt') synchronously inside onupgradeneeded without awaiting fetch(), preventing TransactionInactiveError.",
+      "codeHighlight": "req.transaction!.objectStore('docs').createIndex('byUpdated', 'updatedAt');",
+      "state": {
+        "dbVersion": 4,
+        "ddlTransaction": "committed",
+        "transactionInactiveError": false,
+        "tabBRequest": "resolved"
+      },
+      "visualNodes": [
+        { "id": "tab-a", "label": "Tab A (Reload Banner)", "status": "done" },
+        { "id": "sw", "label": "BroadcastChannel", "status": "done" },
+        { "id": "idb", "label": "IDB Schema v4", "status": "done" },
+        { "id": "tab-b", "label": "Tab B (v4 Ready)", "status": "active" }
+      ]
+    },
+    {
+      "label": "5. Single-Leader Backfill via Web Locks",
+      "description": "After open() resolves, one tab acquires navigator.locks('workspace-db-seed-v4') to fetch metadata outside IDB and write it in a short readwrite transaction.",
+      "codeHighlight": "navigator.locks.request('workspace-db-seed-v4', { ifAvailable: true }, seedSearchIndex);",
+      "state": {
+        "dbVersion": 4,
+        "leaderLock": "tab-b",
+        "backfillRequests": 1,
+        "allTabsHealthy": true
+      },
+      "visualNodes": [
+        { "id": "tab-a", "label": "Tab A (Reloaded v4)", "status": "done" },
+        { "id": "sw", "label": "Web Lock Leader", "status": "done" },
+        { "id": "idb", "label": "IDB v4 Indexed", "status": "done" },
+        { "id": "tab-b", "label": "Tab B (Mounted)", "status": "done" }
+      ]
+    }
+  ]
+}

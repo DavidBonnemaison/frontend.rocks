@@ -1,0 +1,84 @@
+{
+  "type": "step-machine",
+  "id": "css-custom-properties-cascade",
+  "title": "var() Substitution & IACVT Fallback",
+  "description": "Trace how custom properties pass parse time, inherit, and trigger IACVT.",
+  "steps": [
+    {
+      "label": "1. Parse-Time Token Capture",
+      "description": "Declarations with var() always pass CSS syntax parsing, discarding earlier static fallbacks.",
+      "codeHighlight": "background: blue;\nbackground: var(--missing, 12px); /* Passes parse! */",
+      "state": {
+        "parseValid": true,
+        "fallbackDiscarded": "blue"
+      },
+      "visualNodes": [
+        {
+          "id": "parse",
+          "label": "Parse Time",
+          "status": "active"
+        },
+        {
+          "id": "inherit",
+          "label": "Inherit Tree",
+          "status": "idle"
+        },
+        {
+          "id": "sub",
+          "label": "var() Sub",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "2. Cascade & DOM Inheritance",
+      "description": "Engine resolves --token values down the DOM tree via standard specificity and inheritance.",
+      "state": {
+        "tokenValue": "12px",
+        "inheritedFrom": ":root"
+      },
+      "visualNodes": [
+        {
+          "id": "parse",
+          "label": "Parse Time",
+          "status": "done"
+        },
+        {
+          "id": "inherit",
+          "label": "Inherit Tree",
+          "status": "active"
+        },
+        {
+          "id": "sub",
+          "label": "var() Sub",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "3. Computed-Value Substitution (IACVT)",
+      "description": "Substituting 12px into background fails type-checking; the property becomes IACVT and resets to transparent (not blue).",
+      "state": {
+        "computedBackground": "transparent (initial)",
+        "iacvtTriggered": true
+      },
+      "visualNodes": [
+        {
+          "id": "parse",
+          "label": "Parse Time",
+          "status": "done"
+        },
+        {
+          "id": "inherit",
+          "label": "Inherit Tree",
+          "status": "done"
+        },
+        {
+          "id": "sub",
+          "label": "var() Sub",
+          "status": "error"
+        }
+      ]
+    }
+  ]
+}

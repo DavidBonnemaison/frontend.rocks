@@ -1,0 +1,50 @@
+{
+  "type": "step-machine",
+  "id": "shared-array-buffer-atomics",
+  "title": "SharedArrayBuffer Lock-Free Counter with Atomics",
+  "description": "Observe how Atomics.add and Atomics.wait/notify coordinate two workers sharing one memory page.",
+  "steps": [
+    {
+      "label": "1. Allocate Shared Backing Store",
+      "description": "Main thread creates a 4-byte SharedArrayBuffer and shares the reference (no copy, no detach) with Worker A.",
+      "codeHighlight": "const sab = new SharedArrayBuffer(4); const view = new Int32Array(sab);",
+      "state": {
+        "cell0Value": 0,
+        "workerState": "WAITING",
+        "crossOriginIsolated": true
+      },
+      "visualNodes": [
+        { "id": "sab", "label": "Shared Page [0]", "status": "idle" },
+        { "id": "worker", "label": "Worker (Atomics.wait)", "status": "active" }
+      ]
+    },
+    {
+      "label": "2. Atomic Increment on Main",
+      "description": "Atomics.add(view, 0, 1) issues a hardware-locked read-modify-write instruction, preventing torn writes.",
+      "codeHighlight": "Atomics.add(view, 0, 1);",
+      "state": {
+        "cell0Value": 1,
+        "workerState": "WAITING",
+        "atomicInstruction": "LOCK XADD"
+      },
+      "visualNodes": [
+        { "id": "sab", "label": "Shared Page [1]", "status": "active" },
+        { "id": "worker", "label": "Worker (Sleeping)", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Atomics.notify Wakes Worker",
+      "description": "Atomics.notify(view, 0, 1) wakes one parked thread on the futex queue to read the updated slot.",
+      "codeHighlight": "Atomics.notify(view, 0, 1);",
+      "state": {
+        "cell0Value": 1,
+        "workerState": "RESUMED",
+        "wokenAgents": 1
+      },
+      "visualNodes": [
+        { "id": "sab", "label": "Shared Page [1]", "status": "done" },
+        { "id": "worker", "label": "Worker (Resumed)", "status": "done" }
+      ]
+    }
+  ]
+}

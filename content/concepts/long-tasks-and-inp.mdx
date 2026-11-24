@@ -1,0 +1,67 @@
+---
+id: long-tasks-and-inp
+title: Long Tasks and Interaction to Next Paint (INP)
+domain: js-runtime
+maturity_status: baseline-widely
+summary_tldr: "Fix sluggish clicks and fail-threshold INP (>200 ms) by breaking >50 ms Long Tasks—Input Delay, Processing Duration, and Presentation Delay all compete on one main thread."
+relations:
+  - target_id: event-loop-tasks-microtasks
+    type: requires
+    note: "Input events cannot run until the currently executing main-thread macrotask finishes."
+  - target_id: scheduler-api-yield
+    type: requires
+    note: "Chunking >50ms Long Tasks via scheduler.yield() cuts Input Delay for subsequent interactions."
+  - target_id: browser-rendering-pipeline
+    type: under_the_hood
+    note: "Presentation Delay reflects the Style, Layout, Paint, and Composite cost after the handler returns."
+sources:
+  - "https://w3c.github.io/longtasks/"
+  - "https://web.dev/articles/inp"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "inp"
+  - "long tasks"
+  - "loaf"
+  - "responsiveness"
+---
+
+## TL;DR
+
+A Long Task is any main-thread task exceeding 50 ms. Interaction to Next Paint (INP) sums three slices (Input Delay (waiting for active Long Tasks), Processing Duration (event handlers), and Presentation Delay ([Rendering Pipeline](/concepts/browser-rendering-pipeline))) and requires keeping the 75th percentile under 200 ms.
+
+## Interactive Lab
+
+Simulate Input Delay, handler duration, and `scheduler.yield()` chunking in `ConstraintSimulatorLab`.
+
+## Under the Hood
+
+Chromium measures Interaction to Next Paint (INP) from the hardware input timestamp to the next compositor frame swap, summing Input Delay, Processing Duration, and Presentation Delay. Because the main thread runs tasks to completion, an active Long Task stalls the input handler before [Layout and Paint](/concepts/browser-rendering-pipeline) can even begin.
+
+1. **Input Delay**: Because the [Event Loop](/concepts/event-loop-tasks-microtasks) runs tasks to completion, a 180 ms hydration task stalls a user's tap before the `click` handler even starts.
+2. **Processing Duration**: Synchronous state updates and DOM mutations inside `click`, `keydown`, or `pointerup`.
+3. **Presentation Delay**: Recalculating style, layout, paint, and compositor layers to show visual feedback.
+4. **Long Animation Frames (LoAF)**: Newer Chromium telemetry attributes scripts and style/layout time across the entire slow frame.
+
+```js
+// Measure Long Animation Frames in the field
+new PerformanceObserver((list) => {
+  for (const entry of list.getEntries()) {
+    if (entry.duration > 50) {
+      reportSlowFrame(entry.duration, entry.scripts);
+    }
+  }
+}).observe({ type: 'long-animation-frame', buffered: true });
+```
+
+## Problem Genealogy
+
+- **2017 (`PerformanceLongTaskTiming`)**: Defined the 50 ms threshold, the longest task leaving headroom for a 100 ms human perception budget.
+- **2020 (First Input Delay - FID)**: Measured only the first interaction's Input Delay, ignoring slow handlers and later clicks.
+- **2024 (INP Core Web Vital)**: Replaced FID, capturing full Input + Processing + Presentation latency across the entire page session.
+
+## Production Pitfalls
+
+- **Optimizing Only the Click Handler**: Shaving 10 ms off `onClick` fails when a background analytics Long Task causes 220 ms of Input Delay.
+- **Synchronous `alert()` or `localStorage` Scans**: Blocking main-thread APIs inside `pointerdown` freeze presentation until dismissed.
+- **When not to use `requestAnimationFrame` for non-visual work**: Never defer heavy analytics or state cleanup into `rAF`, it runs inside the critical frame window and inflates Presentation Delay; use [scheduler.yield()](/concepts/scheduler-api-yield) instead.

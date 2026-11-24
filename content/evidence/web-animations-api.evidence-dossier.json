@@ -1,0 +1,41 @@
+{
+  "concept_id": "web-animations-api",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/web-animations-1/",
+      "spec_section": "4.1 Timing model",
+      "quote": "An animation object samples its effect at each frame according to its current time, playback rate, and easing, independent of script execution once started."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "36+",
+    "firefox": "48+",
+    "safari": "13.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Animation Creation",
+      "Compositor Hand-off",
+      "Main-Thread Fallback (if layout-affecting)"
+    ],
+    "mechanism_summary": "Keyframes targeting transform/opacity/filter serialize to the Compositor Thread; main-thread JS stalls cannot freeze them."
+  },
+  "production_failures": [
+    {
+      "symptom": "Memory leak and sluggish UI after hundreds of element.animate() calls with fill: \"forwards\"",
+      "root_cause": "Animations with fill: \"forwards\" remain active in the engine’s effect stack indefinitely.",
+      "mitigation": "Call animation.commitStyles() then animation.cancel() inside animation.finished, or avoid fill: \"forwards\"."
+    },
+    {
+      "symptom": "Animation stutters during React hydration or heavy JSON parsing",
+      "root_cause": "Animating width, top, or background-color forces WAAPI back onto the main thread.",
+      "mitigation": "Restrict keyframes to transform, opacity, filter, and clip-path."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/web-animations-1/",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Web_Animations_API"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "concept_id": "streams-api-backpressure",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://streams.spec.whatwg.org/#queuing-strategies",
+      "spec_section": "Streams Living Standard §6 Queuing Strategies & Backpressure",
+      "quote": "Backpressure is the mechanism by which a consumer signals to a producer to slow down when the internal queue's desiredSize drops to zero or below."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "71+ (pipeTo/WritableStream), 105+ (ReadableStream async iteration)",
+    "firefox": "102+",
+    "safari": "14.1+ (TransformStream)"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "ReadableStream Internal Queue",
+      "QueuingStrategy.size() & desiredSize Signal",
+      "pipeTo() Backpressure Propagation"
+    ],
+    "mechanism_summary": "Each stream tracks queued bytes against highWaterMark; when desiredSize <= 0, pull() stops firing upstream until the consumer drains chunks."
+  },
+  "production_failures": [
+    {
+      "symptom": "Browser tab OOMs when streaming a 1.5 GB file through a custom TransformStream",
+      "root_cause": "Default CountQueuingStrategy({ highWaterMark: 1 }) counts chunks, not bytes, or producer ignores controller.desiredSize <= 0 and pushes unboundedly.",
+      "mitigation": "Use ByteLengthQueuingStrategy({ highWaterMark: 65536 }) and honor controller.desiredSize or pipeTo() instead of manual enqueue loops."
+    },
+    {
+      "symptom": "TypeError: ReadableStream is locked when reading response.body twice",
+      "root_cause": "A ReadableStream allows only one active reader at a time; calling getReader() or response.json() locks the stream.",
+      "mitigation": "Use response.clone() before reading or stream.tee() when two consumers must inspect the same bytes."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/Streams_API/Using_readable_streams",
+    "https://streams.spec.whatwg.org/"
+  ]
+}

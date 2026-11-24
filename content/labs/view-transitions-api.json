@@ -1,0 +1,103 @@
+{
+  "type": "step-machine",
+  "id": "view-transitions-api",
+  "title": "View Transition Snapshot Lifecycle",
+  "description": "Step through how the engine captures, swaps, and animates old and new DOM states.",
+  "steps": [
+    {
+      "label": "1. Capture Old Snapshots",
+      "description": "Engine freezes rendering and captures GPU textures for root and every unique view-transition-name.",
+      "codeHighlight": "const vt = document.startViewTransition(() => renderNextView());",
+      "state": {
+        "renderingPaused": true,
+        "oldSnapshots": 2,
+        "domMutated": false
+      },
+      "visualNodes": [
+        {
+          "id": "old",
+          "label": "Old Capture",
+          "status": "active"
+        },
+        {
+          "id": "dom",
+          "label": "DOM Swap",
+          "status": "idle"
+        },
+        {
+          "id": "new",
+          "label": "New Capture",
+          "status": "idle"
+        },
+        {
+          "id": "anim",
+          "label": "Pseudo-Tree Anim",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "2. Execute DOM Mutation Callback",
+      "description": "Your callback updates the DOM while the old snapshot remains painted on screen.",
+      "state": {
+        "renderingPaused": true,
+        "oldSnapshots": 2,
+        "domMutated": true
+      },
+      "visualNodes": [
+        {
+          "id": "old",
+          "label": "Old Capture",
+          "status": "done"
+        },
+        {
+          "id": "dom",
+          "label": "DOM Swap",
+          "status": "active"
+        },
+        {
+          "id": "new",
+          "label": "New Capture",
+          "status": "idle"
+        },
+        {
+          "id": "anim",
+          "label": "Pseudo-Tree Anim",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "3. Build & Animate ::view-transition Tree",
+      "description": "Engine binds live new state to ::view-transition-new and cross-fades/morphs geometry on the compositor.",
+      "codeHighlight": ".hero-img { view-transition-name: hero-poster; }",
+      "state": {
+        "renderingPaused": false,
+        "activePseudoGroups": 2,
+        "compositorAnimated": true
+      },
+      "visualNodes": [
+        {
+          "id": "old",
+          "label": "Old Capture",
+          "status": "done"
+        },
+        {
+          "id": "dom",
+          "label": "DOM Swap",
+          "status": "done"
+        },
+        {
+          "id": "new",
+          "label": "New Capture",
+          "status": "done"
+        },
+        {
+          "id": "anim",
+          "label": "Pseudo-Tree Anim",
+          "status": "active"
+        }
+      ]
+    }
+  ]
+}

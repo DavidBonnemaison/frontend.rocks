@@ -1,0 +1,41 @@
+{
+  "concept_id": "cross-origin-isolation-coop-coep",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/browsers.html#cross-origin-opener-policies",
+      "spec_section": "HTML Living Standard §7.2.4 Cross-origin opener policies",
+      "quote": "A document becomes cross-origin isolated when served with Cross-Origin-Opener-Policy: same-origin and a Cross-Origin-Embedder-Policy of require-corp or credentialless, isolating its browsing context group."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "83+ (COOP/COEP), 96+ (credentialless)",
+    "firefox": "79+ (COOP/COEP), 119+ (credentialless)",
+    "safari": "15.2+ (COOP/COEP)"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "COOP Browsing Context Group Isolation",
+      "COEP Subresource CORP / CORS Verification",
+      "crossOriginIsolated Process Capability Grant"
+    ],
+    "mechanism_summary": "COOP severs window.opener links to cross-origin popups while COEP blocks unauthenticated cross-origin bytes, allowing the OS process to safely expose SharedArrayBuffer and microsecond timers."
+  },
+  "production_failures": [
+    {
+      "symptom": "Third-party CDN images and analytics scripts fail with ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "root_cause": "Cross-Origin-Embedder-Policy: require-corp blocks every cross-origin subresource lacking Cross-Origin-Resource-Policy: cross-origin or CORS headers.",
+      "mitigation": "Add crossorigin='anonymous' with CORS headers on CDN assets, or use COEP: credentialless (where supported) so uncredentialed fetches succeed without CORP."
+    },
+    {
+      "symptom": "OAuth popup window.opener becomes null and breaks postMessage login callback",
+      "root_cause": "Cross-Origin-Opener-Policy: same-origin severs window.opener across origins, blocking popup-to-opener postMessage.",
+      "mitigation": "Use same-origin-allow-popups when isolation is not needed, or switch OAuth callbacks to same-origin redirect + BroadcastChannel."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/Window/crossOriginIsolated",
+    "https://html.spec.whatwg.org/multipage/browsers.html#cross-origin-opener-policies"
+  ]
+}

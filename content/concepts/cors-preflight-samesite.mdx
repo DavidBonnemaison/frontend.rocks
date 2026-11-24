@@ -1,0 +1,62 @@
+---
+id: cors-preflight-samesite
+title: CORS Preflight and SameSite Cookie Boundaries
+domain: security-a11y
+maturity_status: baseline-widely
+summary_tldr: "Fetch-layer cross-origin read gating via OPTIONS preflight handshakes, paired with SameSite cookie attributes that restrict cross-site credential attachment."
+relations:
+  - target_id: beacon-api-visibilitychange
+    type: under_the_hood
+    note: "Cross-origin sendBeacon payloads with non-simple MIME types trigger CORS preflights."
+  - target_id: cross-origin-isolation-coop-coep
+    type: contrasts_with
+    note: "CORS governs JS response readability; COEP/CORP governs embedding binary resources in isolated processes."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS"
+  - "https://fetch.spec.whatwg.org/#http-cors-protocol"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "CORS"
+  - "preflight"
+  - "SameSite"
+  - "Same-Origin Policy"
+---
+
+## TL;DR
+
+CORS relaxes the Same-Origin Policy by letting servers declare which origins may read responses via `Access-Control-Allow-Origin`, preceded by an `OPTIONS` preflight for non-simple requests. `SameSite` cookies control whether credentials attach to cross-site requests in the first place.
+
+## Interactive Lab
+
+Step through a credentialed cross-origin `POST` request, its `OPTIONS` preflight, and `SameSite` cookie evaluation.
+
+## Under the Hood
+
+CORS is a bouncer checking whether JavaScript may *read* the response; `SameSite` is the lock on your wallet deciding whether cookies even leave your pocket on a cross-site trip.
+
+1. **Simple vs Preflight**: `GET`/`POST` with `text/plain` or `application/x-www-form-urlencoded` skips preflight; `application/json` or `Authorization` triggers an `OPTIONS` handshake first, including on cross-origin [Beacon API](/concepts/beacon-api-visibilitychange) calls.
+2. **Wildcard Ban with Credentials**: When `credentials: 'include'` is set, `Access-Control-Allow-Origin: *` is rejected; the server must echo the exact verified origin and set `Vary: Origin`.
+3. **Site vs Origin**: `SameSite` checks the **eTLD+1** (`app.example.com` and `api.example.com` are *same-site*, though *cross-origin*), whereas CORS and [Cross-Origin Isolation](/concepts/cross-origin-isolation-coop-coep) enforce strict `(scheme, host, port)` origin equality.
+
+```http
+HTTP/1.1 204 No Content
+Access-Control-Allow-Origin: https://app.example.com
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: POST, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Max-Age: 7200
+Vary: Origin
+```
+
+## Problem Genealogy
+
+- **1995 (Same-Origin Policy)**: Blocked cross-origin DOM/XHR reads, forcing brittle `JSONP` `<script>` tag hacks.
+- **2009–2014 (CORS W3C Recommendation)**: Standardized `OPTIONS` preflights and `Access-Control-Allow-*` headers.
+- **2020 (`SameSite=Lax` Default)**: Browsers switched default cookies from `None` to `Lax`, cutting off classic cross-site CSRF vectors.
+
+## Production Pitfalls
+
+- **Missing `Vary: Origin`**: Caching a response with `Access-Control-Allow-Origin: https://a.test` on a CDN without `Vary: Origin` breaks `https://b.test` with mysterious CORS errors.
+- **Zero `Access-Control-Max-Age`**: Omitting `Max-Age` forces an `OPTIONS` round-trip before every single API call; set `7200` (2 hours, Chromium's cap).
+- **When not to use `SameSite=None`**: Never set `SameSite=None` on session cookies unless a third-party iframe genuinely requires them; `SameSite=Lax` protects standard first-party apps against CSRF.

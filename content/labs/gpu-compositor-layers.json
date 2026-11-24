@@ -1,0 +1,24 @@
+{
+  "type": "constraint-simulator",
+  "id": "gpu-compositor-layers",
+  "title": "VRAM Cost of GPU Layer Promotion",
+  "description": "Adjust the number of animated elements and toggle static will-change.",
+  "presetMode": "composite-layers",
+  "controls": [
+    {
+      "key": "layers",
+      "label": "Number of cards in view",
+      "kind": "range",
+      "min": 5,
+      "max": 60,
+      "step": 5,
+      "defaultValue": 15
+    },
+    {
+      "key": "willChange",
+      "label": "Permanent will-change: transform",
+      "kind": "toggle",
+      "defaultValue": false
+    }
+  ]
+}

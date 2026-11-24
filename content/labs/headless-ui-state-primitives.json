@@ -1,0 +1,52 @@
+{
+  "type": "step-machine",
+  "id": "headless-ui-state-primitives",
+  "title": "Compound Primitive ARIA & Focus Contract",
+  "description": "Trace how Root, Trigger, and Content coordinate IDs, ARIA state, and focus restoration.",
+  "steps": [
+    {
+      "label": "1. Mount & Bind ARIA Contract",
+      "description": "Root generates a stable menuId; Trigger sets aria-expanded=false and aria-controls=menuId.",
+      "codeHighlight": "<button aria-expanded={open} aria-controls={menuId}>Actions</button>",
+      "state": {
+        "open": false,
+        "menuId": ":r1:",
+        "focusedElement": "Trigger"
+      },
+      "visualNodes": [
+        { "id": "root", "label": "Root Context (:r1:)", "status": "done" },
+        { "id": "trigger", "label": "Trigger (expanded=false)", "status": "idle" },
+        { "id": "content", "label": "Content (Unmounted)", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Open & Transfer Focus",
+      "description": "Click flips open=true, promotes Content to top layer, and moves focus to first MenuItem.",
+      "codeHighlight": "setOpen(true); firstItemRef.current?.focus();",
+      "state": {
+        "open": true,
+        "rovingIndex": 0,
+        "focusedElement": "MenuItem[0]"
+      },
+      "visualNodes": [
+        { "id": "root", "label": "Root Context (open)", "status": "active" },
+        { "id": "trigger", "label": "Trigger (expanded=true)", "status": "active" },
+        { "id": "content", "label": "Top-Layer Menu (Item 0)", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Escape Dismiss & Restore Focus",
+      "description": "Pressing Escape closes Content and returns focus synchronously to Trigger.",
+      "codeHighlight": "if (e.key === 'Escape') { setOpen(false); triggerRef.current?.focus(); }",
+      "state": {
+        "open": false,
+        "focusedElement": "Trigger"
+      },
+      "visualNodes": [
+        { "id": "root", "label": "Root Context (closed)", "status": "done" },
+        { "id": "trigger", "label": "Trigger (Focused)", "status": "done" },
+        { "id": "content", "label": "Content Dismissed", "status": "idle" }
+      ]
+    }
+  ]
+}

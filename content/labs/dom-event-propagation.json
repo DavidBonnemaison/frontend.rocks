@@ -1,0 +1,114 @@
+{
+  "type": "step-machine",
+  "id": "dom-event-propagation",
+  "title": "DOM Click Propagation Lifecycle",
+  "description": "Trace the event path from window down to <button> and back up.",
+  "steps": [
+    {
+      "label": "1. Hit-Testing",
+      "description": "The engine identifies <button> as event.target at the pointer coordinates.",
+      "state": {
+        "eventPhase": "HIT_TEST",
+        "target": "<button>",
+        "currentTarget": null
+      },
+      "visualNodes": [
+        {
+          "id": "win",
+          "label": "window",
+          "status": "idle"
+        },
+        {
+          "id": "ul",
+          "label": "ul (delegator)",
+          "status": "idle"
+        },
+        {
+          "id": "btn",
+          "label": "button (target)",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "label": "2. Capture Phase (Downward)",
+      "description": "Invokes { capture: true } listeners from window down toward ul.",
+      "codeHighlight": "ul.addEventListener('click', fn, { capture: true });",
+      "state": {
+        "eventPhase": "CAPTURING_PHASE (1)",
+        "target": "<button>",
+        "currentTarget": "<ul>"
+      },
+      "visualNodes": [
+        {
+          "id": "win",
+          "label": "window",
+          "status": "done"
+        },
+        {
+          "id": "ul",
+          "label": "ul (capture)",
+          "status": "active"
+        },
+        {
+          "id": "btn",
+          "label": "button",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "3. Target Phase",
+      "description": "The event reaches <button>. Local listeners execute in registration order.",
+      "state": {
+        "eventPhase": "AT_TARGET (2)",
+        "target": "<button>",
+        "currentTarget": "<button>"
+      },
+      "visualNodes": [
+        {
+          "id": "win",
+          "label": "window",
+          "status": "done"
+        },
+        {
+          "id": "ul",
+          "label": "ul",
+          "status": "done"
+        },
+        {
+          "id": "btn",
+          "label": "button (AT_TARGET)",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "label": "4. Bubble Phase (Upward)",
+      "description": "The event bubbles back through ul to window, enabling delegation via event.target.closest().",
+      "codeHighlight": "const btn = e.target.closest('button');",
+      "state": {
+        "eventPhase": "BUBBLING_PHASE (3)",
+        "target": "<button>",
+        "currentTarget": "<ul>"
+      },
+      "visualNodes": [
+        {
+          "id": "win",
+          "label": "window",
+          "status": "idle"
+        },
+        {
+          "id": "ul",
+          "label": "ul (bubble)",
+          "status": "active"
+        },
+        {
+          "id": "btn",
+          "label": "button",
+          "status": "done"
+        }
+      ]
+    }
+  ]
+}

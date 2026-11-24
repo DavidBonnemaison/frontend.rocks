@@ -1,0 +1,102 @@
+{
+  "type": "step-machine",
+  "id": "requestanimationframe-vsync",
+  "title": "Event Loop to VSync Frame Commit",
+  "description": "Trace where requestAnimationFrame executes relative to macrotasks, microtasks, and Paint.",
+  "steps": [
+    {
+      "label": "1. VSync Pulse Arrives",
+      "description": "Display hardware signals a new frame boundary (every 16.67ms at 60Hz or 8.33ms at 120Hz).",
+      "state": {
+        "vsyncHz": 60,
+        "budgetMs": 16.67,
+        "phase": "BeginMainFrame"
+      },
+      "visualNodes": [
+        {
+          "id": "vsync",
+          "label": "VSync",
+          "status": "active"
+        },
+        {
+          "id": "raf",
+          "label": "rAF Queue",
+          "status": "idle"
+        },
+        {
+          "id": "render",
+          "label": "Style/Layout/Paint",
+          "status": "idle"
+        },
+        {
+          "id": "commit",
+          "label": "Commit",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "2. rAF Callbacks Execute",
+      "description": "Engine snapshots the rAF queue and invokes each callback with the frame timestamp; nested rAF calls wait for the next frame.",
+      "codeHighlight": "requestAnimationFrame((ts) => { el.style.transform = `translateX(${ts * 0.1}px)`; });",
+      "state": {
+        "callbacksRun": 3,
+        "timestampMs": 1042.5,
+        "microtasksDrained": true
+      },
+      "visualNodes": [
+        {
+          "id": "vsync",
+          "label": "VSync",
+          "status": "done"
+        },
+        {
+          "id": "raf",
+          "label": "rAF Queue",
+          "status": "active"
+        },
+        {
+          "id": "render",
+          "label": "Style/Layout/Paint",
+          "status": "idle"
+        },
+        {
+          "id": "commit",
+          "label": "Commit",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "3. Render & Commit to Compositor",
+      "description": "Style, Layout, and Paint run once for all rAF mutations, then the frame commits to the Compositor Thread.",
+      "state": {
+        "elapsedMs": 6.2,
+        "budgetRemainingMs": 10.47,
+        "droppedFrames": 0
+      },
+      "visualNodes": [
+        {
+          "id": "vsync",
+          "label": "VSync",
+          "status": "done"
+        },
+        {
+          "id": "raf",
+          "label": "rAF Queue",
+          "status": "done"
+        },
+        {
+          "id": "render",
+          "label": "Style/Layout/Paint",
+          "status": "done"
+        },
+        {
+          "id": "commit",
+          "label": "Commit",
+          "status": "active"
+        }
+      ]
+    }
+  ]
+}

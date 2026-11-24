@@ -1,0 +1,48 @@
+{
+  "concept_id": "visual-regression-subpixel-rendering",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-font-loading/",
+      "spec_section": "4.2 FontFaceSet.ready",
+      "quote": "The ready promise resolves once all currently loading FontFace objects have finished loading and layout has settled."
+    },
+    {
+      "source_url": "https://playwright.dev/docs/test-snapshots",
+      "spec_section": "Playwright Visual Comparisons",
+      "quote": "Screenshots depend on browser version, OS font rendering, and GPU drivers; generate and verify baselines inside the same Docker image."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "Headless 112+",
+    "firefox": "Headless 56+",
+    "safari": "WebKit Playwright 16+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Media Emulation (prefers-reduced-motion: reduce)",
+      "Web Font & Image Decode Synchronization (document.fonts.ready)",
+      "Animation Fast-Forward & Caret Suppression",
+      "Software Skia Rasterization & Pixel-Buffer Diff"
+    ],
+    "mechanism_summary": "Deterministic visual testing eliminates OS text-shaping and timing variance by pinning a Linux software rasterizer, awaiting font readiness, and disabling mid-frame animations."
+  },
+  "production_failures": [
+    {
+      "symptom": "Every PR fails visual regression in GitHub Actions despite clean local diffs on macOS",
+      "root_cause": "Baselines were generated on macOS CoreText at DPR 2 while CI rendered on Linux FreeType at DPR 1.",
+      "mitigation": "Generate and verify all screenshot baselines inside a pinned Playwright Docker container."
+    },
+    {
+      "symptom": "Intermittent 15% pixel diff on hero banner button across identical CI runs",
+      "root_cause": "Screenshot fired before web fonts finished loading, capturing system Arial instead of the custom WOFF2 font.",
+      "mitigation": "Await document.fonts.ready and disable CSS animations before calling toHaveScreenshot()."
+    }
+  ],
+  "sources": [
+    "https://playwright.dev/docs/test-snapshots",
+    "https://drafts.csswg.org/css-font-loading/",
+    "https://www.w3.org/TR/mediaqueries-5/#prefers-reduced-motion"
+  ]
+}

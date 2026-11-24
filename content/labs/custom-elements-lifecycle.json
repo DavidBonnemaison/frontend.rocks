@@ -1,0 +1,50 @@
+{
+  "type": "step-machine",
+  "id": "custom-elements-lifecycle",
+  "title": "Custom Element Upgrade & Reaction Queue",
+  "description": "Trace parser upgrade, attributeChangedCallback, and connected/disconnected reactions.",
+  "steps": [
+    {
+      "label": "1. Element Upgrade (constructor)",
+      "description": "customElements.define() upgrades existing <toast-banner> nodes and runs constructor() without touching attributes.",
+      "codeHighlight": "class ToastBanner extends HTMLElement { constructor() { super(); } }",
+      "state": {
+        "upgraded": true,
+        "connected": false
+      },
+      "visualNodes": [
+        { "id": "ctor", "label": "constructor()", "status": "active" },
+        { "id": "attr", "label": "attributeChanged", "status": "idle" },
+        { "id": "conn", "label": "connectedCallback", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Initial observedAttributes Sync",
+      "description": "Parser or upgrade fires attributeChangedCallback for each pre-existing attribute in observedAttributes.",
+      "codeHighlight": "static observedAttributes = ['open'];",
+      "state": {
+        "upgraded": true,
+        "observed": ["open"]
+      },
+      "visualNodes": [
+        { "id": "ctor", "label": "constructor()", "status": "done" },
+        { "id": "attr", "label": "attributeChanged", "status": "active" },
+        { "id": "conn", "label": "connectedCallback", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Document Mount & Unmount",
+      "description": "connectedCallback() runs on insertion (and every DOM move!); disconnectedCallback() cleans up AbortControllers.",
+      "codeHighlight": "connectedCallback() { this.#ctrl = new AbortController(); }",
+      "state": {
+        "connected": true,
+        "cleanupReady": true
+      },
+      "visualNodes": [
+        { "id": "ctor", "label": "constructor()", "status": "done" },
+        { "id": "attr", "label": "attributeChanged", "status": "done" },
+        { "id": "conn", "label": "connectedCallback", "status": "active" }
+      ]
+    }
+  ]
+}

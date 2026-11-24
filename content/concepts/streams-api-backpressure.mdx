@@ -1,0 +1,66 @@
+---
+id: streams-api-backpressure
+title: Streams API and Backpressure Mechanics
+domain: web-apis
+maturity_status: baseline-widely
+summary_tldr: "Composable ReadableStream, WritableStream, and TransformStream pipelines that bound memory usage via highWaterMark queuing strategies and desiredSize backpressure signals."
+relations:
+  - target_id: event-loop-tasks-microtasks
+    type: requires
+    note: "Stream pull(), write(), and pipeTo() promises settle via microtasks between chunk transfers."
+  - target_id: opfs-origin-private-fs
+    type: under_the_hood
+    note: "Streaming fetch bodies directly into FileSystemWritableFileStream avoids buffering gigabytes in RAM."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Streams_API/Using_readable_streams"
+  - "https://streams.spec.whatwg.org/"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "Streams API"
+  - "backpressure"
+  - "highWaterMark"
+  - "pipeTo"
+web_feature_id: streams
+---
+
+## TL;DR
+
+The WHATWG Streams API processes data incrementally through `ReadableStream`, `TransformStream`, and `WritableStream` pipelines. When a downstream consumer slows down, `desiredSize` drops to `<= 0` and `pipeTo()` pauses upstream `pull()` calls so memory stays bounded.
+
+## Interactive Lab
+
+Adjust `highWaterMark`, chunk size, and backpressure enforcement to inspect queue memory growth.
+
+## Under the Hood
+
+A stream pipeline works like a factory conveyor belt with a weight sensor at the packing station: when boxes pile up past `highWaterMark`, the sensor flips `desiredSize <= 0` and halts the upstream feeder.
+
+1. **Queuing Strategy**: `ByteLengthQueuingStrategy({ highWaterMark })` measures queued bytes instead of chunk counts, preventing 1-chunk-equals-100-MB spikes.
+2. **Pull-Based Flow**: The engine invokes `source.pull(controller)` only while `controller.desiredSize > 0`, coordinating chunk scheduling across [Event Loop](/concepts/event-loop-tasks-microtasks) microtasks.
+3. **Zero-Buffer Piping**: `readable.pipeThrough(transform).pipeTo(writable)` propagates backpressure and abort signals end-to-end, ideal for writing large downloads into [OPFS](/concepts/opfs-origin-private-fs).
+
+```js
+const response = await fetch('/assets/archive.ndjson.gz');
+const decompressed = response.body.pipeThrough(new DecompressionStream('gzip'));
+const textStream = decompressed.pipeThrough(new TextDecoderStream());
+
+const reader = textStream.getReader();
+while (true) {
+  const { value, done } = await reader.read();
+  if (done) break;
+  processChunk(value);
+}
+```
+
+## Problem Genealogy
+
+- **2011 (`response.blob()` / `arrayBuffer()`)**: Forced buffering the entire HTTP payload in RAM before user code could inspect byte 0.
+- **2016 (WHATWG Streams)**: Introduced `ReadableStream` on `fetch().body` with standardized `highWaterMark` backpressure.
+- **2022+ (`CompressionStream` / `TextDecoderStream`)**: Added native C++-backed `TransformStream` primitives directly in the browser.
+
+## Production Pitfalls
+
+- **Ignoring `desiredSize` in push sources**: A `WebSocket` or `EventSource` wrapper that calls `controller.enqueue()` unconditionally still buffers unboundedly in RAM; pause or drop frames when `desiredSize <= 0`.
+- **Locked stream errors**: Calling `response.json()` after inspecting `response.body.getReader()` throws `TypeError: ReadableStream is locked`; call `response.clone()` first.
+- **When not to use Streams**: Small JSON payloads (< 1 MB) are faster and simpler with `await response.json()` than setting up reader loops.

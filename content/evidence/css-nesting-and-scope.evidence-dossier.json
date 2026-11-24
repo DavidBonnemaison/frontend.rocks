@@ -1,0 +1,42 @@
+{
+  "concept_id": "css-nesting-and-scope",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-nesting-1/",
+      "spec_section": "2. Nesting Style Rules",
+      "quote": "The & nesting selector represents the elements matched by the parent rule, behaving with the specificity of :is() wrapping the parent selector list."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-newly",
+    "chrome": "120+",
+    "firefox": "146+",
+    "safari": "17.4+",
+    "notes": "CSS Nesting (including bare tag names) is Baseline Newly Available since late 2023; @scope reached broad support by 2025/2026."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Selector Desugaring",
+      "Scope Root/Limit Matching",
+      "Proximity Tie-Breaker"
+    ],
+    "mechanism_summary": "Nesting desugars to :is(parent) child; @scope bounds matching between root and limit and adds scoping proximity to the cascade."
+  },
+  "production_failures": [
+    {
+      "symptom": "Nested rule inside #id, .card unexpectedly gains ID-level specificity for .card children",
+      "root_cause": "& desugars to :is(#id, .card), which takes the highest specificity in the selector list.",
+      "mitigation": "Avoid mixing high- and low-specificity selectors in the same parent list, or wrap in :where()."
+    },
+    {
+      "symptom": "Parent .theme-dark styles leak into nested .theme-light card slots",
+      "root_cause": "Equal specificity falls back to source order instead of DOM closeness.",
+      "mitigation": "Use @scope (.theme-dark) { ... } so the closer DOM ancestor wins via scoping proximity."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-nesting-1/",
+    "https://drafts.csswg.org/css-cascade-6/#scoped-styles"
+  ]
+}

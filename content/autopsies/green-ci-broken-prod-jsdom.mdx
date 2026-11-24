@@ -1,0 +1,103 @@
+---
+id: green-ci-broken-prod-jsdom
+case_number: 7
+title: "Autopsy #07: 412 Green Tests and a Dead Menu Button"
+symptom: "100% of unit and component tests pass in CI while the mobile navigation dropdown is completely unclickable in production."
+failure_mode: false-positive-ci
+format: narrative
+case_type: composite
+cast:
+  - ines
+  - karim
+  - nadia
+traversed_concepts:
+  - concept_id: render-tree-layout
+    step_order: 1
+    role_in_chain: "An unclosed transparent sticky header overlay covers the dropdown trigger in the real CSS box tree."
+  - concept_id: passive-event-listeners
+    step_order: 2
+    role_in_chain: "A non-passive touchstart handler and touch-action conflict swallow mobile tap gestures before click synthesis."
+  - concept_id: simulated-dom-vs-real-engines
+    step_order: 3
+    role_in_chain: "JSDOM skips CSS layout, stacking-context hit-testing, and compositor touch routing, passing synthetic clicks directly."
+  - concept_id: async-determinism-fake-timers
+    step_order: 4
+    role_in_chain: "vi.useFakeTimers() advances animation delays synchronously, masking a 300ms transition race that hides the menu."
+  - concept_id: a11y-tree-queries-vs-dom-selectors
+    step_order: 5
+    role_in_chain: "Tests query internal class names instead of ARIA roles, leaving aria-expanded and focus traps unverified."
+case_file:
+  trigger: "Header cleanup left `.promo-banner-backdrop` at `opacity: 0` over the header and added a `touchstart` scroll lock"
+  symptom: "Mobile `nav_dropdown_open` events fell from 14,200/hr to zero while all 412 Vitest + JSDOM tests stayed green"
+  root_cause: "JSDOM has no layout engine or hit-testing, so `element.click()` bypassed the invisible backdrop and passive listener rules"
+  bad_fixes:
+    - label: "`z-index: 9999` + 413th JSDOM test"
+      outcome: "All 413 tests passed in 11 seconds; mobile menu stayed dead in production"
+  fix: "Add `inert` and `pointer-events: none` to closed backdrops, drop global `touchstart`, and test interactions in Playwright with `getByRole`"
+  how_to_spot: "Open DevTools Elements at 375x667, click the menu button, and inspect which element actually receives the pointer event"
+  deleted: "Global `window` `touchstart` scroll-lock listener, `{ force: true }` helper flag in Playwright"
+reading_time_min: 7
+sources:
+  - https://playwright.dev/docs/actionability
+  - https://dom.spec.whatwg.org/
+  - https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#passive
+last_verified_at: "2026-11-17"
+proof_status: unverified
+---
+
+## 412 green checks in 11 seconds
+
+Karim tidied up the mobile promotional banner wrapper and added a `touchstart` scroll lock for the navigation drawer so background content would not drift while the menu was open. Inès's suite of 412 Vitest + JSDOM tests ran in 11 seconds. Every single check was green, the PR diff looked harmless, and it merged cleanly before standup.
+
+Twenty minutes after deploy, Nadia messaged `#frontend` to say nobody on a phone could open the main navigation menu anymore. She dropped two customer screenshots showing the menu icon sitting there with nothing happening on tap. We checked RUM telemetry: `nav_dropdown_open` events on viewports under 768 px had dropped from 14,200 per hour to zero. Not low. Exactly zero.
+
+Desktop users saw nothing wrong, mobile bounce rate jumped 38%, and CI was still 100% green.
+
+## Adding a 413th green test
+
+Karim looked at the header CSS, assumed the dropdown was painting behind the promo bar, bumped `.dropdown-menu` to `z-index: 9999`, and wrote test number 413 to prove the trigger worked:
+
+```ts
+fireEvent.click(screen.getByTestId('nav-trigger'));
+expect(screen.getByTestId('nav-drawer')).toBeVisible();
+```
+
+All 413 tests passed in 11 seconds. We shipped the hotfix and waited for the telemetry graph to recover. Mobile `nav_dropdown_open` events stayed at zero.
+
+## What JSDOM never tells you
+
+When Inès opened the site on a real phone from her drawer with remote DevTools attached, the bug took ten seconds to find. She tapped the menu button, inspected the element under her finger, and saw `.promo-banner-backdrop` highlighted across the entire top half of the screen.
+
+<CausalChainStepper />
+
+The transparent `.promo-banner-backdrop` was closed with `opacity: 0`, without `pointer-events: none` or `inert`. In a real [Render Tree](/concepts/render-tree-layout), a pointer tap at coordinates `(x, y)` runs geometric hit-testing from front to back and lands on the invisible backdrop sitting over the header. Setting `opacity: 0` hides the pixels; it does not remove the box from pointer hit-testing.
+
+In a [simulated DOM](/concepts/simulated-dom-vs-real-engines) like JSDOM, there is no CSS layout engine at all. Every `getBoundingClientRect()` returns `{ top: 0, left: 0, width: 0, height: 0 }`, and `fireEvent.click(node)` dispatches the event straight onto `node` without checking whether another box is covering it. As far as JSDOM was concerned, the backdrop and the button did not even share a coordinate system.
+
+## Passive touch listeners and fake timers
+
+That was only half of what JSDOM hid. Karim's new `window.addEventListener('touchstart', (e) => e.preventDefault())` lacked `{ passive: false }`. Because modern browsers treat document-level [passive event listeners](/concepts/passive-event-listeners) as the default for touch events so scrolling never stalls behind JavaScript, `preventDefault()` was ignored with a console warning that JSDOM never emits either.
+
+Meanwhile, `vi.useFakeTimers()` in the [async test suite](/concepts/async-determinism-fake-timers) skipped right over a 300 ms CSS transition race that left the drawer closed on rapid taps, and querying by `data-testid` instead of [accessibility tree queries](/concepts/a11y-tree-queries-vs-dom-selectors) hid the fact that `aria-expanded` never toggled and screen-reader users could not even tell whether the menu was open or closed.
+
+<FailureSimulator />
+
+## Fixing the backdrop and moving to a real engine
+
+We fixed the backdrop by adding `inert` and `pointer-events: none` whenever the banner is closed, replaced the global `touchstart` listener with `overscroll-behavior: contain` on the drawer, and moved the critical mobile navigation checks into Playwright using `page.getByRole('button', { name: 'Menu' })`.
+
+We also added a check that verifies `aria-expanded` flips from `"false"` to `"true"`, focus moves cleanly into the drawer, and a user can navigate to at least one category link without hitting an invisible layer. In JSDOM, those assertions had been mocked or bypassed; in Chromium and WebKit at `390x844`, the browser exercises the real CSS box tree, real stacking contexts, and real compositor touch routing on every pull request.
+
+## The `{ force: true }` trap
+
+First try in Playwright: the new browser test passed even when we intentionally left `.promo-banner-backdrop` broken on a test branch.
+
+Someone had copied a helper that called `.click({ force: true })`. In Playwright, `{ force: true }` disables the actionability check that verifies no other element intercepts the pointer at the target coordinates. It turns a real browser test back into JSDOM with a slower startup time. The moment we removed `{ force: true }`, Playwright failed immediately and named `.promo-banner-backdrop` as the exact element intercepting the click at `(342, 34)`.
+
+## What stayed in the codebase
+
+<CaseFile />
+
+JSDOM verifies that your function runs when you call it; a real browser verifies that a human finger can reach the button.
+
+We now run 410 JSDOM unit tests and 6 real-browser tests, and those 6 are the ones that wake us up before Nadia does. Within two hours of deploying the fix, `nav_dropdown_open` climbed back to 14,400 events per hour and mobile bounce rate returned to baseline.

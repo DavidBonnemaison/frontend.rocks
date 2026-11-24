@@ -1,0 +1,42 @@
+{
+  "concept_id": "block-formatting-context",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-display-3/#block-formatting-context",
+      "spec_section": "3.2 Block Formatting Contexts",
+      "quote": "Floats, absolutely positioned elements, block containers that are not block boxes, and block boxes with overflow other than visible establish new block formatting contexts."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "58+",
+    "firefox": "53+",
+    "safari": "13+",
+    "notes": "display: flow-root is Baseline Widely Available; BFCs themselves date back to CSS 2.1."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Box Tree Construction",
+      "Block Layout",
+      "Float Exclusion Space"
+    ],
+    "mechanism_summary": "Each BFC maintains its own float exclusion list and prevents vertical margins from collapsing across its boundary."
+  },
+  "production_failures": [
+    {
+      "symptom": "Card container collapses to 0px height around a floated avatar image",
+      "root_cause": "Parent block box does not establish a BFC, so floated children are excluded from its auto height calculation.",
+      "mitigation": "Add display: flow-root to the parent container instead of legacy clearfix hacks."
+    },
+    {
+      "symptom": "Top margin on an <h1> pushes down the entire parent section instead of creating internal padding",
+      "root_cause": "Adjacent parent and first-child vertical margins collapse through when no border, padding, or BFC separates them.",
+      "mitigation": "Use display: flow-root on the parent or use padding/gap on a flex/grid container."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-display-3/#block-formatting-context",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_display/Block_formatting_context"
+  ]
+}

@@ -1,0 +1,71 @@
+name: Publish Public Audit Skill
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish-public-skill:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Refuse to publish an empty or unverified catalog
+        run: |
+          npm run generate:exports
+          COUNT=$(node -e "console.log(require('./public/audit-rules.json').rule_count)")
+          if [ "$COUNT" = "0" ]; then
+            echo "::error::No proven rules. The public skill stays unpublished until content is proven."
+            exit 1
+          fi
+
+      - run: npm run generate:exports
+      - run: npm run build:public-skill
+
+      - name: Verify audit catalog, canonical URLs, and strict whitelist
+        run: npx vitest run tests/audit-rules.test.ts
+
+      - name: Sync whitelisted bundle to DavidBonnemaison/frontend-rocks-skills
+        env:
+          PUBLIC_SKILLS_REPO_TOKEN: ${{ secrets.PUBLIC_SKILLS_REPO_TOKEN }}
+          TARGET_REPO: DavidBonnemaison/frontend-rocks-skills
+          SKILL_NAME: frontend-rocks-audit
+        run: |
+          if [ -z "$PUBLIC_SKILLS_REPO_TOKEN" ]; then
+            echo "PUBLIC_SKILLS_REPO_TOKEN is not configured — skipping remote push (dry-run verified)."
+            ls -la dist-public-skill dist-public-skill/references
+            exit 0
+          fi
+
+          WORK_DIR="$(mktemp -d)"
+          git clone "https://x-access-token:${PUBLIC_SKILLS_REPO_TOKEN}@github.com/${TARGET_REPO}.git" "$WORK_DIR"
+
+          mkdir -p "$WORK_DIR/skills/${SKILL_NAME}/references"
+          rm -rf "$WORK_DIR/skills/${SKILL_NAME}"
+          mkdir -p "$WORK_DIR/skills/${SKILL_NAME}"
+
+          # Copy ONLY strictly whitelisted bundle files from dist-public-skill/
+          cp -R dist-public-skill/. "$WORK_DIR/skills/${SKILL_NAME}/"
+          cp dist-public-skill/README.md "$WORK_DIR/README.md"
+          cp dist-public-skill/LICENSE "$WORK_DIR/LICENSE"
+
+          cd "$WORK_DIR"
+          git config user.name "frontend-rocks-bot"
+          git config user.email "bot@frontend.rocks"
+
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No changes to sync to ${TARGET_REPO}."
+            exit 0
+          fi
+
+          git add -A
+          git commit -m "chore(skill): sync ${SKILL_NAME} from frontend.rocks@${GITHUB_SHA::7}"
+          git push origin HEAD

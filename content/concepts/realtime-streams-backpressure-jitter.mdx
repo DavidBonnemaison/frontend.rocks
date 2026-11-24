@@ -1,0 +1,66 @@
+---
+id: realtime-streams-backpressure-jitter
+title: WebSockets, SSE, Reconnection Jitter & Consumer Backpressure
+domain: network-perf
+maturity_status: baseline-widely
+summary_tldr: "Unbounded WebSocket bursts spike tab memory until OOM, while synchronized reconnects DDoS your own edge servers. Pair ReadableStream backpressure with full-jitter exponential backoff so slow UI consumers throttle sockets safely."
+relations:
+  - target_id: streams-api-backpressure
+    type: requires
+    note: "ReadableStream desiredSize signals allow slow consumers to exert TCP-level backpressure on WebSocketStream."
+  - target_id: abortcontroller-cancellation
+    type: requires
+    note: "AbortController cancels pending reconnect timers and in-flight SSE fetch streams cleanly on unmount."
+sources:
+  - "https://websockets.spec.whatwg.org/"
+  - "https://html.spec.whatwg.org/multipage/server-sent-events.html"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "websockets"
+  - "sse"
+  - "backpressure"
+  - "jitter"
+---
+
+## TL;DR
+
+Use SSE for server-to-client feeds and `WebSocketStream` when duplex frames need [Streams API backpressure](/concepts/streams-api-backpressure). Pair reconnects with full-jitter backoff and [`AbortController`](/concepts/abortcontroller-cancellation) to prevent retry storms.
+
+## Interactive Lab
+
+Trace socket burst buffering, `desiredSize` backpressure signaling, and full-jitter backoff windows in `StepMachineLab`.
+
+## Under the Hood
+
+Legacy `WebSocket.onmessage` pushes every arriving TCP frame onto the main-thread event loop regardless of whether the UI can render it, growing heap memory without limit. Wrapping transport in a `ReadableStream` connects consumer `desiredSize` directly to TCP flow control.
+
+1. **Transport Split**: SSE (`text/event-stream`) rides standard HTTP/2 multiplexing with native `Last-Event-ID` resume, whereas WebSockets upgrade to a dedicated full-duplex TCP framing layer.
+2. **Backpressure Propagation**: When a consumer pauses `reader.read()`, `desiredSize` hits zero and `WebSocketStream` stops reading from the OS socket buffer, shrinking the TCP receive window.
+3. **Full-Jitter Backoff**: Computing `random(0, min(cap, base * 2^attempt))` spreads 100,000 disconnected clients uniformly across the retry window instead of spiking at fixed powers of two.
+
+```js
+async function connectWithJitter(url, signal, attempt = 0) {
+  try {
+    const res = await fetch(url, { signal, headers: { Accept: 'text/event-stream' } });
+    return res.body.pipeThrough(new TextDecoderStream());
+  } catch (err) {
+    if (signal.aborted) throw err;
+    const delay = Math.random() * Math.min(30000, 500 * 2 ** attempt);
+    await new Promise((r) => setTimeout(r, delay));
+    return connectWithJitter(url, signal, attempt + 1);
+  }
+}
+```
+
+## Problem Genealogy
+
+- **2011 (Raw `WebSocket` & Fixed `setInterval`)**: Clients buffered unbounded `onmessage` events in JS arrays and retried every 1000ms, crashing tabs on bursts and taking down edge proxies after deploys.
+- **2015 (HTTP/2 + SSE Adoption)**: Unidirectional feeds moved to `EventSource`, eliminating custom heartbeat frames and sharing one TCP connection per origin.
+- **2024 (`WebSocketStream` & `fetch` Streams)**: Native WHATWG streams unified socket reads with `ReadableStream` backpressure and `AbortSignal` teardown.
+
+## Production Pitfalls
+
+- **Synchronized Retry Storms**: Fixed or unjittered exponential backoff causes every dropped client to reconnect at the exact same second, turning a 5-second deploy blip into a multi-minute outage.
+- **EventSource 6-Connection Limit on HTTP/1.1**: Opening multiple `EventSource` tabs against an HTTP/1.1 proxy exhausts the browser's 6-connection-per-origin pool and stalls API `fetch` calls.
+- **When not to use WebSockets**: Do not deploy WebSockets for server-to-client notifications, LLM token streaming, or live tickers; use HTTP/2 SSE to avoid stateful load-balancer stickiness and custom auth-header workarounds.

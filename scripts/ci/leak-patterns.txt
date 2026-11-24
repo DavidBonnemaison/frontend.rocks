@@ -1,0 +1,6 @@
+generativelanguage\.googleapis\.com
+GEMINI_API_KEY
+\.agents/
+docs/epics
+editorial-factory
+topic-scout

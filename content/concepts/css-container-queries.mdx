@@ -1,0 +1,66 @@
+---
+id: css-container-queries
+title: CSS Container Queries (@container)
+domain: css-layout
+maturity_status: baseline-widely
+summary_tldr: "CSS queries evaluating an explicit parent container's dimensions or styles instead of the global viewport, resolved natively during Layout."
+relations:
+  - target_id: js-resize-observer-pattern
+    type: replaces
+    note: "Eliminates ResizeObserver + JS class toggling to adapt components to their container."
+  - target_id: browser-rendering-pipeline
+    type: under_the_hood
+    note: "Requires contain: inline-size (layout containment) to break parent-child circular dependencies."
+sources:
+  - "https://drafts.csswg.org/css-contain-3/"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_queries"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "@container"
+  - "container-type"
+  - "inline-size"
+  - "responsive component"
+web_feature_id: container-queries
+---
+
+## TL;DR
+
+`@container` applies CSS rules based on the width or height of an ancestor declared with `container-type: inline-size`. Components adapt to their actual insertion slot (sidebar, grid, modal) with zero JavaScript.
+
+## Interactive Lab
+
+Adjust parent container width to compare `@container` against `@media` in `ConstraintSimulatorLab`.
+
+## Under the Hood
+
+1. `container-type: inline-size` enables inline-axis size containment: the container's width no longer depends on its children.
+2. This containment breaks the circular sizing dependency that historically blocked parent queries (and forced teams into the [JS ResizeObserver Pattern](/concepts/js-resize-observer-pattern)).
+3. During the Layout pass of the [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline), the engine resolves container size, evaluates `@container` rules, and resolves descendant styles and geometry in a single top-down pass.
+
+```css
+.card-slot {
+  container-type: inline-size;
+  container-name: card;
+}
+
+@container card (min-width: 420px) {
+  .card {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 1rem;
+  }
+}
+```
+
+## Problem Genealogy
+
+- **2010 (`@media`)**: Viewport-only adaptation, unusable for reusable components dropped into sidebars or drawers.
+- **2018 (`ResizeObserver` + React state)**: Post-paint JS measurement causing double renders, hydration flash, and 150 lines of hook plumbing for a two-column card.
+- **2023+ (`@container` Baseline)**: Native resolution inside the CSS engine without JS or hydration mismatch.
+
+## Production Pitfalls
+
+- **Container collapsing to 0 px**: Applying `container-type: inline-size` on an `inline` element or flex/grid item without intrinsic width collapses it to `0px`.
+- **Missing `container-name`**: Without a name, `@container` targets the nearest ancestor container, which can misfire in nested layouts.
+- **When not to use `@container`**: For macro page layout (global navigation, main page grid), keep viewport `@media` queries.

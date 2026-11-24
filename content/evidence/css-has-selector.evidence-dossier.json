@@ -1,0 +1,42 @@
+{
+  "concept_id": "css-has-selector",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/selectors-4/#relational",
+      "spec_section": "4.2 The Relational Pseudo-class: :has()",
+      "quote": "The relational pseudo-class :has() takes a relative selector list as an argument and matches if any of the relative selectors match at least one element when anchored against the subject."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-newly",
+    "chrome": "105+",
+    "firefox": "121+",
+    "safari": "15.4+",
+    "notes": "Baseline Newly Available (December 2023)."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Bloom-Filter Fast Reject",
+      "Subtree/Sibling Walk",
+      "Targeted Style Invalidation"
+    ],
+    "mechanism_summary": "Engines attach :has() invalidation flags to ancestors/siblings so DOM mutations only re-evaluate affected subjects instead of scanning the whole tree."
+  },
+  "production_failures": [
+    {
+      "symptom": "Style recalculation spikes when typing into an input inside a huge form",
+      "root_cause": "Using :root:has(input:invalid) forces document-wide invalidation checks on every keystroke.",
+      "mitigation": "Scope :has() to the nearest container (.field:has(:invalid)) instead of :root or body."
+    },
+    {
+      "symptom": ":has() fails to match pseudo-elements like ::before or ::after",
+      "root_cause": "Per CSS Selectors L4, pseudo-elements are invalid inside :has() arguments.",
+      "mitigation": "Match real DOM elements or state pseudo-classes (:checked, :focus-within, :empty) inside :has()."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/selectors-4/#relational",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/:has"
+  ]
+}

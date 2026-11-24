@@ -1,0 +1,42 @@
+{
+  "concept_id": "promises-async-await-internals",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://tc39.es/ecma262/#sec-await",
+      "spec_section": "27.7.5.3 Await ( value )",
+      "quote": "Perform PerformPromiseThen(promise, onFulfilled, onRejected) and suspend the running execution context."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "55+",
+    "firefox": "52+",
+    "safari": "10.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Synchronous Execution Until First await",
+      "Promise.resolve Wrapping & Microtask Enqueue",
+      "Execution Context Suspension",
+      "AsyncResume Microtask Dispatch"
+    ],
+    "mechanism_summary": "An async function runs synchronously until await, suspends its execution context into a heap generator-like frame, and schedules resumption as a microtask."
+  },
+  "production_failures": [
+    {
+      "symptom": "Page load latency doubles due to sequential network waterfalls",
+      "root_cause": "Using await inside a for..of loop serializes independent fetch() calls instead of dispatching them concurrently.",
+      "mitigation": "Dispatch independent promises together with Promise.all() or Promise.allSettled()."
+    },
+    {
+      "symptom": "UnhandledRejection crashes Node/worker or leaks silent failures in browser",
+      "root_cause": "Creating a rejected promise without attaching .catch() before the end of the current microtask turn triggers unhandledrejection.",
+      "mitigation": "Attach rejection handlers synchronously or await every spawned promise within try/catch."
+    }
+  ],
+  "sources": [
+    "https://tc39.es/ecma262/#sec-await",
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function"
+  ]
+}

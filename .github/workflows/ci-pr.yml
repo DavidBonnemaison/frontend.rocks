@@ -1,0 +1,67 @@
+name: CI (pull request)
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      code: ${{ steps.f.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: f
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          CHANGED=$(git diff --name-only "$BASE"...HEAD)
+          echo "$CHANGED"
+          # "code" = anything that is neither a proof result nor documentation
+          if echo "$CHANGED" | grep -qvE '^(content/\.proof-results/|.*\.md$|LICENSE)'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  gate:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run validate:content
+      - run: npm run build-prod
+      - run: npx playwright install --with-deps chromium
+      # The E2E suite reads the lab preview PNGs that this step writes into public/ and dist/.
+      - run: npm run generate:lab-previews
+      - run: npx playwright test
+
+  ci-result:
+    needs: [changes, gate]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Fail if a required job failed or was cancelled
+        run: |
+          echo "changes=${{ needs.changes.result }} gate=${{ needs.gate.result }}"
+          if [ "${{ needs.changes.result }}" != "success" ]; then exit 1; fi
+          if [ "${{ needs.gate.result }}" = "failure" ] || [ "${{ needs.gate.result }}" = "cancelled" ]; then exit 1; fi

@@ -1,0 +1,38 @@
+{
+  "type": "step-machine",
+  "id": "virtual-dom-reconciliation",
+  "title": "VDOM Reconciliation: Render, Diff & Commit",
+  "description": "Step through how O(n) heuristic tree diffing turns a state update into minimal DOM patches.",
+  "steps": [
+    {
+      "label": "1. Render Phase (Pure JS Tree)",
+      "description": "Component returns a new JS descriptor tree. Zero live DOM nodes are touched yet.",
+      "codeHighlight": "const nextTree = App({ filter: 'active' });",
+      "state": {
+        "phase": "render",
+        "vdomNodesAllocated": 42,
+        "domWrites": 0
+      }
+    },
+    {
+      "label": "2. Reconcile & Keyed List Match",
+      "description": "Diff compares element.type and key. Same type+key updates props; changed type unmounts subtree.",
+      "codeHighlight": "// key='row-7' matched at index 0 -> move node, preserve <input> state",
+      "state": {
+        "phase": "reconcile",
+        "nodesReused": 40,
+        "nodesRemounted": 2
+      }
+    },
+    {
+      "label": "3. Commit Phase (Batched DOM Patch)",
+      "description": "Engine applies only the 2 changed attributes/moves in one synchronous commit pass.",
+      "codeHighlight": "parentNode.insertBefore(row7El, firstChild);",
+      "state": {
+        "phase": "commit",
+        "domWrites": 2,
+        "layoutTriggered": true
+      }
+    }
+  ]
+}

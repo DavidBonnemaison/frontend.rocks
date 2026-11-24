@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "fine-grained-signals",
+  "title": "State Propagation: VDOM Diff vs Signals",
+  "before": {
+    "label": "Virtual DOM Subtree Re-render",
+    "code": "function Parent() {\n  const [count, setCount] = useState(0);\n  return <ExpensiveTree count={count} />;\n}",
+    "metrics": {
+      "lines": 4,
+      "reflows": "O(N) component diff",
+      "dependencies": "Manual React memoization"
+    },
+    "previewNote": "Requires memo/useCallback to prevent cascading re-renders."
+  },
+  "after": {
+    "label": "Fine-Grained Signal (Targeted O(1))",
+    "code": "const count = new Signal.State(0);\nconst doubled = new Signal.Computed(() => count.get() * 2);\n// Only the subscribed text node updates",
+    "metrics": {
+      "lines": 3,
+      "reflows": "O(1) subscribed nodes",
+      "dependencies": "Native reactive graph"
+    },
+    "previewNote": "Zero virtual tree diffing on each mutation."
+  }
+}

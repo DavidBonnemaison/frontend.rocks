@@ -1,0 +1,67 @@
+---
+id: custom-elements-lifecycle
+title: Custom Elements Lifecycle and Upgrade Reactions
+domain: dom-events
+maturity_status: baseline-widely
+summary_tldr: "Build framework-agnostic UI primitives without hydration races—customElements.define() upgrades existing DOM nodes via deterministic lifecycle reaction queues."
+relations:
+  - target_id: shadow-dom-encapsulation
+    type: requires
+    note: "Custom elements typically attach a ShadowRoot in constructor() and hydrate slots in connectedCallback()."
+  - target_id: prototype-chain-lookup
+    type: requires
+    note: "Element upgrades swizzle the DOM node's [[Prototype]] to the registered HTMLElement subclass."
+sources:
+  - "https://html.spec.whatwg.org/multipage/custom-elements.html#custom-element-reactions"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_custom_elements"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "custom elements"
+  - "web components"
+  - "connectedCallback"
+  - "upgrade"
+---
+
+## TL;DR
+
+`customElements.define()` binds a hyphenated tag name to an `HTMLElement` subclass. When parsed or upgraded, the engine swaps the node's [Prototype Chain](/concepts/prototype-chain-lookup) and runs deterministic reactions (`constructor`, `attributeChangedCallback`, `connectedCallback`, `disconnectedCallback`), often paired with [Shadow DOM](/concepts/shadow-dom-encapsulation).
+
+## Interactive Lab
+
+Step through element upgrade, `observedAttributes`, and mount/unmount reactions in `StepMachineLab`.
+
+## Under the Hood
+
+The HTML parser instantiates unregistered hyphenated tags as `HTMLUnknownElement` nodes until `customElements.define()` runs an upgrade pass, swizzling each node's prototype and queuing its reactions. Only when the element is inserted into a connected document does `connectedCallback()` fire to wire listeners and external state.
+
+1. **Pre-Upgrade State**: Unregistered `<my-el>` tags render as `HTMLUnknownElement` until `define()` runs and swizzles their prototype.
+2. **Restricted `constructor()`**: The spec forbids reading or mutating attributes or light-DOM children inside `constructor()`; attach `ShadowRoot` there and defer DOM setup to `connectedCallback()`.
+3. **Move Re-Fires**: Moving an element via `append()` fires `disconnectedCallback()` then `connectedCallback()` (unless `moveBefore()` is used).
+
+```js
+class ToastBanner extends HTMLElement {
+  static observedAttributes = ['open'];
+  #ctrl;
+  connectedCallback() {
+    this.#ctrl = new AbortController();
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') this.removeAttribute('open');
+    }, { signal: this.#ctrl.signal });
+  }
+  disconnectedCallback() { this.#ctrl?.abort(); }
+}
+customElements.define('toast-banner', ToastBanner);
+```
+
+## Problem Genealogy
+
+- **2014 (Custom Elements v0)**: Non-standard `document.registerElement` with `createdCallback` failed cross-browser consensus.
+- **2016 (Custom Elements v1)**: Standardized ES6 class inheritance (`extends HTMLElement`) and `observedAttributes`.
+- **2024 (`ElementInternals` & Form-Associated)**: Enabled custom elements to participate natively in `<form>` validation and ARIA.
+
+## Production Pitfalls
+
+- **DOM Mutations in `constructor()`**: Calling `this.setAttribute()` in `constructor()` throws `NotSupportedError` during HTML parsing.
+- **Safari Built-in Rejection**: Extending `<button is="my-btn">` (`extends: 'button'`) is unsupported in Safari; always use autonomous tags.
+- **When not to use Custom Elements**: Avoid wrapping every leaf UI primitive in a custom element if your app already compiles single-framework SSR templates, use them for cross-framework widgets or design-system leaves.

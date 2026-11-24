@@ -1,0 +1,68 @@
+---
+id: runtime-boundary-validation
+title: "Runtime Boundary Validation (Parse, Don't Validate)"
+domain: state-architecture
+maturity_status: baseline-widely
+summary_tldr: "Prevents silent TypeError crashes from drifted API payloads and corrupted localStorage by parsing untrusted JSON at I/O boundaries into typed structures without blocking INP."
+relations:
+  - target_id: structured-clone-algorithm
+    type: requires
+    note: "Cross-boundary messages via postMessage and IndexedDB strip prototypes and bypass TypeScript compile-time types."
+  - target_id: long-tasks-and-inp
+    type: requires
+    note: "Synchronous schema validation over huge arrays can exceed 50 ms on the main thread and degrade INP."
+sources:
+  - "https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/"
+  - "https://zod.dev/"
+  - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "runtime-validation"
+  - "parse-dont-validate"
+  - "schema"
+  - "type-safety"
+  - "io-boundary"
+---
+
+## TL;DR
+
+TypeScript types vanish at compile time, leaving `fetch()`, `postMessage()`, and `localStorage` free to inject `undefined` fields into state. Parsing untrusted payloads at the I/O boundary converts `unknown` into a guaranteed shape or fails explicitly before corrupted data reaches UI components.
+
+## Interactive Lab
+
+Compare an unsafe TypeScript `as` cast against a schema-parsed boundary in `PatternComparatorLab`.
+
+## Under the Hood
+
+Every `JSON.parse()` call and [Structured Clone](/concepts/structured-clone-algorithm) boundary returns `unknown` at runtime. Boolean `validate(x)` checks discard proof of structure, whereas a parser refines the type and strips unexpected keys in one pass.
+
+1. **Boundary isolation**: Run schema parsing once in the network, storage, or Worker adapter rather than inside render functions.
+2. **Non-throwing `safeParse`**: Return a discriminated `{ success, data | error }` result so corrupted `localStorage` entries fall back to defaults instead of crashing hydration.
+3. **Chunked large lists**: Offload multi-megabyte array parsing to a Dedicated Worker or validate lazily to avoid [Long Tasks](/concepts/long-tasks-and-inp).
+
+```ts
+import { z } from 'zod';
+
+const UserSchema = z.object({ id: z.string(), role: z.enum(['admin', 'viewer']) });
+type User = z.infer<typeof UserSchema>;
+
+export async function fetchUser(url: string): Promise<User> {
+  const raw: unknown = await (await fetch(url)).json();
+  const parsed = UserSchema.safeParse(raw);
+  if (!parsed.success) throw new Error(`Schema drift: ${parsed.error.message}`);
+  return parsed.data;
+}
+```
+
+## Problem Genealogy
+
+- **2016–2019 (TypeScript `res.json() as T`)**: Teams trusted backend contracts via blind casts, causing uncatchable `Cannot read properties of undefined` crashes weeks after API deploys.
+- **2019 ("Parse, Don't Validate")**: Formalized type-driven parsing so downstream code never re-checks invariants.
+- **2021+ (Zod, Valibot & Standard Schema)**: Compressed schema validators to 1–12 KB gzipped with zero-cost TypeScript inference.
+
+## Production Pitfalls
+
+- **White-screen crash on stale `localStorage` schema**: Deploying a renamed field without `safeParse` fallback throws during initial state hydration for returning users.
+- **50 ms+ main-thread stall on 5,000-row tables**: Running deep recursive object validation synchronously inside a click handler blocks paint frames and spikes INP.
+- **When not to use runtime schema parsing**: Inside 60 fps animation loops, `requestAnimationFrame` physics ticks, or already-parsed internal reducer transitions where data never crossed an untrusted serialization boundary.

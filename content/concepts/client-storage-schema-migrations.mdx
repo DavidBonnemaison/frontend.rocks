@@ -1,0 +1,68 @@
+---
+id: client-storage-schema-migrations
+title: "Client Storage Versioning & Zero-Downtime Migrations"
+domain: state-architecture
+maturity_status: baseline-widely
+summary_tldr: "Prevents hung IndexedDB upgrades and wiped user drafts during deploys by coordinating schema version bumps across open tabs with onversionchange and expand-and-contract migrations."
+relations:
+  - target_id: indexeddb-transactions-quotas
+    type: requires
+    note: "IndexedDB schema changes run exclusively inside the versionchange transaction triggered by indexedDB.open(name, version)."
+  - target_id: service-worker-lifecycle
+    type: requires
+    note: "Coordinating Service Worker activation with open tab storage versions prevents old JS bundles from reading new schemas."
+sources:
+  - "https://w3c.github.io/IndexedDB/#upgrade-transaction-steps"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/IDBOpenDBRequest/upgradeneeded_event"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase/versionchange_event"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "indexeddb-migrations"
+  - "versionchange"
+  - "schema-versioning"
+  - "zero-downtime"
+  - "storage"
+---
+
+## TL;DR
+
+Bumping an IndexedDB schema version while an older tab holds an open connection triggers `onblocked` and hangs the new tab indefinitely. Handling `onversionchange` to call `db.close()` in old tabs and running idempotent `versionchange` steps lets migrations complete without data loss.
+
+## Interactive Lab
+
+Trace a multi-tab `versionchange` handshake and `upgradeneeded` migration in `StepMachineLab`.
+
+## Under the Hood
+
+The [IndexedDB](/concepts/indexeddb-transactions-quotas) specification enforces a single-writer lock across the entire origin during schema upgrades. Opening version `N + 1` cannot start `onupgradeneeded` until every tab holding version `N` closes its `IDBDatabase` handle.
+
+1. **Cooperative close**: Every tab attaches `db.onversionchange = () => db.close()` immediately after `open()` succeeds, unblocking newer tabs opened after a deploy.
+2. **Sequential step table**: Inside `onupgradeneeded(e)`, iterate `for (let v = e.oldVersion; v < e.newVersion; v++)` so users jumping from v1 to v4 execute every intermediate store/index transform.
+3. **Expand-and-contract**: During rolling [Service Worker](/concepts/service-worker-lifecycle) updates, add new stores or nullable fields before dropping legacy ones so older cached tabs do not crash.
+
+```ts
+const req = indexedDB.open('app-db', 2);
+req.onupgradeneeded = (e) => {
+  const db = req.result;
+  if (e.oldVersion < 1) db.createObjectStore('drafts', { keyPath: 'id' });
+  if (e.oldVersion < 2) {
+    const store = req.transaction!.objectStore('drafts');
+    store.createIndex('byUpdated', 'updatedAt', { unique: false });
+  }
+};
+req.onsuccess = () => {
+  req.result.onversionchange = () => req.result.close();
+};
+```
+
+## Problem Genealogy
+
+- **2013–2017 (Delete-on-Mismatch Shortcuts)**: Apps wrapped `indexedDB.open()` in `deleteDatabase()` on version errors, silently erasing offline user drafts whenever a schema bumped.
+- **2018+ (Versioned Step Runners & `onversionchange`)**: Standardized multi-tab `close()` handshakes and additive schema migrations modeled after backend SQL runners.
+
+## Production Pitfalls
+
+- **New tab hangs forever on splash screen after deploy**: Omitting `db.onversionchange = () => db.close()` leaves background tabs holding the v1 handle, firing `onblocked` indefinitely in the v2 tab.
+- **`ConstraintError` or `TransactionInactiveError` during `upgradeneeded`**: Calling `await fetch()` inside `onupgradeneeded` commits and closes the `versionchange` transaction before the network resolves.
+- **When not to use an IndexedDB version bump**: For adding an optional JSON property inside an existing object store value, deserialize lazily at read time with a runtime schema default instead of triggering a cross-tab `versionchange` lock.

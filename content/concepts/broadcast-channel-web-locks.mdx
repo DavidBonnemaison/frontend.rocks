@@ -1,0 +1,65 @@
+---
+id: broadcast-channel-web-locks
+title: BroadcastChannel and Web Locks API
+domain: web-apis
+maturity_status: baseline-widely
+summary_tldr: "Origin-scoped pub/sub messaging and async mutual-exclusion locks coordinated by the browser process across tabs, iframes, and workers."
+relations:
+  - target_id: event-loop-tasks-microtasks
+    type: requires
+    note: "BroadcastChannel messages and Web Lock grants arrive as asynchronous tasks on each context's event loop."
+  - target_id: opfs-origin-private-fs
+    type: under_the_hood
+    note: "Web Locks prevent NoModificationAllowedError when multiple tabs open the same OPFS file."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Broadcast_Channel_API"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "BroadcastChannel"
+  - "Web Locks"
+  - "cross-tab"
+  - "leader election"
+web_feature_id: broadcast-channel
+---
+
+## TL;DR
+
+`BroadcastChannel` delivers structured-cloned messages to every same-origin tab, iframe, and worker subscribed to a channel name. `navigator.locks.request()` adds an async mutex managed by the browser process that automatically releases when the callback's Promise settles or the tab crashes.
+
+## Interactive Lab
+
+Step through cross-tab leader election using `navigator.locks.request()` and `BroadcastChannel`.
+
+## Under the Hood
+
+`localStorage` `storage` events were a leaky bulletin board; `BroadcastChannel` is a dedicated intercom, and `navigator.locks` is the physical keycard that ensures only one tab writes to [OPFS](/concepts/opfs-origin-private-fs) or [IndexedDB](/concepts/indexeddb-transactions-quotas) at a time.
+
+1. **Origin Partitioning**: Both APIs are partitioned by `(origin, top-level site)` in modern storage-partitioned browsers, blocking cross-site tracking.
+2. **Sender Exclusion**: `channel.postMessage(msg)` dispatches `message` events to *other* contexts on the channel, never back to the sender instance.
+3. **Crash-Safe Leases**: Because the browser process owns the lock table, killing a tab's renderer process immediately releases its held locks to the next queued waiter.
+
+```js
+const bus = new BroadcastChannel('auth-sync');
+
+async function refreshSessionOnce() {
+  await navigator.locks.request('auth-refresh', { ifAvailable: true }, async (lock) => {
+    if (!lock) return; // Another tab already holds the refresh lock
+    const token = await fetch('/api/refresh', { method: 'POST' }).then((r) => r.text());
+    bus.postMessage({ type: 'TOKEN_UPDATED', token });
+  });
+}
+```
+
+## Problem Genealogy
+
+- **2009 (`localStorage` `storage` event)**: Synchronous string-only cross-tab hack that failed inside workers and stalled the main thread.
+- **2016 (`BroadcastChannel`)**: Added structured-cloned async pub/sub across windows and workers.
+- **2022 (`Web Locks API`)**: Replaced brittle `localStorage` timestamp heartbeats with kernel-style async mutexes.
+
+## Production Pitfalls
+
+- **Holding a lock forever for leader election**: If a leader tab sleeps in [bfcache](/concepts/bfcache-navigation) while holding a lock, it can stall other tabs unless you release locks on `pagehide` or use `AbortController`.
+- **Nested lock deadlocks**: Acquiring lock `A` then `B` in one tab and `B` then `A` in another hangs both queues permanently; pass an `AbortSignal` timeout.
+- **When not to use `BroadcastChannel`**: Cross-origin iframes cannot share a `BroadcastChannel`; use `window.postMessage()` with explicit `targetOrigin` checks instead.

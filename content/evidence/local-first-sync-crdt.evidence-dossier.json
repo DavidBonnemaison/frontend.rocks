@@ -1,0 +1,44 @@
+{
+  "concept_id": "local-first-sync-crdt",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://crdt.tech/papers.html",
+      "spec_section": "CRDT Specification: Strong Eventual Consistency",
+      "quote": "Conflict-free Replicated Data Types guarantee that any two replicas that have received the same set of updates converge deterministically to identical state without central coordination."
+    },
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API",
+      "spec_section": "MDN IndexedDB API",
+      "quote": "IndexedDB is a transactional, asynchronous key-value and object store persisted locally in the browser for offline-capable applications."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "interop-experimental",
+    "chrome": "24+ (IndexedDB) / OPFS 102+",
+    "firefox": "16+ (IndexedDB) / OPFS 111+",
+    "safari": "10+ (IndexedDB) / OPFS 15.2+",
+    "notes": "Browser storage primitives (IndexedDB, OPFS) are widely supported; CRDT sync engines (Yjs, Automerge) live in userland libraries."
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Local IndexedDB/OPFS Write", "Lamport/HLC Timestamp Tagging", "Peer/Server Delta Exchange", "Commutative Merge Convergence"],
+    "mechanism_summary": "Writes mutations locally first at 0ms network wait, encoding operations with causal/Lamport clocks so offline peers merge deterministically upon reconnection."
+  },
+  "production_failures": [
+    {
+      "symptom": "IndexedDB grows to hundreds of megabytes for a tiny 200-line collaborative document",
+      "root_cause": "CRDT retained every historical character insertion and tombstone deletion forever without periodic snapshot compaction.",
+      "mitigation": "Run periodic state-vector compaction/garbage collection once all active replicas acknowledge a causal checkpoint."
+    },
+    {
+      "symptom": "Concurrent offline edits overwrite each other silently (Last-Write-Wins data loss)",
+      "root_cause": "Sync engine used raw wall-clock Date.now() LWW registers on whole-document blobs instead of field/character-level CRDTs.",
+      "mitigation": "Use Hybrid Logical Clocks (HLC) for field-level LWW-Element-Sets or sequence CRDTs (RGA/YATA) for rich text."
+    }
+  ],
+  "sources": [
+    "https://www.inkandswitch.com/local-first/",
+    "https://crdt.tech/",
+    "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API"
+  ]
+}

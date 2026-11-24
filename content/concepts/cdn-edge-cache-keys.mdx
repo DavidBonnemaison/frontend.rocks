@@ -1,0 +1,60 @@
+---
+id: cdn-edge-cache-keys
+title: "CDN Edge Cache Keys & Vary"
+domain: network-perf
+maturity_status: baseline-widely
+summary_tldr: "Determines whether a CDN edge PoP serves a cached response or hits your origin by hashing URL, normalized query params, and Vary headers into a lookup key."
+relations:
+  - target_id: http-caching-directives
+    type: requires
+    note: "Shared edge caches obey s-maxage, stale-while-revalidate, and Vary directives."
+  - target_id: compression-brotli-dictionaries
+    type: under_the_hood
+    note: "Vary: Accept-Encoding prevents serving a Brotli or dictionary payload to incompatible clients."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Vary"
+  - "https://www.rfc-editor.org/rfc/rfc9111"
+  - "https://web.dev/articles/http-cache"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "cdn"
+  - "cache-key"
+  - "vary"
+  - "s-maxage"
+  - "stale-while-revalidate"
+---
+
+## TL;DR
+
+A CDN edge cache is a giant hash map keyed by scheme, host, path, query string, and `Vary` headers. Leave tracking parameters (`?utm_*`, `?fbclid=`) or `Vary: User-Agent` in the key, and your 95% cache hit ratio quietly collapses to 8%.
+
+## Interactive Lab
+
+Compare fragmented default cache keys against normalized edge keys using `PatternComparatorLab`.
+
+## Under the Hood
+
+An edge PoP operates like a coat check with strict ticket numbers: if two visitors ask for `/pricing` and `/pricing?utm_source=x`, the default hash produces two different tickets and sends the second visitor to the origin server. Tuning [HTTP Caching Directives](/concepts/http-caching-directives) at the edge means controlling both key cardinality and revalidation.
+
+1. The edge node strips or sorts non-semantic query parameters (`utm_*`, `gclid`) before computing the lookup hash.
+2. It reads `Vary` headers (`Accept-Encoding`, `Origin`) to partition variants, crucial for [Brotli & Compression Dictionaries](/concepts/compression-brotli-dictionaries).
+3. `s-maxage` overrides `max-age` exclusively for shared CDN caches, while `stale-while-revalidate` serves the expired entry immediately and refreshes asynchronously.
+
+```http
+Cache-Control: public, max-age=0, s-maxage=3600, stale-while-revalidate=86400
+Vary: Accept-Encoding
+CDN-Cache-Control: max-age=3600
+```
+
+## Problem Genealogy
+
+- **2000s (Origin-Centric CDNs)**: Cached only `/images/*` and `/css/*` by exact URL; dynamic HTML always hit origin.
+- **2014 (`Surrogate-Control` & `s-maxage`)**: Separated browser TTL (`max-age=0`) from CDN TTL (`s-maxage=3600`) for instant invalidation.
+- **2022+ (RFC 9211 `Cache-Status` & `CDN-Cache-Control`)**: Standardized per-hop cache headers so origin, CDN, and browser stop fighting over `Cache-Control`.
+
+## Production Pitfalls
+
+- **`Vary: User-Agent` or `Vary: Cookie`**: Explodes key cardinality across thousands of browser versions and session IDs, effectively disabling edge caching.
+- **Caching personalized responses**: Emitting `s-maxage` on a route that reads `Cookie` leaks one user's HTML to the next visitor at the same PoP.
+- **When not to use edge caching**: Never cache user-specific mutations, authenticated JSON endpoints, or CSRF-token HTML shells in shared CDN storage.

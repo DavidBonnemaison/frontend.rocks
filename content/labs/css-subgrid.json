@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "css-subgrid",
+  "title": "Independent Nested Grids vs subgrid",
+  "description": "Compare misaligned sibling card internals against shared parent row tracks.",
+  "before": {
+    "label": "Independent Card Grids",
+    "code": ".cards { display: grid; grid-template-columns: repeat(3, 1fr); }\n.card {\n  display: grid;\n  grid-template-rows: auto 1fr auto;\n  /* Titles & footers misalign across cards */\n}",
+    "metrics": {
+      "lines": 6,
+      "reflows": "Isolated per card",
+      "dependencies": "0 JS (misaligned rows)"
+    },
+    "previewNote": "A 2-line title in Card 1 misaligns Card 2’s body and footer."
+  },
+  "after": {
+    "label": "Shared Parent Tracks via subgrid",
+    "code": ".cards { display: grid; grid-template-columns: repeat(3, 1fr); }\n.card {\n  display: grid;\n  grid-row: span 3;\n  grid-template-rows: subgrid;\n}",
+    "metrics": {
+      "lines": 6,
+      "reflows": "Single unified pass",
+      "dependencies": "0 JS (pixel-aligned)"
+    },
+    "previewNote": "All card titles, bodies, and footers share the exact same row tracks."
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "concept_id": "popover-api-light-dismiss",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/popover.html#the-popover-attribute",
+      "spec_section": "6.11 The popover attribute",
+      "quote": "Auto popovers participate in light dismiss and close other unrelated auto popovers when shown."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-newly",
+    "chrome": "114+",
+    "firefox": "125+",
+    "safari": "17.0+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Top Layer Stack",
+      "Light-Dismiss Hit-Test"
+    ],
+    "mechanism_summary": "Auto popover stack managed by Document without DOM event listeners."
+  },
+  "production_failures": [
+    {
+      "symptom": "Notification toast closes on any user click",
+      "root_cause": "Using popover='auto' instead of popover='manual'.",
+      "mitigation": "Use popover='manual' for persistent notifications."
+    },
+    {
+      "symptom": "Menu clipped by ancestor overflow: hidden",
+      "root_cause": "Missing popover attribute or CSS overriding position: static.",
+      "mitigation": "Preserve the default Top Layer behavior of popover."
+    }
+  ],
+  "sources": [
+    "https://html.spec.whatwg.org/multipage/popover.html",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Popover_API"
+  ]
+}

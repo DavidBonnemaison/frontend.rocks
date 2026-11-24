@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "inert-attribute-focus",
+  "title": "Manual aria-hidden + tabindex=-1 vs Native inert Attribute",
+  "before": {
+    "label": "Manual aria-hidden + tabindex Loops",
+    "code": "shell.setAttribute('aria-hidden', 'true');\nshell.querySelectorAll('a,button,input').forEach((el) => {\n  el.dataset.prevTab = el.getAttribute('tabindex') ?? '';\n  el.tabIndex = -1;\n});",
+    "metrics": {
+      "lines": 5,
+      "reflows": "DOM query + mutation",
+      "dependencies": "Leaks new dynamic nodes"
+    },
+    "previewNote": "Misses dynamically inserted buttons and fails to block pointer clicks."
+  },
+  "after": {
+    "label": "Native HTML inert Attribute",
+    "code": "shell.inert = isDrawerOpen;\n// Single boolean blocks focus, clicks, selection, find-in-page, and A11y tree",
+    "metrics": {
+      "lines": 2,
+      "reflows": "0 child mutations",
+      "dependencies": "0 JS focus traps"
+    },
+    "previewNote": "Engine-enforced across all existing and future descendants."
+  }
+}

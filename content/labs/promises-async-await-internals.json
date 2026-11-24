@@ -1,0 +1,53 @@
+{
+  "type": "step-machine",
+  "id": "promises-async-await-internals",
+  "title": "Async Function Suspension & Microtask Resume",
+  "description": "Trace how await suspends an execution context and resumes via the Microtask Queue.",
+  "steps": [
+    {
+      "label": "1. Synchronous Prologue",
+      "description": "async fn() runs synchronously on the Call Stack until it hits await.",
+      "codeHighlight": "console.log('A'); const data = await fetchJSON();",
+      "state": {
+        "callStack": ["fn()"],
+        "microtasks": [],
+        "suspended": false
+      },
+      "visualNodes": [
+        { "id": "stack", "label": "Call Stack", "status": "active" },
+        { "id": "heap", "label": "Suspended Context", "status": "idle" },
+        { "id": "micro", "label": "Microtask Queue", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Suspend & Return Pending Promise",
+      "description": "Engine pops fn() off the Call Stack, saves its frame on the heap, and returns a pending Promise to the caller.",
+      "codeHighlight": "// caller continues synchronously: console.log('B')",
+      "state": {
+        "callStack": ["caller()"],
+        "microtasks": [],
+        "suspended": true
+      },
+      "visualNodes": [
+        { "id": "stack", "label": "Call Stack", "status": "done" },
+        { "id": "heap", "label": "Suspended Context", "status": "active" },
+        { "id": "micro", "label": "Microtask Queue", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Enqueue & Resume Microtask",
+      "description": "When fetchJSON() settles, the resume reaction enters the Microtask Queue and restores fn() on the Call Stack.",
+      "codeHighlight": "console.log('C', data);",
+      "state": {
+        "callStack": ["fn() [resumed]"],
+        "microtasks": [],
+        "suspended": false
+      },
+      "visualNodes": [
+        { "id": "stack", "label": "Call Stack", "status": "active" },
+        { "id": "heap", "label": "Suspended Context", "status": "done" },
+        { "id": "micro", "label": "Microtask Queue", "status": "done" }
+      ]
+    }
+  ]
+}

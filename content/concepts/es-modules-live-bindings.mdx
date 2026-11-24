@@ -1,0 +1,65 @@
+---
+id: es-modules-live-bindings
+title: ES Modules and Live Bindings
+domain: js-runtime
+maturity_status: baseline-widely
+summary_tldr: "Eliminate stale circular-import snapshots and unlock static tree-shaking—ESM imports wire read-only indirect pointers into the exporter's ModuleEnvironmentRecord."
+relations:
+  - target_id: execution-context-call-stack
+    type: requires
+    note: "ModuleEnvironmentRecords extend LexicalEnvironments with cross-module indirect binding slots."
+  - target_id: preload-scanner-hints
+    type: contrasts_with
+    note: "Nested ES module imports cannot be discovered by the HTML preload scanner without modulepreload hints."
+sources:
+  - "https://tc39.es/ecma262/#sec-resolveexport"
+  - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "esm"
+  - "live bindings"
+  - "circular dependency"
+  - "modulepreload"
+web_feature_id: js-modules
+---
+
+## TL;DR
+
+ES Module imports do not copy values; they link read-only pointers straight into the exporting module's [Execution Context](/concepts/execution-context-call-stack) slot. Because linking completes before execution, mutations in the exporter surface immediately to every importer, and static graphs enable tree-shaking.
+
+## Interactive Lab
+
+Compare stale CommonJS value snapshots against live ESM pointer slots in `PatternComparatorLab`.
+
+## Under the Hood
+
+During instantiation, V8 allocates a `ModuleEnvironmentRecord` per module and wires read-only indirect bindings straight to the exporter's slots before execution. Whereas CommonJS `require()` copies a value snapshot at call time, an ESM `import` exposes live updates without allowing reassignment.
+
+1. **Construction**: The loader fetches and parses all static `import` specifiers before running any code.
+2. **Instantiation**: The engine allocates a `ModuleEnvironmentRecord` for each module and wires indirect bindings from imports to exports.
+3. **Evaluation**: Modules execute post-order (leaves first); top-level `await` pauses parent evaluation until settled.
+4. **Network Discovery**: Unlike `<script>` tags spotted by [Preload Scanner Hints](/concepts/preload-scanner-hints), deep ESM imports trigger waterfalls unless declared with `modulepreload`.
+
+```js
+// counter.mjs
+export let count = 0;
+export const increment = () => { count += 1; };
+
+// consumer.mjs
+import { count, increment } from './counter.mjs';
+increment();
+console.log(count); // 1 (live read-only view)
+```
+
+## Problem Genealogy
+
+- **2009 (CommonJS & AMD)**: Synchronous `require()` copied `module.exports` by value, breaking circular references and static dead-code elimination.
+- **2015 (ES2015 Modules)**: Standardized static `import`/`export` syntax with live read-only bindings.
+- **2022 (`<link rel="modulepreload">` & Import Maps)**: Eliminated bare-specifier tooling lock-in and sequential fetch waterfalls.
+
+## Production Pitfalls
+
+- **Circular TDZ Crashes**: Reading an imported `const` before the exporting module finishes evaluating throws `ReferenceError`.
+- **Unbundled Waterfall Latency**: Serving 200 raw ESM files over HTTP/2 without `modulepreload` stalls First Interactive behind serial round-trips.
+- **When not to use raw unbundled ESM**: Never ship hundreds of unbundled `node_modules` ESM files to production browsers without bundling or `<link rel="modulepreload">` hints.

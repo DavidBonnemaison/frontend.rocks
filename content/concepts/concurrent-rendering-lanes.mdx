@@ -1,0 +1,67 @@
+---
+id: concurrent-rendering-lanes
+title: "Priority Lanes & Time-Slicing Schedulers"
+domain: framework-internals
+maturity_status: baseline-widely
+summary_tldr: "Heavy state updates lock the main thread and tank INP past 200 ms. Bitmask priority lanes let a framework scheduler pause background tree reconciliation, yield to user input, and resume work across frames."
+relations:
+  - target_id: scheduler-api-yield
+    type: requires
+    note: "Time-slicing schedulers yield control back to the browser event loop between work units."
+  - target_id: long-tasks-and-inp
+    type: requires
+    note: "Chunking reconciliation into 5 ms slices prevents >50 ms long tasks that degrade INP."
+  - target_id: virtual-dom-reconciliation
+    type: requires
+    note: "Fiber linked-list trees make Virtual DOM reconciliation interruptible at any component boundary."
+sources:
+  - "https://wicg.github.io/scheduling-apis/"
+  - "https://react.dev/reference/react/useTransition"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "priority lanes"
+  - "time slicing"
+  - "fiber scheduler"
+  - "inp"
+---
+
+## TL;DR
+
+Synchronous [Virtual DOM](/concepts/virtual-dom-reconciliation) diffing blocks input events until the entire tree finishes. Concurrent schedulers assign 31-bit priority lanes to updates, slicing work into 5 ms chunks and calling [Scheduler Yield](/concepts/scheduler-api-yield) primitives so urgent keystrokes preempt background renders.
+
+## Interactive Lab
+
+Step through bitmask lane assignment, 5 ms deadline yielding, and urgent input preemption in `StepMachineLab`.
+
+## Under the Hood
+
+Frameworks represent update priorities as a 31-bit integer bitmask (`SyncLane = 1`, `InputContinuousLane = 4`, `TransitionLane = 64`), enabling O(1) bitwise scheduling checks.
+
+1. **Lane Bitmasking**: When `setState` fires inside `startTransition`, the scheduler ORs a `TransitionLane` bit onto the fiber's `lanes` field and bubbles `childLanes` up to the root.
+2. **Work Loop & 5 ms Slice**: During `workLoopConcurrent()`, the runtime processes one fiber node at a time and checks `performance.now() >= deadline` (typically 5 ms) before continuing.
+3. **Preemption & Yielding**: If a user keystroke arrives (`SyncLane`), the scheduler aborts the in-progress transition tree, flushes the urgent lane synchronously, and restarts the transition later without dropping [INP](/concepts/long-tasks-and-inp) frames.
+
+```ts
+function workLoopConcurrent(deadline: number) {
+  while (workInProgress !== null && performance.now() < deadline) {
+    workInProgress = performUnitOfWork(workInProgress);
+  }
+  if (workInProgress !== null) {
+    // Yield to browser paint & input; resume in next macrotask
+    scheduler.postTask(() => workLoopConcurrent(performance.now() + 5));
+  }
+}
+```
+
+## Problem Genealogy
+
+- **2016 (Recursive Stack Reconciler)**: React 15 walked components via JS call-stack recursion; a 2,000-node filter update ran uninterruptibly for 120 ms.
+- **2017 (Fiber Linked List)**: Replaced recursion with heap-allocated fiber pointers (`child`, `sibling`, `return`) so traversal could pause and resume.
+- **2022 (Lane Bitmasks & `scheduler.yield`)**: Replaced scalar expiration times with 31-bit lane masks, allowing multiple concurrent transitions to entangle and preempt cleanly.
+
+## Production Pitfalls
+
+- **Tearing on External Mutable Stores**: Reading a mutable global outside React state during an interrupted render causes top and bottom components to show different values unless wrapped in `useSyncExternalStore`.
+- **Starving Low-Priority Lanes**: Firing continuous `InputContinuousLane` updates (such as 60 fps scroll state) indefinitely preempts `TransitionLane` renders until starvation expiration forces a synchronous flush.
+- **When not to use concurrent transitions**: Never wrap controlled text `<input>` value updates in `startTransition`; delaying keystroke echo past 16 ms makes typing feel broken and forces synchronous fallback work.

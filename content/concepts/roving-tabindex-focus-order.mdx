@@ -1,0 +1,66 @@
+---
+id: roving-tabindex-focus-order
+title: Roving Tabindex and Focus Order Mechanics
+domain: security-a11y
+maturity_status: baseline-widely
+summary_tldr: "Keyboard navigation pattern that reduces a multi-item composite widget to a single Tab stop by toggling tabindex='0' onto the active descendant while keeping siblings at tabindex='-1'."
+relations:
+  - target_id: accessibility-tree-aria
+    type: requires
+    note: "Roving tabindex pairs with composite ARIA roles (tablist, menu, toolbar) so screen readers announce item positions."
+  - target_id: dom-event-propagation
+    type: under_the_hood
+    note: "A single keydown listener on the container intercepts Arrow keys via event bubbling."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex"
+  - "https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "roving tabindex"
+  - "focus management"
+  - "tabindex"
+  - "keyboard navigation"
+---
+
+## TL;DR
+
+Roving `tabindex` gives a composite widget (tablist, toolbar, radio group, grid) exactly one `Tab` stop. Only the currently active child carries `tabindex="0"`, while all sibling items hold `tabindex="-1"` and receive programmatic `.focus()` on `Arrow` key presses.
+
+## Interactive Lab
+
+Step through how `tabindex="0"` and `.focus()` migrate across items inside a tablist on `ArrowRight`.
+
+## Under the Hood
+
+Without roving `tabindex`, a 40-button toolbar forces keyboard users to mash `Tab` forty times just to reach the next section; roving `tabindex` turns the entire toolbar into one exit-ramps-included roundabout.
+
+1. **Sequential Focus Order**: The browser's `Tab` walker visits elements with `tabindex="0"` in DOM order and skips `tabindex="-1"`, though `element.focus()` still moves focus to `-1` nodes.
+2. **Delegated Key Listener**: A single `keydown` handler on the parent container intercepts `ArrowLeft`/`ArrowRight` (or `Home`/`End`) via [DOM Event Propagation](/concepts/dom-event-propagation).
+3. **Focus Restoration**: Leaving the widget via `Tab` and returning later via `Shift+Tab` lands directly on the last active item because its `tabindex` remained `0` in the [Accessibility Tree](/concepts/accessibility-tree-aria).
+
+```js
+toolbar.addEventListener('keydown', (e) => {
+  const items = [...toolbar.querySelectorAll('[role="button"]')];
+  const idx = items.indexOf(document.activeElement);
+  if (idx === -1) return;
+  const next = e.key === 'ArrowRight' ? (idx + 1) % items.length
+             : e.key === 'ArrowLeft' ? (idx - 1 + items.length) % items.length : -1;
+  if (next === -1) return;
+  items[idx].tabIndex = -1;
+  items[next].tabIndex = 0;
+  items[next].focus();
+});
+```
+
+## Problem Genealogy
+
+- **2000s (Positive `tabindex="1"`, `"2"`)**: Brittle manual ordering caused chaotic focus jumps whenever CSS Grid or Flexbox reordered visual elements.
+- **2014 (WAI-ARIA APG Roving Tabindex)**: Standardized `0` / `-1` swapping for desktop-grade web widgets.
+- **2020+ (`aria-activedescendant` vs Roving Tabindex)**: Virtualized lists adopted `aria-activedescendant`, while fixed toolbars and tablists standardized on roving `tabindex`.
+
+## Production Pitfalls
+
+- **Using positive `tabindex > 0`**: Even a single `tabindex="1"` hijacks the entire document's `Tab` order ahead of skip links and navigation; restrict values to `0` and `-1`.
+- **Removing the active node without shifting `tabindex="0"`**: Deleting the currently active tab without promoting a neighbor leaves the widget unreachable by keyboard `Tab`.
+- **When not to use roving `tabindex`**: Virtualized lists with 10,000 off-screen rows cannot mount DOM nodes to focus; use `aria-activedescendant` on the scroll container instead.

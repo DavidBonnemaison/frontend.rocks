@@ -1,0 +1,31 @@
+{
+  "type": "constraint-simulator",
+  "id": "compression-brotli-dictionaries",
+  "title": "Payload Transfer: Gzip vs Brotli vs Dictionary Delta",
+  "description": "Adjust bundle delta ratio and Brotli quality to observe wire bytes and compression CPU latency.",
+  "presetMode": "brotli-dictionary",
+  "controls": [
+    {
+      "key": "brotliQuality",
+      "label": "Brotli Quality Level",
+      "kind": "range",
+      "min": 1,
+      "max": 11,
+      "step": 1,
+      "defaultValue": 5
+    },
+    {
+      "key": "useSharedDictionary",
+      "label": "Use Previous Version as Dictionary (dcb)",
+      "kind": "toggle",
+      "defaultValue": true
+    },
+    {
+      "key": "payloadKind",
+      "label": "Response Type",
+      "kind": "select",
+      "options": ["static-js-bundle", "dynamic-ssr-html"],
+      "defaultValue": "static-js-bundle"
+    }
+  ]
+}

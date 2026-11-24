@@ -1,0 +1,53 @@
+{
+  "type": "step-machine",
+  "id": "command-pattern-event-sourcing-ui",
+  "title": "Deterministic Command Log & Time-Travel Replay",
+  "description": "Trace how pure commands append to an immutable log and replay deterministically to any cursor index.",
+  "steps": [
+    {
+      "label": "1. Capture Pure Command",
+      "description": "Timestamp and UUID are computed at dispatch time so the command object is 100% deterministic.",
+      "codeHighlight": "log.push({ seq: 2, type: 'ADD_ITEM', id: 'itm_9', ts: 1731770002 });",
+      "state": {
+        "logLength": 3,
+        "cursor": 2,
+        "itemCount": 2
+      },
+      "visualNodes": [
+        { "id": "cmd", "label": "Command Log [0..2]", "status": "active" },
+        { "id": "chk", "label": "Checkpoint @0", "status": "done" },
+        { "id": "ui", "label": "Derived State (2 items)", "status": "active" }
+      ]
+    },
+    {
+      "label": "2. Scrub Cursor Backward (Time Travel)",
+      "description": "User or debugger moves cursor to seq 1; runtime folds from nearest checkpoint @0 through seq 1.",
+      "codeHighlight": "const state = replay(log, /* targetIndex */ 1, checkpoint0);",
+      "state": {
+        "logLength": 3,
+        "cursor": 1,
+        "itemCount": 1
+      },
+      "visualNodes": [
+        { "id": "cmd", "label": "Command Log [0..1]", "status": "active" },
+        { "id": "chk", "label": "Checkpoint @0", "status": "done" },
+        { "id": "ui", "label": "Derived State (1 item)", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Export Reproducible Bug Trace",
+      "description": "Serializing log[0..2] to JSON reproduces the exact state sequence on any developer machine.",
+      "codeHighlight": "JSON.stringify({ checkpoint0, commands: log.slice(0, 3) });",
+      "state": {
+        "logLength": 3,
+        "cursor": 2,
+        "deterministic": true
+      },
+      "visualNodes": [
+        { "id": "cmd", "label": "Serialized Trace", "status": "done" },
+        { "id": "chk", "label": "Checkpoint @0", "status": "done" },
+        { "id": "ui", "label": "Bit-Identical Replay", "status": "done" }
+      ]
+    }
+  ]
+}

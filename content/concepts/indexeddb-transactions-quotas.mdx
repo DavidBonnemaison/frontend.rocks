@@ -1,0 +1,71 @@
+---
+id: indexeddb-transactions-quotas
+title: IndexedDB Transactions and Storage Quotas
+domain: web-apis
+maturity_status: baseline-widely
+summary_tldr: "Transactional client-side B-tree object store whose transactions auto-commit on microtask drain and whose storage limits depend on origin-wide disk quotas."
+relations:
+  - target_id: event-loop-tasks-microtasks
+    type: requires
+    note: "IDB transaction auto-commit is tied directly to microtask queue exhaustion."
+  - target_id: opfs-origin-private-fs
+    type: contrasts_with
+    note: "OPFS provides raw byte-level file handles without structured-clone or transaction overhead."
+  - target_id: broadcast-channel-web-locks
+    type: contrasts_with
+    note: "IndexedDB locks object stores per transaction, whereas Web Locks and BroadcastChannel coordinate multi-tab state explicitly."
+  - target_id: local-first-sync-crdt
+    type: contrasts_with
+    note: "IndexedDB persists single-device B-tree records, whereas CRDTs merge concurrent multi-device edits deterministically."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB"
+  - "https://w3c.github.io/IndexedDB/"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "IndexedDB"
+  - "TransactionInactiveError"
+  - "QuotaExceededError"
+  - "storage persistence"
+web_feature_id: indexeddb
+---
+
+## TL;DR
+
+IndexedDB stores structured-cloned JavaScript objects in indexed B-trees on disk. Every read or write runs inside a scoped transaction that auto-commits the moment the [Event Loop](/concepts/event-loop-tasks-microtasks) drains with no pending `IDBRequest`s, while capacity is governed by dynamic origin-wide storage quotas.
+
+## Interactive Lab
+
+Trace why `await fetch()` inside an open IndexedDB transaction triggers `TransactionInactiveError`.
+
+## Under the Hood
+
+An IndexedDB transaction behaves like a bank vault's dead-man switch: the door locks shut the instant you stop feeding it requests, even if you only stepped away to check the network.
+
+1. **Scope Locking**: Multiple `readonly` transactions execute concurrently; a `readwrite` transaction blocks overlapping `readwrite` transactions on the same object store.
+2. **Microtask Auto-Commit**: After `IDBRequest.onsuccess` fires, if no new request is queued before microtasks drain, the engine commits the transaction automatically.
+3. **Quota & Eviction**: Browsers allocate a percentage of free disk per origin (`navigator.storage.estimate()`) and evict `best-effort` origins under disk pressure unless granted `navigator.storage.persist()`.
+
+```js
+// Safe pattern: resolve async I/O BEFORE opening the transaction
+const payload = await fetch('/api/doc/42').then((r) => r.json());
+const tx = db.transaction('docs', 'readwrite');
+const store = tx.objectStore('docs');
+store.put(payload);
+await new Promise((resolve, reject) => {
+  tx.oncomplete = () => resolve();
+  tx.onerror = () => reject(tx.error);
+});
+```
+
+## Problem Genealogy
+
+- **2010 (Web SQL Deprecated)**: SQLite-over-SQL was abandoned over dialect lock-in, leaving IndexedDB as the sole structured client database.
+- **2014 (Quota Management API)**: Unified IndexedDB, Cache API, and [OPFS](/concepts/opfs-origin-private-fs) under one origin quota pool.
+- **2023+ (SQLite-on-Wasm + OPFS)**: Large analytical apps increasingly bypass IndexedDB's structured-clone tax by storing raw SQLite pages in OPFS.
+
+## Production Pitfalls
+
+- **Awaiting non-IDB promises inside a transaction**: `await fetch()` or `await new Promise(setTimeout)` closes the transaction and throws `TransactionInactiveError` on the next write.
+- **Large `structuredClone` payloads on the main thread**: Writing 50 MB blobs in one `store.put()` stalls the UI thread; run heavy writes in a [Dedicated Web Worker](/concepts/dedicated-web-workers).
+- **When not to use IndexedDB**: For sequential binary file streaming, SQLite page files, or append-only logs, use OPFS instead of serializing chunks into B-tree records; for multi-tab mutexes or offline conflict resolution, pair it with [BroadcastChannel & Web Locks](/concepts/broadcast-channel-web-locks) and [Local-First Sync & CRDTs](/concepts/local-first-sync-crdt).

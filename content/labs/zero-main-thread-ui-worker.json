@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "zero-main-thread-ui-worker",
+  "title": "100k-Row Engine: Main-Thread Sort vs Worker Actor + Wasm + OPFS",
+  "description": "Compare blocking 100k-row sorts and JSON IndexedDB writes on the main thread against an off-main-thread Worker actor with zero-copy transfers and OPFS sync writes.",
+  "before": {
+    "label": "Main-Thread Sort + JSON Persistence",
+    "code": "function onSortColumn(colIndex) {\n  rows.sort((a, b) => a[colIndex] - b[colIndex]); // 420ms main-thread block\n  const blob = JSON.stringify(rows);              // 180ms serialization\n  idbStore.put(blob, 'sheet-v1');                 // Async IDB structured clone\n  renderVisibleViewport(rows.slice(0, 60));\n}",
+    "metrics": {
+      "lines": 6,
+      "reflows": "4 FPS (600ms+ Long Task)",
+      "dependencies": "Main Thread 100%"
+    },
+    "previewNote": "Every sort triggers a >600 ms Long Task, starving rAF, dropping frame rate to 4 FPS, and allocating 90 MB of transient JSON strings."
+  },
+  "after": {
+    "label": "Worker Actor + Wasm Sort + OPFS Sync + Transfer",
+    "code": "// Inside Dedicated Worker actor\nfunction handleSort(colIndex, syncHandle) {\n  wasmExports.sortColumnInPlace(colIndex); // 11ms in linear memory\n  const view = new Uint32Array(wasmMemory.buffer, idxPtr, rowCount).slice();\n  syncHandle.write(view, { at: 0 });       // Sync OPFS write off main thread\n  self.postMessage({ type: 'SORTED', indices: view.buffer }, [view.buffer]);\n}",
+    "metrics": {
+      "lines": 7,
+      "reflows": "60 FPS (0ms Main-Thread Sort)",
+      "dependencies": "Worker + Wasm + OPFS"
+    },
+    "previewNote": "Main thread stays at 60 FPS; only a zero-copy ArrayBuffer of sorted row indices crosses the Worker boundary."
+  }
+}

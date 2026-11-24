@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "async-clipboard-activation",
+  "title": "Async Copy: Expired Gesture vs Promise-Backed ClipboardItem",
+  "before": {
+    "label": "Await Fetch Before writeText() (Fails in Safari)",
+    "code": "btn.onclick = async () => {\n  const url = await fetchShareUrl();\n  await navigator.clipboard.writeText(url); // Activation expired!\n};",
+    "metrics": {
+      "lines": 4,
+      "reflows": "NotAllowedError",
+      "dependencies": "0 kB"
+    },
+    "previewNote": "Fails when fetch() exceeds the transient activation window."
+  },
+  "after": {
+    "label": "Synchronous ClipboardItem with Promise<Blob>",
+    "code": "btn.onclick = () => {\n  const item = new ClipboardItem({\n    'text/plain': fetchShareUrl().then((u) => new Blob([u], { type: 'text/plain' })),\n  });\n  navigator.clipboard.write([item]);\n};",
+    "metrics": {
+      "lines": 6,
+      "reflows": "Gesture Preserved",
+      "dependencies": "0 kB"
+    },
+    "previewNote": "write() runs synchronously inside the click handler; browser awaits the Blob."
+  }
+}

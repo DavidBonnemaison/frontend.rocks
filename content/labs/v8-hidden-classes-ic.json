@@ -1,0 +1,38 @@
+{
+  "type": "step-machine",
+  "id": "v8-hidden-classes-ic",
+  "title": "Inline Cache Evolution in V8",
+  "description": "Observe the transition from Monomorphic to Megamorphic when a function receives heterogeneous Shapes.",
+  "steps": [
+    {
+      "label": "1. Monomorphic (1 Shape)",
+      "description": "getX({ x: 1, y: 2 }) caches Shape_AB and reads offset +0 directly.",
+      "codeHighlight": "function getX(p) { return p.x; }",
+      "state": {
+        "icState": "MONOMORPHIC",
+        "cachedShapes": 1,
+        "lookupCost": "1 pointer comparison"
+      }
+    },
+    {
+      "label": "2. Polymorphic (2 to 4 Shapes)",
+      "description": "Calls with { x: 1, z: 3 } then { y: 2, x: 1 }: the IC maintains a small array of Shapes.",
+      "codeHighlight": "getX({ x: 1, z: 3 }); getX({ y: 2, x: 1 });",
+      "state": {
+        "icState": "POLYMORPHIC",
+        "cachedShapes": 3,
+        "lookupCost": "Linear scan (<= 4)"
+      }
+    },
+    {
+      "label": "3. Megamorphic (> 4 Shapes)",
+      "description": "Beyond 4 distinct Shapes, the IC abandons the local cache and falls back to the global hash table.",
+      "codeHighlight": "// > 4 distinct object shapes",
+      "state": {
+        "icState": "MEGAMORPHIC",
+        "cachedShapes": "> 4",
+        "lookupCost": "Hash lookup / Deoptimization"
+      }
+    }
+  ]
+}

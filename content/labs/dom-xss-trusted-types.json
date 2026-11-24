@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "dom-xss-trusted-types",
+  "title": "DOM Injection Sinks: Raw String vs TrustedHTML Policy",
+  "before": {
+    "label": "Unchecked innerHTML Sink",
+    "code": "const bio = new URLSearchParams(location.search).get('bio');\nprofileEl.innerHTML = bio; // Executes <img onerror=...>!",
+    "metrics": {
+      "lines": 2,
+      "reflows": "XSS Sink Open",
+      "dependencies": "0 kB"
+    },
+    "previewNote": "Any attacker-controlled string flows straight into the HTML parser."
+  },
+  "after": {
+    "label": "Trusted Types + DOMPurify Policy",
+    "code": "const policy = trustedTypes.createPolicy('app-html', {\n  createHTML: (dirty) => DOMPurify.sanitize(dirty),\n});\nprofileEl.innerHTML = policy.createHTML(bio);",
+    "metrics": {
+      "lines": 4,
+      "reflows": "Type-Locked Sink",
+      "dependencies": "DOMPurify (~7 kB)"
+    },
+    "previewNote": "Raw strings throw TypeError; only TrustedHTML from app-html compiles."
+  }
+}

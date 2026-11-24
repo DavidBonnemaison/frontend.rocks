@@ -1,0 +1,64 @@
+---
+id: layout-thrashing
+title: Layout Thrashing (Forced Synchronous Layout)
+domain: rendering-pipeline
+maturity_status: baseline-widely
+summary_tldr: "Interleaving DOM writes and geometric reads inside JavaScript forces the engine to recompute Layout synchronously on every iteration."
+relations:
+  - target_id: browser-rendering-pipeline
+    type: requires
+    note: "Thrashing stems from repeated invalidation of the Layout phase."
+  - target_id: debounce-throttle-raf-coalescing
+    type: contrasts_with
+    note: "Interleaved reads and writes force synchronous reflows, whereas rAF coalescing batches DOM writes at frame boundaries."
+sources:
+  - "https://web.dev/articles/avoid-large-complex-layouts-and-layout-thrashing"
+  - "https://gist.github.com/paulirish/5d52fb081b3570c81e3a"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "offsetHeight"
+  - "getBoundingClientRect"
+  - "reflow"
+  - "jank"
+---
+
+## TL;DR
+
+Reading a geometric property (`offsetHeight`, `getBoundingClientRect()`) after invalidating styles forces the engine to run Layout synchronously mid-script instead of deferring it to the end of the frame.
+
+## Interactive Lab
+
+Compare the impact of batching reads before writes on per-frame reflows in `ConstraintSimulatorLab`.
+
+## Under the Hood
+
+1. A DOM write (`el.style.width = '100px'`) sets a `NeedsLayout` dirty flag on the `LayoutObject` and its ancestors in the [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline).
+2. Normally, geometry computation is deferred until `Update the Rendering` at the end of the [Event Loop](/concepts/event-loop-tasks-microtasks) frame.
+3. Any box metric read (`offsetTop`, `clientWidth`, `getComputedStyle(el).width`) forces a synchronous `Document::UpdateStyleAndLayoutTree()` to return an up-to-date value.
+
+```js
+// Bad: N forced synchronous layouts in one loop
+for (const card of cards) {
+  const w = card.offsetWidth; // Read -> forces Layout
+  card.style.width = `${w + 10}px`; // Write -> dirties Layout
+}
+
+// Good: batch all geometric reads before any DOM write
+const widths = cards.map((card) => card.offsetWidth);
+cards.forEach((card, i) => {
+  card.style.width = `${widths[i] + 10}px`;
+});
+```
+
+## Problem Genealogy
+
+- **2005 (jQuery Animations)**: `.each()` loops reading `.height()` then writing `.css('height', ...)` across entire lists, guaranteeing 10 FPS on a 200-row table.
+- **2013 (FastDOM)**: Libraries separating read and write queues around `requestAnimationFrame` using [rAF Coalescing](/concepts/debounce-throttle-raf-coalescing).
+- **2020+ (`ResizeObserver` & `content-visibility`)**: Asynchronous dimension observation without forced synchronous reads.
+
+## Production Pitfalls
+
+- **Virtualized Lists & Grids**: Measuring each row after insertion causes O(N) layouts and drops frame rates below 15 FPS.
+- **Third-Party Analytics**: A tracker calling `getBoundingClientRect()` right after a framework commit triggers a full-page reflow on someone else's dime.
+- **When not to use manual read/write batching**: For resize observation, replace manual metric reads with [CSS Container Queries](/concepts/css-container-queries) or `ResizeObserver` instead of maintaining custom read queues.

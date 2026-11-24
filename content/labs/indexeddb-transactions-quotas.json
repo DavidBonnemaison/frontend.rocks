@@ -1,0 +1,49 @@
+{
+  "type": "step-machine",
+  "id": "indexeddb-transactions-quotas",
+  "title": "IndexedDB Transaction Auto-Commit Lifecycle",
+  "description": "See why awaiting a non-IDB Promise kills an active IndexedDB transaction.",
+  "steps": [
+    {
+      "label": "1. Open readwrite Transaction",
+      "description": "db.transaction('docs', 'readwrite') acquires a write lock on the 'docs' object store and marks the transaction active.",
+      "codeHighlight": "const tx = db.transaction('docs', 'readwrite');",
+      "state": {
+        "txState": "ACTIVE",
+        "pendingRequests": 0,
+        "storeLock": "EXCLUSIVE"
+      },
+      "visualNodes": [
+        { "id": "tx", "label": "Transaction (Active)", "status": "active" },
+        { "id": "microtask", "label": "Microtask Queue", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Await External Promise (Trap)",
+      "description": "Calling await fetch(...) suspends the JS frame with zero pending IDBRequests. The engine auto-commits the transaction on microtask drain.",
+      "codeHighlight": "await fetch('/api/meta'); // No IDB requests queued!",
+      "state": {
+        "txState": "COMMITTED_AUTO",
+        "pendingRequests": 0,
+        "storeLock": "RELEASED"
+      },
+      "visualNodes": [
+        { "id": "tx", "label": "Transaction (Committed)", "status": "done" },
+        { "id": "microtask", "label": "Fetch Pending", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Resume & Throw TransactionInactiveError",
+      "description": "When fetch resolves, calling store.put() throws TransactionInactiveError because the transaction already closed.",
+      "codeHighlight": "tx.objectStore('docs').put(doc); // Throws!",
+      "state": {
+        "txState": "INACTIVE",
+        "error": "TransactionInactiveError"
+      },
+      "visualNodes": [
+        { "id": "tx", "label": "TransactionInactiveError", "status": "error" },
+        { "id": "microtask", "label": "Resume After Fetch", "status": "done" }
+      ]
+    }
+  ]
+}

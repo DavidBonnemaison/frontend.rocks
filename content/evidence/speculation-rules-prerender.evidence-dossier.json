@@ -1,0 +1,43 @@
+{
+  "concept_id": "speculation-rules-prerender",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://wicg.github.io/nav-speculation/speculation-rules.html",
+      "spec_section": "WICG Speculation Rules: Prerendering",
+      "quote": "Speculation rules allow authors to declaratively specify URLs to prefetch or prerender in a background browsing context before navigation."
+    },
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/API/Speculation_Rules_API",
+      "spec_section": "MDN Speculation Rules API",
+      "quote": "document.prerendering is true while a document is prerendering and transitions to false when the page is activated via prerenderingchange."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "interop-experimental",
+    "chrome": "109+",
+    "firefox": "No (in development)",
+    "safari": "No"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Rule JSON Parse", "Eagerness Heuristic Trigger", "Hidden Browsing Context Render", "Atomic Page Activation"],
+    "mechanism_summary": "Spawns a hidden background renderer tab to fetch, parse, and paint a predicted next navigation, swapping it atomically on click for near-zero LCP."
+  },
+  "production_failures": [
+    {
+      "symptom": "Analytics pageviews and ad impressions double-count or fire for unvisited pages",
+      "root_cause": "Tracking scripts executed during the hidden prerender phase before the user actually clicked the link.",
+      "mitigation": "Gate analytics beacons on !document.prerendering and defer until the prerenderingchange event fires."
+    },
+    {
+      "symptom": "Aggressive eager prerender rules exhaust origin servers and user mobile data",
+      "root_cause": "Using eagerness: immediate on a list of 20 product links triggered 20 full-page background renders per pageview.",
+      "mitigation": "Use eagerness: moderate (hover/pointerdown) or conservative (pointerdown) and restrict prerender to high-probability routes."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/Speculation_Rules_API",
+    "https://developer.chrome.com/docs/web-platform/prerender-pages",
+    "https://wicg.github.io/nav-speculation/speculation-rules.html"
+  ]
+}

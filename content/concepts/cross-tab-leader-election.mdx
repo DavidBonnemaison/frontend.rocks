@@ -1,0 +1,66 @@
+---
+id: cross-tab-leader-election
+title: "Multi-Tab State Synchronization & Leader Election"
+domain: state-architecture
+maturity_status: baseline-widely
+summary_tldr: "Stops N open browser tabs from hammering WebSockets, refreshing OAuth tokens in parallel, and corrupting IndexedDB by electing a single leader tab with Web Locks and BroadcastChannel."
+relations:
+  - target_id: broadcast-channel-web-locks
+    type: requires
+    note: "navigator.locks provides browser-managed mutual exclusion while BroadcastChannel fans out leader state to followers."
+  - target_id: indexeddb-transactions-quotas
+    type: requires
+    note: "Single-leader coordination prevents concurrent tabs from interleaving read-modify-write IndexedDB transactions."
+sources:
+  - "https://w3c.github.io/web-locks/"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "leader-election"
+  - "web-locks"
+  - "broadcast-channel"
+  - "multi-tab"
+  - "oauth-refresh"
+---
+
+## TL;DR
+
+Opening 10 tabs of a web app multiplies WebSocket connections, triggers parallel OAuth refresh races, and corrupts shared IndexedDB state. Acquiring an exclusive `navigator.locks.request()` lease elects one active leader tab that owns network I/O and broadcasts snapshots via `BroadcastChannel`.
+
+## Interactive Lab
+
+Trace lock acquisition, leader crash recovery, and follower promotion in `StepMachineLab`.
+
+## Under the Hood
+
+The browser's Lock Manager grants an exclusive lock to the first tab calling `navigator.locks.request()` and queues all other tabs in FIFO order. Unlike `localStorage` heartbeat timers, the engine releases the lock automatically when a tab crashes or closes.
+
+1. **Zero-polling election**: The leader holds the lock inside an unresolved Promise until the tab unloads or yields, eliminating 500 ms `localStorage` polling timers.
+2. **Fan-out over `BroadcastChannel`**: The elected leader owns the WebSocket, token refresh, and [IndexedDB](/concepts/indexeddb-transactions-quotas) writes, pushing state deltas to follower tabs via [BroadcastChannel & Web Locks](/concepts/broadcast-channel-web-locks).
+3. **Instant failover**: When the leader tab closes, the Lock Manager wakes the next queued tab immediately to resume sync.
+
+```ts
+const channel = new BroadcastChannel('app-sync');
+
+navigator.locks.request('tab-leader', async () => {
+  const ws = new WebSocket('wss://api.example.com/stream');
+  ws.onmessage = (e) => channel.postMessage(e.data);
+  // Hold lock until tab closes or is evicted
+  await new Promise<void>((resolve) => {
+    window.addEventListener('pagehide', () => { ws.close(); resolve(); });
+  });
+});
+```
+
+## Problem Genealogy
+
+- **2014–2018 (`localStorage` Heartbeat Hacks)**: Apps wrote timestamps to `localStorage` every 1,000 ms to detect dead tabs, causing split-brain elections when background tabs were throttled to 1-minute timers.
+- **2019+ (Web Locks API)**: Moved mutex scheduling into the browser C++ process so crashed tabs release locks in milliseconds with zero polling overhead.
+
+## Production Pitfalls
+
+- **Users logged out randomly with 10 tabs open**: Without a Web Lock around OAuth refresh-token rotation, two tabs send the same single-use refresh token simultaneously, revoking the entire session family.
+- **Frozen `bfcache` tab retains leader lock**: Holding a Web Lock across `pagehide` without releasing it blocks the page from entering Back/Forward Cache and stalls follower tabs.
+- **When not to use cross-tab leader election**: On isolated single-tab ephemeral forms or when a `SharedWorker` is already available across all target browsers (excluding Android Chrome, where `SharedWorker` is unsupported and `navigator.locks` is mandatory).

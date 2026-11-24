@@ -1,0 +1,67 @@
+---
+id: browser-top-layer
+title: The Browser Top Layer
+domain: dom-events
+maturity_status: baseline-widely
+summary_tldr: "End z-index: 99999 wars and overflow: hidden modal clipping—the Browser Top Layer paints <dialog> and [popover] in a document-level LIFO list above the root stacking context."
+relations:
+  - target_id: css-stacking-context
+    type: requires
+    note: "Top Layer elements paint in a dedicated layer above the entire document root stacking context."
+  - target_id: gpu-compositor-layers
+    type: under_the_hood
+    note: "Top Layer elements and their ::backdrop pseudo-elements paint after all normal compositor layers."
+  - target_id: inert-attribute-focus
+    type: contrasts_with
+    note: "showModal() marks background subtrees inert automatically, whereas custom overlays require the inert attribute explicitly."
+sources:
+  - "https://fullscreen.spec.whatwg.org/#top-layer"
+  - "https://developer.chrome.com/blog/what-is-the-top-layer"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "top layer"
+  - "backdrop"
+  - "z-index"
+  - "stacking context"
+---
+
+## TL;DR
+
+The Browser Top Layer is a render list managed outside normal DOM paint order. Elements promoted via [Native Dialog](/concepts/native-dialog-element) or [Popover API](/concepts/popover-api-light-dismiss) paint above every [CSS Stacking Context](/concepts/css-stacking-context), ignoring ancestor `overflow: hidden` and `z-index`.
+
+## Interactive Lab
+
+Toggle parent clipping and `z-index` isolation in `ConstraintSimulatorLab`.
+
+## Under the Hood
+
+The rendering engine maintains the Top Layer as a document-level LIFO ordered set painted after the entire root stacking context. No matter how many `overflow: hidden` clips or `z-index: 99999` contexts exist inside the DOM tree, promoted elements render cleanly above the whole document.
+
+1. **LIFO Ordered Set**: The document maintains a `top layer` list; each `showModal()` or `showPopover()` appends to the end, painting last-in on top.
+2. **Viewport Containing Block**: Top Layer elements escape ancestor `transform` and `clip-path` containing blocks.
+3. **`::backdrop` Layer**: Each modal or popover receives its own `::backdrop` pseudo-element painted immediately beneath it.
+
+```css
+/* Animating Top Layer entry & exit cleanly */
+dialog[open], [popover]:popover-open {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.2s, transform 0.2s, display 0.2s allow-discrete;
+}
+@starting-style {
+  dialog[open], [popover]:popover-open { opacity: 0; transform: scale(0.96); }
+}
+```
+
+## Problem Genealogy
+
+- **2005 (`z-index: 999999` Arms Race)**: Libraries escalated arbitrary `z-index` constants that still failed inside `transform` or `opacity` parents.
+- **2014 (Fullscreen & `<dialog>`)**: WHATWG formalized the Top Layer for fullscreen video and modal dialogs.
+- **2024 (Popover API & `@starting-style`)**: Opened Top Layer promotion to non-modal tooltips, menus, and toasts with CSS entry transitions.
+
+## Production Pitfalls
+
+- **`z-index` Ignored Inside Top Layer**: Setting `z-index: 99999` on an earlier popover will not raise it above a later popover, order depends strictly on activation order.
+- **`display: none` Breaks Exit Transitions**: Closing a Top Layer element snaps it out of the layer unless `transition-behavior: allow-discrete` is declared.
+- **When not to use Top Layer**: Do not promote persistent inline banners or sticky headers; keep them in normal document flow, and use the [inert attribute](/concepts/inert-attribute-focus) when non-Top-Layer regions must block background focus.

@@ -1,0 +1,64 @@
+---
+id: abortcontroller-cancellation
+title: AbortController and Cooperative Cancellation
+domain: js-runtime
+maturity_status: baseline-widely
+summary_tldr: "Kill-switch for in-flight fetch calls, DOM listeners, and async tasks you should have stopped three renders ago—without boolean isMounted flags."
+relations:
+  - target_id: promises-async-await-internals
+    type: requires
+    note: "Aborted async APIs reject their pending Promises with signal.reason on the Microtask Queue."
+  - target_id: js-memory-leaks-retainers
+    type: requires
+    note: "Passing { signal } to addEventListener detaches listeners in bulk without retaining callback refs."
+sources:
+  - "https://dom.spec.whatwg.org/#interface-abortcontroller"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/AbortController"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "abortcontroller"
+  - "abortsignal"
+  - "cancellation"
+  - "fetch"
+web_feature_id: aborting
+---
+
+## TL;DR
+
+`AbortController` separates the power to cancel (`controller.abort()`) from the read-only `AbortSignal` passed to `fetch()`, `addEventListener()`, and streams. Aborting rejects pending [Promises](/concepts/promises-async-await-internals) with `signal.reason` and detaches listeners cleanly to prevent [Memory Leaks](/concepts/js-memory-leaks-retainers).
+
+## Interactive Lab
+
+Trace signal registration, `abort(reason)` propagation, and socket teardown in `StepMachineLab`.
+
+## Under the Hood
+
+Blink and V8 implement `AbortController` and `AbortSignal` as a paired C++ capability boundary: `controller.abort()` mutates the signal's aborted state once and synchronously invokes every registered abort algorithm. Multiple subsystems can subscribe to `AbortSignal`, yet only the `AbortController` holder can trip them all.
+
+1. **Capability Split**: Consumers receive only `signal` and cannot accidentally abort sibling work.
+2. **Idempotent Transition**: Calling `abort(reason)` flips `signal.aborted` once, stores `signal.reason`, and executes registered C++ abort algorithms.
+3. **Composition**: `AbortSignal.any([a, b])` and `AbortSignal.timeout(ms)` combine user cancellation with deadlines without manual `clearTimeout`.
+
+```js
+let activeCtrl;
+async function search(query) {
+  activeCtrl?.abort();
+  activeCtrl = new AbortController();
+  const signal = AbortSignal.any([activeCtrl.signal, AbortSignal.timeout(4000)]);
+  const res = await fetch(`/search?q=${encodeURIComponent(query)}`, { signal });
+  return res.json();
+}
+```
+
+## Problem Genealogy
+
+- **2015 (Canceled ES6 Cancelable Promises)**: TC39 proposal stalled over whether promises should cancel or stay pure value containers.
+- **2017 (WHATWG `AbortController`)**: Browser specs introduced external `AbortSignal` tokens for `fetch()`.
+- **2023 (`AbortSignal.timeout` & `AbortSignal.any`)**: Eliminated boilerplate timer cleanup and multi-signal plumbing.
+
+## Production Pitfalls
+
+- **Swallowing Real Errors**: Catching `fetch` rejections without checking `err.name === 'AbortError'` hides network failures and type bugs.
+- **Long-Lived Signal Retention**: Attaching thousands of per-request listeners to a single app-wide `AbortSignal` retains every callback until the app closes.
+- **When not to use a single shared `AbortSignal`**: Never share one global signal across short-lived tasks; create per-operation controllers and compose with `AbortSignal.any()`.

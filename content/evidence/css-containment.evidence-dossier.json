@@ -1,0 +1,41 @@
+{
+  "concept_id": "css-containment",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-contain-2/",
+      "spec_section": "3. Types of Containment",
+      "quote": "Layout containment ensures that nothing outside the element can affect its internal layout, and nothing inside can affect the layout of anything outside."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "52+",
+    "firefox": "69+",
+    "safari": "15.4+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Style",
+      "Layout",
+      "Paint"
+    ],
+    "mechanism_summary": "contain: layout establishes an independent formatting context and layout root; contain: paint clips overflow and creates a stacking context."
+  },
+  "production_failures": [
+    {
+      "symptom": "contain: size collapses an accordion or card to 0px height",
+      "root_cause": "Size containment instructs the engine to size the element as if it had no children.",
+      "mitigation": "Provide explicit width/height, use contain: inline-size, or use contain: content (layout + paint + style without size)."
+    },
+    {
+      "symptom": "Dropdown menus inside a card get clipped at the card border",
+      "root_cause": "contain: paint or contain: content clips all overflowing descendants to the padding box.",
+      "mitigation": "Move floating overlays to the Top Layer with Popover API or avoid paint containment on overflow-visible containers."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-contain-2/",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/contain"
+  ]
+}

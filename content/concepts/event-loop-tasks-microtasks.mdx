@@ -1,0 +1,59 @@
+---
+id: event-loop-tasks-microtasks
+title: Event Loop, Macrotasks, and Microtask Queue
+domain: js-runtime
+maturity_status: baseline-widely
+summary_tldr: "Prevent 60fps frame starvation and Promise-loop freezes—the Event Loop drains the entire Microtask Queue after every single macrotask before painting."
+relations:
+  - target_id: browser-rendering-pipeline
+    type: under_the_hood
+    note: "Update the Rendering runs only after the Microtask Queue is completely drained."
+  - target_id: debounce-throttle-raf-coalescing
+    type: contrasts_with
+    note: "Raw tasks and microtasks fire per event, whereas rAF coalescing batches callbacks once per vsync frame."
+sources:
+  - "https://html.spec.whatwg.org/multipage/webappapis.html#event-loops"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "promise"
+  - "setTimeout"
+  - "queueMicrotask"
+  - "ui freeze"
+---
+
+## TL;DR
+
+The Event Loop dequeues one macrotask, runs the Call Stack until empty, then drains every microtask (Promises, `queueMicrotask`, `MutationObserver`) before the engine can paint the next frame.
+
+## Interactive Lab
+
+Trace the strict drain order across Call Stack, Microtask Queue, and Render Steps in `StepMachineLab`.
+
+## Under the Hood
+
+The browser Event Loop dequeues one macrotask, runs the Call Stack to completion, and drains the entire Microtask Queue (including microtasks queued during the drain) before entering `Update the Rendering`. Like a tollbooth with an express VIP lane, the next frame waits until the microtask lane is empty.
+
+1. **Task (Macrotask)**: An event (`click`, `setTimeout`, initial script) enters the Call Stack and executes run-to-completion without preemption.
+2. **Microtask Checkpoint**: Once the Call Stack empties, V8 drains every queued microtask, including new microtasks scheduled during the drain.
+3. **Update the Rendering**: When a frame is due (16.6 ms at 60 Hz), the engine runs `requestAnimationFrame` callbacks, then Style, Layout, Paint, and Composite in the [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline).
+
+```js
+setTimeout(() => console.log('4: macrotask'), 0);
+requestAnimationFrame(() => console.log('3: before paint'));
+Promise.resolve().then(() => console.log('2: microtask'));
+console.log('1: synchronous call stack');
+```
+
+## Problem Genealogy
+
+- **1995 (Single-threaded JS)**: Synchronous execution model driven by timer and DOM event callbacks.
+- **2015 (ES6 Promises)**: Dedicated priority queue (Microtask Queue) introduced to settle promises before the next render cycle.
+- **2024+ (`scheduler.yield()`)**: Explicit API to yield the main thread while retaining higher priority than third-party tasks, fixing the old `setTimeout(fn, 0)` hack that sent your continuation to the back of the queue.
+
+## Production Pitfalls
+
+- **Render Starvation**: A recursive `Promise.resolve().then(...)` loop prevents the Event Loop from ever reaching the render phase, freezing the tab completely.
+- **rAF vs Promise Ordering**: Scheduling a DOM read inside `.then()` runs before `requestAnimationFrame` (see [Debounce, Throttle, and rAF Coalescing](/concepts/debounce-throttle-raf-coalescing)) and can trigger [Layout Thrashing](/concepts/layout-thrashing) on unsynchronized styles.
+- **When not to use `queueMicrotask`**: Never chunk heavy CPU work with microtasks (they still block the frame); use `scheduler.yield()` or a Web Worker.

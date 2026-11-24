@@ -1,0 +1,66 @@
+---
+id: css-houdini-property
+title: "CSS Houdini @property"
+domain: rendering-pipeline
+maturity_status: baseline-newly
+summary_tldr: "@property registers typed custom properties so the CSS engine can interpolate gradients, angles, and colors smoothly."
+relations:
+  - target_id: browser-rendering-pipeline
+    type: requires
+    note: "Type registration changes how the Style phase parses and interpolates custom properties."
+  - target_id: paint-rasterization
+    type: under_the_hood
+    note: "Interpolated @property values drive smooth gradient and color repaints across frames."
+sources:
+  - "https://drafts.css-houdini.org/css-properties-values-api/"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/@property"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "@property"
+  - "Houdini"
+  - "syntax"
+  - "initial-value"
+  - "custom property animation"
+web_feature_id: registered-custom-properties
+---
+
+## TL;DR
+
+Standard CSS custom properties are untyped token streams, the engine cannot interpolate them. `@property` registers a variable's `syntax`, `inherits` flag, and `initial-value`, enabling smooth transitions on gradients, angles, and numbers while curbing unnecessary inheritance work.
+
+## Interactive Lab
+
+Compare an untyped `--angle` snapping abruptly against a typed `@property` transition in `PatternComparatorLab`.
+
+## Under the Hood
+
+Without `@property`, `--angle: 45deg` is just a sticky note with characters scribbled on it; `@property` turns it into a typed dial the [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline) can turn smoothly.
+
+1. **Type Validation**: Invalid assignments (like `--angle: red`) are rejected at parse time and fall back to `initial-value`.
+2. **Interpolation**: Knowing the type (`<color>`, `<length>`, `<angle>`, `<number>`) lets transitions and `@keyframes` compute intermediate values.
+3. **Inheritance Opt-Out**: Setting `inherits: false` stops style recalculations from propagating down large subtrees.
+
+```css
+@property --glow-alpha {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0.2;
+}
+.card {
+  box-shadow: 0 0 24px rgb(59 130 246 / var(--glow-alpha));
+  transition: --glow-alpha 250ms ease;
+}
+.card:hover { --glow-alpha: 0.8; }
+```
+
+## Problem Genealogy
+
+- **2016–2020**: CSS Variables shipped as untyped substitutions, forcing JS `requestAnimationFrame` loops just to animate a gradient stop.
+- **2020–2024**: CSS Properties and Values API (`@property`) reached Baseline Newly Available across all major engines.
+
+## Production Pitfalls
+
+- **Missing descriptors**: Omitting `initial-value` or `inherits` invalidates the entire `@property` rule silently.
+- **Main-thread Paint cost**: Animating a typed `@property` inside `background` still triggers [Paint & Rasterization](/concepts/paint-rasterization) every frame, unlike `transform` or `opacity`.
+- **When not to use `@property`**: Do not register static design tokens that never animate and need normal inheritance; plain custom properties are lighter.

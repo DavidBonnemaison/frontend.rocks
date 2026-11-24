@@ -1,0 +1,50 @@
+{
+  "type": "step-machine",
+  "id": "client-side-router-internals",
+  "title": "Radix Tree Matching & Loader Cancellation",
+  "description": "Trace how a client router matches segments in O(k), aborts stale loaders, and commits history.",
+  "steps": [
+    {
+      "label": "1. Intercept Navigation",
+      "description": "User clicks /users/99/billing; router prevents full document reload and splits path segments.",
+      "codeHighlight": "e.preventDefault(); router.navigate('/users/99/billing');",
+      "state": {
+        "targetPath": "/users/99/billing",
+        "segments": ["users", "99", "billing"]
+      },
+      "visualNodes": [
+        { "id": "url", "label": "URL: /users/99/billing", "status": "active" },
+        { "id": "trie", "label": "Radix Trie", "status": "idle" },
+        { "id": "loader", "label": "Loaders", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Traverse Radix Trie",
+      "description": "Matcher follows static 'users' edge, binds param id='99', and matches static 'billing' leaf.",
+      "codeHighlight": "matchRadix(root, ['users', '99', 'billing']) // { id: '99' }",
+      "state": {
+        "matchedBranch": ["root", "users", ":id", "billing"],
+        "params": { "id": "99" }
+      },
+      "visualNodes": [
+        { "id": "url", "label": "URL: /users/99/billing", "status": "done" },
+        { "id": "trie", "label": "Matched in 3 steps", "status": "done" },
+        { "id": "loader", "label": "Loaders", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Abort Previous & Run Parallel Loaders",
+      "description": "Previous navigation's AbortController fires; layout and leaf loaders run concurrently.",
+      "codeHighlight": "prevCtrl?.abort(); Promise.all([loadUser(99, sig), loadBilling(99, sig)]);",
+      "state": {
+        "abortedPrevious": true,
+        "concurrentLoaders": 2
+      },
+      "visualNodes": [
+        { "id": "url", "label": "URL: /users/99/billing", "status": "done" },
+        { "id": "trie", "label": "Matched in 3 steps", "status": "done" },
+        { "id": "loader", "label": "2 Loaders Settled", "status": "done" }
+      ]
+    }
+  ]
+}

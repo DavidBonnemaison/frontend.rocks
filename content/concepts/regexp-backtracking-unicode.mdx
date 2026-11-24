@@ -1,0 +1,61 @@
+---
+id: regexp-backtracking-unicode
+title: RegExp Backtracking (ReDoS) and Unicode Modes
+domain: js-runtime
+maturity_status: baseline-widely
+summary_tldr: "Prevent catastrophic O(2^n) main-thread ReDoS freezes and broken 16-bit emoji splits—understand Irregexp's backtracking NFA and use /u or /v Unicode modes."
+relations:
+  - target_id: execution-context-call-stack
+    type: requires
+    note: "RegExp matching executes synchronously inside the active Call Stack frame without yielding."
+  - target_id: long-tasks-and-inp
+    type: under_the_hood
+    note: "Catastrophic O(2^n) RegExp backtracking locks the main thread as an uninterruptible Long Task."
+sources:
+  - "https://tc39.es/ecma262/#sec-regexp-regular-expression-objects"
+  - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "regexp"
+  - "redos"
+  - "backtracking"
+  - "unicode"
+---
+
+## TL;DR
+
+JavaScript's `RegExp` engine uses a backtracking NFA: nested quantifiers like `(a+)+` explore $2^n$ partitions on a failing suffix, locking the [Call Stack](/concepts/execution-context-call-stack) into a [Long Task](/concepts/long-tasks-and-inp). Meanwhile, omitting `/u` or `/v` splits 32-bit emoji into broken 16-bit UTF-16 surrogates.
+
+## Interactive Lab
+
+Step through exponential NFA backtracking versus linear Unicode matching in `StepMachineLab`.
+
+## Under the Hood
+
+V8's Irregexp engine compiles patterns to native code, yet executes a backtracking NFA on the synchronous [Call Stack](/concepts/execution-context-call-stack). When nested quantifiers hit a failing suffix, exponential match partitions run without yielding, locking the main thread as a [Long Task](/concepts/long-tasks-and-inp).
+
+1. **Synchronous NFA**: V8's Irregexp compiles patterns to native code, yet ambiguous quantifiers still backtrack exponentially.
+2. **ReDoS Trigger**: Input `"aaaaaaaaaaaaaaaaaaaa!"` against `/^(a+)+$/` stalls the main thread for seconds.
+3. **Unicode `/u` and `/v`**: `/u` treats surrogate pairs (`🚀`) as single code points; `/v` (`unicodeSets`) adds set subtraction (`[\p{Decimal_Number}--[0-9]]`).
+
+```js
+// Safe linear check + /v Unicode property & set difference
+const SAFE_USER = /^[\p{L}\p{N}_-]{1,64}$/v;
+
+// Dangerous: nested quantifier (a+)+ triggers ReDoS
+const UNSAFE = /^([a-z0-9]+)+$/i;
+console.log(SAFE_USER.test('ada_42')); // true
+```
+
+## Problem Genealogy
+
+- **1999 (ES3 Perl-style NFA)**: Shipped backtracking `RegExp` without atomic groups or UTF-16 surrogate awareness.
+- **2015 (ES6 `/u` Flag)**: Added full code-point matching and `\p{...}` Unicode property escapes.
+- **2024 (ES2024 `/v` Flag)**: Added Unicode string properties (`\p{RGI_Emoji}`) and character class set operations.
+
+## Production Pitfalls
+
+- **Stateful `/g` `lastIndex` Bug**: Calling `.test()` repeatedly on a `/g` regex mutates `lastIndex`, causing alternating `true`/`false` results on identical strings.
+- **ReDoS on User-Supplied Inputs**: Validating email or Markdown with nested `+`/`*` groups opens a client-side freeze vector.
+- **When not to use `RegExp`**: Never parse nested HTML, JSON, or balanced parentheses with regular expressions, use a proper parser or `DOMParser`.

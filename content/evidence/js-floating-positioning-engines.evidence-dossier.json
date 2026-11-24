@@ -1,0 +1,42 @@
+{
+  "concept_id": "js-floating-positioning-engines",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect",
+      "spec_section": "CSSOM View Module — getBoundingClientRect()",
+      "quote": "The getBoundingClientRect() method forces a synchronous layout calculation if styles are dirty, returning a DOMRect relative to the viewport."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "51+",
+    "firefox": "53+",
+    "safari": "10+",
+    "notes": "Built on ResizeObserver, IntersectionObserver, and getBoundingClientRect()."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Sync Rect Read",
+      "Middleware Pipeline (offset -> flip -> shift)",
+      "Transform/Inset Write"
+    ],
+    "mechanism_summary": "computePosition reads reference and floating DOMRects, runs collision middleware in JS, and writes translate3d() coordinates."
+  },
+  "production_failures": [
+    {
+      "symptom": "Tooltip drifts away from its button during fast wheel or touch scrolling",
+      "root_cause": "Using window.scroll only misses nested overflow: auto scroll containers; JS rAF also lags async compositor scroll by 1 frame.",
+      "mitigation": "Use Floating UI autoUpdate() with ancestorScroll: true so every scrollable ancestor is observed."
+    },
+    {
+      "symptom": "Opening 50 table-row tooltips or popovers causes a 30ms frame spike",
+      "root_cause": "Interleaving computePosition() calls per item triggers repeated forced synchronous layouts.",
+      "mitigation": "Position only the single active popover on open, and write coordinates via transform: translate3d() to skip Layout."
+    }
+  ],
+  "sources": [
+    "https://floating-ui.com/docs/computePosition",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect"
+  ]
+}

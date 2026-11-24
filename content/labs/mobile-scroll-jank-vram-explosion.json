@@ -1,0 +1,24 @@
+{
+  "type": "constraint-simulator",
+  "id": "mobile-scroll-jank-vram-explosion",
+  "title": "Mobile Card Grid: Layer Promotion vs VRAM Budget",
+  "description": "Simulate how blanket will-change: transform on a 60-card feed exhausts mid-range Android GPU memory compared to CSS containment and content-visibility.",
+  "presetMode": "composite-layers",
+  "controls": [
+    {
+      "key": "layers",
+      "label": "Promoted cards in DOM",
+      "kind": "range",
+      "min": 10,
+      "max": 80,
+      "step": 10,
+      "defaultValue": 50
+    },
+    {
+      "key": "willChange",
+      "label": "Static will-change: transform on every card",
+      "kind": "toggle",
+      "defaultValue": true
+    }
+  ]
+}

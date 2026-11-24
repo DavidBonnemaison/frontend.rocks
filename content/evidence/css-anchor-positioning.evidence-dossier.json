@@ -1,0 +1,42 @@
+{
+  "concept_id": "css-anchor-positioning",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-anchor-position-1/",
+      "spec_section": "3. Anchor Positioning",
+      "quote": "The anchor() function resolves to a length representing the position of a specified edge of the anchor element, evaluated during layout."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "interop-experimental",
+    "chrome": "125+",
+    "firefox": "In development",
+    "safari": "26+",
+    "notes": "Supported in Chromium 125+ and Safari 26; use Floating UI or a polyfill where Firefox support is required."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Anchor Box Layout",
+      "Anchored Inset Resolution",
+      "Position-Try Overflow Fallback"
+    ],
+    "mechanism_summary": "Engine lays out the anchor first, resolves anchor() insets on the positioned element, and tries position-try-fallbacks if it overflows the containing block."
+  },
+  "production_failures": [
+    {
+      "symptom": "Tooltip ignores anchor-name and pins to the viewport corner (0, 0)",
+      "root_cause": "An ancestor between the anchor and tooltip has contain: layout or overflow/transform hiding the anchor name scope.",
+      "mitigation": "Ensure anchor-scope is not blocking visibility, or place the tooltip in the Top Layer via [popover] where anchor lookup spans the document."
+    },
+    {
+      "symptom": "Tooltip clips off-screen near the bottom of the viewport",
+      "root_cause": "position-area or anchor() was set without position-try-fallbacks: flip-block.",
+      "mitigation": "Add position-try-fallbacks: flip-block, flip-inline so the layout engine flips the tooltip automatically."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-anchor-position-1/",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_anchor_positioning"
+  ]
+}

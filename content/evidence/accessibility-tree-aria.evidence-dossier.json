@@ -1,0 +1,41 @@
+{
+  "concept_id": "accessibility-tree-aria",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://w3c.github.io/aria/#intro_ria_accessibility_tree",
+      "spec_section": "WAI-ARIA 1.2 §1.2 Accessibility Tree",
+      "quote": "The accessibility tree is a subset of the DOM tree exposed to platform accessibility APIs (UIA, NSAccessibility, ATK) containing each node's computed Role, Accessible Name, Description, and States."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "Full Accessibility Tree",
+    "firefox": "Full Accessibility Tree",
+    "safari": "VoiceOver / NSAccessibility"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "DOM + CSSOM Visibility Filtering",
+      "AccName 1.2 Name & Description Computation",
+      "Platform A11y IPC Tree (UIA / AX / ATK)"
+    ],
+    "mechanism_summary": "The browser builds a parallel Accessibility Tree from semantic HTML and ARIA attributes, filtering display:none/aria-hidden nodes and computing Accessible Names for OS screen readers."
+  },
+  "production_failures": [
+    {
+      "symptom": "Clickable <div onclick> button is invisible to keyboard Tab and announced as plain text by screen readers",
+      "root_cause": "Adding role='button' alone exposes the ARIA role without keyboard focusability (tabindex='0') or Enter/Space activation.",
+      "mitigation": "Use native <button type='button'>, which provides role, tabindex, Enter/Space handlers, and disabled state automatically."
+    },
+    {
+      "symptom": "aria-hidden='true' placed on a modal's ancestor traps screen reader users in silence while focus sits inside",
+      "root_cause": "Putting aria-hidden='true' on a focusable element or its ancestor hides it from the accessibility tree while leaving it in the keyboard Tab order.",
+      "mitigation": "Use native <dialog>.showModal() or the HTML inert attribute to hide background subtrees from both focus and the accessibility tree."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Glossary/Accessibility_tree",
+    "https://w3c.github.io/aria/"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "type": "step-machine",
+  "id": "undo-redo-structural-sharing",
+  "title": "Undo/Redo Stacks with Structural Sharing",
+  "description": "Trace copy-on-write path cloning, future-stack truncation, and reference reuse across history.",
+  "steps": [
+    {
+      "label": "1. Initial State (past=[], future=[])",
+      "description": "Document has nodes A (4MB mesh) and B (text). Present points to Root#1.",
+      "codeHighlight": "const history = { past: [], present: root1, future: [] };",
+      "state": {
+        "pastLen": 0,
+        "presentRef": "Root#1",
+        "futureLen": 0,
+        "heapMb": 4.1
+      }
+    },
+    {
+      "label": "2. Edit Node B -> Copy-on-Write Spine",
+      "description": "Only Root and Node B are cloned (Root#2, B#2). Root#2.A === Root#1.A reuses the 4MB mesh pointer.",
+      "codeHighlight": "const root2 = { ...root1, B: { ...root1.B, text: 'hi' } };",
+      "state": {
+        "pastLen": 1,
+        "presentRef": "Root#2",
+        "sharedNodeA": true,
+        "heapMb": 4.12
+      }
+    },
+    {
+      "label": "3. Undo (Cmd+Z) then New Edit",
+      "description": "Undo pops Root#1 to present and pushes Root#2 to future. A new edit clears future=[] cleanly.",
+      "codeHighlight": "return { past: [...past, present], present: root3, future: [] };",
+      "state": {
+        "pastLen": 1,
+        "presentRef": "Root#3",
+        "futureLen": 0
+      }
+    }
+  ]
+}

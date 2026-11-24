@@ -1,0 +1,42 @@
+{
+  "concept_id": "microfrontend-isolation-models",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/webappapis.html#import-maps",
+      "spec_section": "8.1.7.3 Import maps",
+      "quote": "An import map allows documents to control the resolution of bare module specifiers to URLs, enabling multiple scripts to share a single module instance in the module map."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "89+",
+    "firefox": "108+",
+    "safari": "16.4+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Module Specifier Resolution (Import Map / Federation)",
+      "DOM & CSS Boundary Attachment (ShadowRoot vs Iframe)",
+      "Global Scope Isolation (Proxy Sandbox vs Browsing Context)",
+      "Cross-Boundary Event & State Messaging"
+    ],
+    "mechanism_summary": "Isolation models trade shared-heap efficiency (Import Maps + Shadow DOM) against hard process and origin boundaries (cross-origin iframes with postMessage)."
+  },
+  "production_failures": [
+    {
+      "symptom": "Unstyled modal dialogs or broken click-outside handlers inside a micro-frontend",
+      "root_cause": "Portaling a modal to document.body moves the DOM subtree outside the ShadowRoot, stripping scoped stylesheets.",
+      "mitigation": "Mount portals onto a dedicated container inside the ShadowRoot or use native top-layer <dialog> elements."
+    },
+    {
+      "symptom": "400 KB extra JS download and conflicting global router state",
+      "root_cause": "Remotes bundle independent copies of the UI framework and router without singleton negotiation in the import map or federation config.",
+      "mitigation": "Pin shared framework dependencies as singletons in the host import map with strict semver ranges."
+    }
+  ],
+  "sources": [
+    "https://html.spec.whatwg.org/multipage/iframe-embed-object.html",
+    "https://html.spec.whatwg.org/multipage/webappapis.html#import-maps"
+  ]
+}

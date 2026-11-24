@@ -1,0 +1,29 @@
+{
+  "type": "constraint-simulator",
+  "id": "cross-origin-isolation-coop-coep",
+  "title": "COOP + COEP Cross-Origin Isolation Matrix",
+  "description": "Toggle COOP, COEP, and subresource CORP/CORS headers to inspect crossOriginIsolated status and blocked embeds.",
+  "presetMode": "cross-origin-isolation",
+  "controls": [
+    {
+      "key": "coopHeader",
+      "label": "COOP Policy",
+      "kind": "select",
+      "options": ["unsafe-none", "same-origin-allow-popups", "same-origin"],
+      "defaultValue": "same-origin"
+    },
+    {
+      "key": "coepHeader",
+      "label": "COEP Policy",
+      "kind": "select",
+      "options": ["unsafe-none", "require-corp", "credentialless"],
+      "defaultValue": "require-corp"
+    },
+    {
+      "key": "subresourceCorp",
+      "label": "Third-party CDN sends CORP/CORS",
+      "kind": "toggle",
+      "defaultValue": true
+    }
+  ]
+}

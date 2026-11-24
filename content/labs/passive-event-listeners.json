@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "passive-event-listeners",
+  "title": "Blocking Touch/Wheel Listener vs { passive: true }",
+  "before": {
+    "label": "Non-Passive Listener (Blocks Compositor)",
+    "code": "carousel.addEventListener('touchmove', (e) => {\n  trackSwipeAnalytics(e.touches[0].clientX);\n}); // Compositor waits on main thread every frame",
+    "metrics": {
+      "lines": 3,
+      "reflows": "Main-thread sync gate",
+      "dependencies": "Scroll jank under load"
+    },
+    "previewNote": "Compositor stalls scroll until JS returns and confirms no preventDefault()."
+  },
+  "after": {
+    "label": "Passive Listener ({ passive: true })",
+    "code": "carousel.addEventListener('touchmove', (e) => {\n  trackSwipeAnalytics(e.touches[0].clientX);\n}, { passive: true }); // Compositor scrolls immediately",
+    "metrics": {
+      "lines": 3,
+      "reflows": "0ms compositor wait",
+      "dependencies": "60/120fps scroll thread"
+    },
+    "previewNote": "Compositor translates layers immediately; JS runs asynchronously."
+  }
+}

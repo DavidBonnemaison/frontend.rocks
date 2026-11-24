@@ -1,0 +1,37 @@
+{
+  "concept_id": "css-container-queries",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-contain-3/#container-queries",
+      "spec_section": "CSS Containment Module Level 3",
+      "quote": "Size containment on the inline axis breaks the parent-child sizing cycle required for container queries."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "105+",
+    "firefox": "110+",
+    "safari": "16.0+"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Layout Containment", "Container Size Resolution", "Descendant Style/Layout"],
+    "mechanism_summary": "inline-size containment allows @container rules to resolve in a single top-down pass."
+  },
+  "production_failures": [
+    {
+      "symptom": "Container collapses to 0px width",
+      "root_cause": "container-type: inline-size prevents the parent from sizing to its children's intrinsic width.",
+      "mitigation": "Define an explicit width (width: 100% or flex: 1) on the container."
+    },
+    {
+      "symptom": "@container rule ignored on a nested component",
+      "root_cause": "An intermediate wrapper also declares container-type without a container-name.",
+      "mitigation": "Name critical containers explicitly with container-name."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-contain-3/",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_queries"
+  ]
+}

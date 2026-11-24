@@ -1,0 +1,48 @@
+{
+  "concept_id": "cross-tab-leader-election",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://w3c.github.io/web-locks/",
+      "spec_section": "W3C Web Locks API: Lock Requests",
+      "quote": "A lock is held until the callback's returned promise settles, or until the client's execution context terminates."
+    },
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel",
+      "spec_section": "BroadcastChannel API",
+      "quote": "The BroadcastChannel interface represents a named channel that any browsing context of a given origin can subscribe to for message passing."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "69+",
+    "firefox": "96+",
+    "safari": "15.4+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Exclusive Lock Request (navigator.locks)",
+      "Leader Lease Acquisition & Socket Initialization",
+      "BroadcastChannel State Fan-Out",
+      "Process-Crash / pagehide Lock Release & Failover"
+    ],
+    "mechanism_summary": "Uses the browser's C++ Lock Manager to grant an exclusive lease to one tab per origin, automatically releasing on tab close and promoting the next queued follower."
+  },
+  "production_failures": [
+    {
+      "symptom": "Users are logged out across all tabs when waking a laptop with 6 open tabs",
+      "root_cause": "All 6 tabs detected an expired JWT on focus and fired parallel OAuth refresh requests; the first succeeded and rotated the token, while the second triggered token-reuse revocation.",
+      "mitigation": "Wrap token refresh in navigator.locks.request('auth-refresh', ...) and re-read the fresh token from storage once the lock is acquired."
+    },
+    {
+      "symptom": "Follower tabs stay disconnected after user navigates the leader tab away",
+      "root_cause": "Leader tab stayed alive in bfcache while still holding the exclusive Web Lock, preventing the browser from waking the next tab.",
+      "mitigation": "Release the leader lock and close the WebSocket inside the pagehide event handler."
+    }
+  ],
+  "sources": [
+    "https://w3c.github.io/web-locks/",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API",
+    "https://developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel"
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "type": "step-machine",
+  "id": "network-interception-har-replay",
+  "title": "Browser Network Interception & HAR Replay",
+  "description": "Trace how CDP/Service Worker interception captures a real fetch() and replays a recorded HAR stream.",
+  "steps": [
+    {
+      "label": "1. Browser Dispatches Real Request",
+      "description": "App calls fetch('/api/v2/cart'); browser attaches cookies, origin headers, and aborts signals.",
+      "codeHighlight": "const res = await fetch('/api/v2/cart', { credentials: 'include' });",
+      "state": {
+        "layer": "Browser Network Stack",
+        "url": "/api/v2/cart",
+        "headersAttached": true
+      },
+      "visualNodes": [
+        { "id": "app", "label": "App fetch()", "status": "done" },
+        { "id": "hook", "label": "CDP / SW Hook", "status": "active" },
+        { "id": "har", "label": "HAR Archive", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Match Entry in HAR Index",
+      "description": "Interceptor pauses the request and matches method + URL against the recorded HAR file.",
+      "codeHighlight": "await page.routeFromHAR('cart.har', { notFound: 'abort' });",
+      "state": {
+        "harMatch": "200 OK (application/json)",
+        "networkSocketOpened": false
+      },
+      "visualNodes": [
+        { "id": "app", "label": "App fetch()", "status": "done" },
+        { "id": "hook", "label": "CDP / SW Hook", "status": "done" },
+        { "id": "har", "label": "HAR Match (200 OK)", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Fulfill Response & Stream Body",
+      "description": "Interceptor returns the archived headers and ReadableStream body back through browser decoding.",
+      "codeHighlight": "const data = await res.json(); // Parsed via real Response stream",
+      "state": {
+        "status": 200,
+        "streamDecoded": true,
+        "deterministic": true
+      },
+      "visualNodes": [
+        { "id": "app", "label": "App fetch()", "status": "done" },
+        { "id": "hook", "label": "CDP / SW Hook", "status": "done" },
+        { "id": "har", "label": "Stream Fulfilled", "status": "done" }
+      ]
+    }
+  ]
+}

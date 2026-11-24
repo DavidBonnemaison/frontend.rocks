@@ -1,0 +1,59 @@
+---
+id: isr-swr-edge-invalidation
+title: "Hybrid Rendering Topologies (SSG, SSR, ISR & Edge Cache)"
+domain: framework-internals
+maturity_status: baseline-widely
+summary_tldr: "Pure SSG breaks on 100,000-page catalogs with 40-minute builds, while uncached SSR melts origin databases under traffic spikes. ISR and tag-based edge invalidation serve static CDN hits while regenerating stale pages asynchronously."
+relations:
+  - target_id: cdn-edge-cache-keys
+    type: requires
+    note: "Edge caches store rendered HTML and RSC payloads keyed by URL, Vary headers, and surrogate cache tags."
+  - target_id: http-caching-directives
+    type: requires
+    note: "ISR relies on s-maxage and stale-while-revalidate directives to serve cached HTML during background regeneration."
+sources:
+  - "https://datatracker.ietf.org/doc/html/rfc9111"
+  - "https://datatracker.ietf.org/doc/html/rfc5861"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "isr"
+  - "edge cache"
+  - "surrogate keys"
+  - "ssg vs ssr"
+---
+
+## TL;DR
+
+Hybrid rendering pairs [HTTP Caching Directives](/concepts/http-caching-directives) with origin regeneration queues. CDNs serve pre-rendered HTML from [Edge Cache Keys](/concepts/cdn-edge-cache-keys) in under 20 ms; when TTL expires or a `Cache-Tag` purges, one background worker rebuilds the page while concurrent visitors still receive stale HTML.
+
+## Interactive Lab
+
+Trace `HIT`, `STALE` background regeneration, and `Cache-Tag` purge propagation across edge PoPs in `StepMachineLab`.
+
+## Under the Hood
+
+ISR (Incremental Static Regeneration) combines CDN `stale-while-revalidate` headers with a distributed single-flight lock at the origin.
+
+1. **Edge Hit (`s-maxage`)**: While `age < s-maxage`, the CDN PoP returns cached HTML directly without touching the origin server.
+2. **Stale Window & Single-Flight Lock**: Once `s-maxage` expires within the `stale-while-revalidate` window, the edge serves the stale response immediately and sends one asynchronous revalidation request to the origin; a distributed lock prevents 500 concurrent users from triggering 500 rebuilds.
+3. **On-Demand Tag Purge**: CMS webhooks call a purge API with `Surrogate-Key: product-42`, evicting all dependent HTML and JSON cache keys globally in ~150 ms.
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Cache-Control: public, s-maxage=60, stale-while-revalidate=86400
+Cache-Tag: product-42, category-shoes
+```
+
+## Problem Genealogy
+
+- **2018 (Monolithic SSG)**: Rebuilding 50,000 product pages on every typo fix took 25–45 minutes of CI compute.
+- **2020 (Time-Based ISR)**: Moved builds to on-demand runtime queues keyed by `revalidate: 60`, capping build times to changed routes only.
+- **2023 (Tag-Based Edge Invalidation)**: Replaced blind TTL guessing with `Cache-Tag` / `revalidateTag()` webhooks, delivering instant consistency without sacrificing CDN hit ratios.
+
+## Production Pitfalls
+
+- **Cache Poisoning via Personalized SSR**: Rendering `Set-Cookie` or user-specific headers inside an `s-maxage` route either leaks private data across users or forces the CDN to bypass caching entirely.
+- **Missing `Vary` on Locale or Device**: Caching `/pricing` at the edge without keying on `Accept-Language` or currency cookies serves EUR prices to USD visitors.
+- **When not to use ISR or edge HTML caching**: Never cache per-user authenticated dashboards, live order-tracking pages, or CSRF-token forms at a shared CDN PoP; use dynamic SSR or client-fetched personalized islands over a static shell.

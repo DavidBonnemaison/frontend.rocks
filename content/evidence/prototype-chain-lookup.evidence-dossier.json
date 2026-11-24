@@ -1,0 +1,42 @@
+{
+  "concept_id": "prototype-chain-lookup",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://tc39.es/ecma262/#sec-ordinaryget",
+      "spec_section": "10.1.8.1 OrdinaryGet ( O, P, Receiver )",
+      "quote": "Let parent be ? O.[[GetPrototypeOf]](). If parent is null, return undefined. Return ? parent.[[Get]](P, Receiver)."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+",
+    "firefox": "1+",
+    "safari": "1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Own Property Check via Hidden Class",
+      "[[Prototype]] Pointer Walk",
+      "Receiver-bound Getter/Method Dispatch",
+      "Inline Cache Feedback Update"
+    ],
+    "mechanism_summary": "Property reads walk [[Prototype]] links until a match or null; V8 caches prototype-chain offsets in Inline Caches guarded by prototype Map checks."
+  },
+  "production_failures": [
+    {
+      "symptom": "10x slowdown in hot property-access loops",
+      "root_cause": "Mutating an object's prototype at runtime with Object.setPrototypeOf invalidates V8 Hidden Classes and forces megamorphic slow-path lookups.",
+      "mitigation": "Assign prototypes once via class syntax or Object.create() before instances enter hot loops."
+    },
+    {
+      "symptom": "Prototype pollution escalates to XSS or auth bypass",
+      "root_cause": "Recursive object-merge utilities copy __proto__ or constructor.prototype keys from untrusted JSON onto Object.prototype.",
+      "mitigation": "Use Object.create(null) for dictionaries and reject __proto__, constructor, and prototype keys during merges."
+    }
+  ],
+  "sources": [
+    "https://tc39.es/ecma262/#sec-ordinaryget",
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Inheritance_and_the_prototype_chain"
+  ]
+}

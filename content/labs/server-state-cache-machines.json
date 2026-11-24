@@ -1,0 +1,68 @@
+{
+  "type": "step-machine",
+  "id": "server-state-cache-machines",
+  "title": "Server State Cache Transitions",
+  "description": "Trace how a key-indexed cache machine deduplicates observers, serves stale data, and runs GC.",
+  "steps": [
+    {
+      "label": "1. Mount & Deduplicate In-Flight",
+      "description": "Two components request ['user', 42] simultaneously; only one fetch() executes.",
+      "codeHighlight": "if (entry.inflight) return entry.inflight;",
+      "state": {
+        "status": "fetching",
+        "observers": 2,
+        "networkRequests": 1
+      },
+      "visualNodes": [
+        { "id": "obs", "label": "2 Observers", "status": "active" },
+        { "id": "cache", "label": "Entry: fetching", "status": "active" },
+        { "id": "net", "label": "1 HTTP Request", "status": "active" }
+      ]
+    },
+    {
+      "label": "2. Fresh Window (0 ms Reads)",
+      "description": "Response arrives; updatedAt is stamped and subsequent mounts read synchronously during staleTime.",
+      "codeHighlight": "if (Date.now() - entry.updatedAt < staleTime) return entry.data;",
+      "state": {
+        "status": "fresh",
+        "observers": 2,
+        "staleTimeMs": 30000
+      },
+      "visualNodes": [
+        { "id": "obs", "label": "2 Observers", "status": "done" },
+        { "id": "cache", "label": "Entry: fresh", "status": "done" },
+        { "id": "net", "label": "Network Idle", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Stale-While-Revalidate",
+      "description": "After staleTime expires, a new mount receives cached data immediately while a background refetch runs.",
+      "codeHighlight": "render(entry.data); entry.revalidateInBackground();",
+      "state": {
+        "status": "stale -> fetching",
+        "observers": 3,
+        "servedFromCache": true
+      },
+      "visualNodes": [
+        { "id": "obs", "label": "3 Observers", "status": "active" },
+        { "id": "cache", "label": "Entry: stale", "status": "active" },
+        { "id": "net", "label": "Background Fetch", "status": "active" }
+      ]
+    },
+    {
+      "label": "4. Unmount & GC Eviction",
+      "description": "All observers unmount; gcTime expires and the entry is deleted from the cache Map.",
+      "codeHighlight": "if (entry.observers.size === 0) scheduleGC(gcTime);",
+      "state": {
+        "status": "evicted",
+        "observers": 0,
+        "inMemory": false
+      },
+      "visualNodes": [
+        { "id": "obs", "label": "0 Observers", "status": "idle" },
+        { "id": "cache", "label": "Entry: GC'd", "status": "done" },
+        { "id": "net", "label": "Network Idle", "status": "idle" }
+      ]
+    }
+  ]
+}

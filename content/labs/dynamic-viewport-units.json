@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "dynamic-viewport-units",
+  "title": "100vh Mobile Clipping vs 100svh / 100dvh",
+  "description": "Compare how mobile browser chrome interacts with vh, svh, and dvh.",
+  "before": {
+    "label": "Legacy 100vh",
+    "code": ".hero-screen {\n  height: 100vh;\n  display: grid;\n  align-content: space-between;\n}",
+    "metrics": {
+      "lines": 5,
+      "reflows": "0 on scroll (clips bottom)",
+      "dependencies": "0 JS"
+    },
+    "previewNote": "Bottom CTA hides under mobile URL bar on initial load."
+  },
+  "after": {
+    "label": "100svh / 100dvh",
+    "code": ".hero-screen {\n  min-height: 100svh; /* Safe & static */\n  min-height: 100dvh; /* Dynamic if desired */\n  display: grid;\n  align-content: space-between;\n}",
+    "metrics": {
+      "lines": 6,
+      "reflows": "svh: 0 | dvh: on bar toggle",
+      "dependencies": "0 JS"
+    },
+    "previewNote": "Fits cleanly above the mobile URL bar on first paint."
+  }
+}

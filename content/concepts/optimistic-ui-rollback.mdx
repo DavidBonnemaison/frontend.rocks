@@ -1,0 +1,71 @@
+---
+id: optimistic-ui-rollback
+title: "Optimistic UI & Rollback Safety"
+domain: state-architecture
+maturity_status: baseline-widely
+summary_tldr: "Applies speculative UI state immediately on user action while retaining an immutable confirmed snapshot for atomic rollback if the network request fails."
+relations:
+  - target_id: core-web-vitals-mechanics
+    type: under_the_hood
+    note: "Immediate optimistic state transitions keep perceived latency and INP presentation under 16 ms."
+  - target_id: stale-closures-hooks
+    type: requires
+    note: "Rollback handlers must avoid closing over stale pre-mutation state when rapid consecutive edits occur."
+  - target_id: undo-redo-structural-sharing
+    type: contrasts_with
+    note: "Optimistic rollback reverts failed pending mutations, whereas undo/redo tracks user-confirmed history via structural sharing."
+sources:
+  - "https://react.dev/reference/react/useOptimistic"
+  - "https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates"
+  - "https://web.dev/articles/inp"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "optimistic-ui"
+  - "rollback"
+  - "idempotency"
+  - "race-condition"
+  - "useoptimistic"
+---
+
+## TL;DR
+
+Optimistic UI renders the expected post-mutation state immediately at 0 ms instead of trapping the user behind a spinner. To avoid corrupting the screen when requests fail or arrive out of order, keep confirmed server state separate from the speculative overlay and restore the snapshot on error.
+
+## Interactive Lab
+
+Step through refetch cancellation, speculative overlay, and error rollback using `StepMachineLab`.
+
+## Under the Hood
+
+Optimistic UI works like an accountant's pencil-and-ink ledger: you write the expected balance in pencil right away so the customer sees instant feedback for [Core Web Vitals](/concepts/core-web-vitals-mechanics) INP, and only ink it over (or erase it) once the bank clears the check.
+
+1. **Cancel in-flight reads**: Abort or ignore any running `GET` refetch for the same entity so an older server payload cannot clobber the new optimistic state.
+2. **Snapshot & overlay**: Save the last confirmed value (or use `useOptimistic`, which overlays temporary state over base props without mutating them) and avoid [Stale Closures](/concepts/stale-closures-hooks) by reading from a functional reducer.
+3. **Reconcile or rollback**: On `200 OK`, replace the speculative entry with the server's authoritative record; on `4xx`/`5xx`, revert to the snapshot and surface an explicit retry action.
+
+```js
+async function toggleLike(postId, nextLiked) {
+  const snapshot = store.get(postId);
+  store.set(postId, { ...snapshot, liked: nextLiked, pending: true });
+  try {
+    const confirmed = await api.setLike(postId, nextLiked);
+    store.set(postId, confirmed);
+  } catch (err) {
+    store.set(postId, snapshot); // Atomic rollback on failure
+    notifyRetry('Could not save like', () => toggleLike(postId, nextLiked));
+  }
+}
+```
+
+## Problem Genealogy
+
+- **2005 (Spinner-Driven AJAX)**: Blocked buttons with loading spinners for every 300 ms `POST`, making web apps feel sluggish compared to desktop software.
+- **2014 (Client Cache Stores, Relay/Apollo)**: Normalized entity graphs and introduced optimistic response patches, often tangled with manual rollback bugs.
+- **2023+ (`useOptimistic` & Scoped Mutations)**: Built ephemeral overlay semantics directly into UI runtimes so failed mutations auto-discard when transitions settle.
+
+## Production Pitfalls
+
+- **Out-of-order toggle races**: Rapidly clicking Like -> Unlike fires two requests; if Request #1 resolves slower than Request #2, naive reconciliation flickers the UI back to Liked. Use a monotonic request counter or `AbortController`.
+- **Fake IDs leaking into URLs**: Creating a comment optimistically with `id: "temp-123"` and letting the user click `/comments/temp-123` before the server assigns a real ID breaks deep links.
+- **When not to use Optimistic UI**: Never fake success on irreversible or high-stakes actions, payment charges, inventory reservations, password changes, or destructive account deletions; for local multi-step editing history, use [Undo/Redo & Structural Sharing](/concepts/undo-redo-structural-sharing) instead.

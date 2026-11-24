@@ -1,0 +1,66 @@
+---
+id: structured-clone-algorithm
+title: Structured Clone Algorithm
+domain: js-runtime
+maturity_status: baseline-widely
+summary_tldr: "Deep-copy cyclic JS graphs, Maps, Sets, and Date objects without JSON.stringify data loss—and transfer ArrayBuffers to workers with zero-copy overhead."
+relations:
+  - target_id: prototype-chain-lookup
+    type: requires
+    note: "Structured clone copies own enumerable properties and discards custom [[Prototype]] chains."
+  - target_id: js-garbage-collection
+    type: under_the_hood
+    note: "Transferring an ArrayBuffer detaches it in the source realm so GC reclaims only the empty shell."
+  - target_id: temporal-api-dates
+    type: contrasts_with
+    note: "structuredClone() clones legacy Date internal slots natively, whereas Temporal objects require explicit ISO string serialization."
+sources:
+  - "https://html.spec.whatwg.org/multipage/structured-data.html#structuredserializeinternal"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "structuredClone"
+  - "postMessage"
+  - "DataCloneError"
+  - "transferable"
+web_feature_id: structured-clone
+---
+
+## TL;DR
+
+The Structured Clone Algorithm powers `structuredClone()`, `postMessage()`, and IndexedDB. Unlike `JSON.stringify()`, it preserves `Date`, `Map`, `Set`, `RegExp`, and cyclic references, drops custom [Prototype Chains](/concepts/prototype-chain-lookup), and throws `DataCloneError` on functions or DOM nodes.
+
+## Interactive Lab
+
+Compare lossy `JSON.parse(JSON.stringify())` round-trips against `structuredClone()` with buffer transfer in `PatternComparatorLab`.
+
+## Under the Hood
+
+The HTML `StructuredSerializeInternal` algorithm walks object graphs in C++ while maintaining a visited-object memory map to preserve cycles and shared references. Built-in internal slots serialize natively, custom `[[Prototype]]` chains are stripped to plain `Object` shells, and functions or DOM nodes throw `DataCloneError`.
+
+1. **Memory Map Deduplication**: The engine tracks visited objects in an internal map so circular references and shared sub-objects clone once.
+2. **Type-Tagged Serialization**: Built-in internal slots (`[[DateValue]]`, `[[MapData]]`, `[[ArrayBufferData]]`) serialize natively in C++.
+3. **Prototype Stripping**: Cloned class instances become plain `Object` shells without methods.
+4. **Transfer Semantics**: Passing `[buffer]` in `{ transfer }` detaches the buffer in the sender realm for zero-copy [Garbage Collection](/concepts/js-garbage-collection) cleanup.
+
+```js
+const payload = { created: new Date(), items: new Set([1, 2]) };
+payload.self = payload; // Cyclic reference
+
+const clone = structuredClone(payload);
+console.log(clone.self === clone); // true
+console.log(clone.items instanceof Set); // true
+```
+
+## Problem Genealogy
+
+- **2009 (`JSON.parse(JSON.stringify())`)**: Misused as a deep-clone trick; corrupted `Date`, `Map`, `Set`, `NaN`, and crashed on cycles.
+- **2010 (`postMessage` & IndexedDB)**: Exposed structured cloning indirectly across workers and storage.
+- **2022 (`globalThis.structuredClone`)**: Exposed the browser's C++ clone engine directly as a synchronous global function.
+
+## Production Pitfalls
+
+- **`DataCloneError` on Reactive Proxies**: Passing Vue/MobX `Proxy` objects or functions to `structuredClone()` throws immediately; unwrap to raw objects first.
+- **Cloning Multi-Megabyte Buffers**: Omitting the `transfer` list copies the entire `ArrayBuffer` on the main thread.
+- **When not to use `structuredClone()`**: Never use `structuredClone()` to clone class instances when you need their methods or prototype chain intact, or for [Temporal API](/concepts/temporal-api-dates) objects (serialize them as ISO strings instead).

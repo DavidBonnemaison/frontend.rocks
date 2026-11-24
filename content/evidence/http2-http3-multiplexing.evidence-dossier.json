@@ -1,0 +1,43 @@
+{
+  "concept_id": "http2-http3-multiplexing",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://www.rfc-editor.org/rfc/rfc9113#section-5",
+      "spec_section": "RFC 9113 Section 5: Streams and Multiplexing",
+      "quote": "A stream is an independent, bidirectional sequence of frames exchanged between the client and server within an HTTP/2 connection."
+    },
+    {
+      "source_url": "https://www.rfc-editor.org/rfc/rfc9114#section-4.1",
+      "spec_section": "RFC 9114 Section 4.1: HTTP/3 Request-Response Lifecycle",
+      "quote": "HTTP/3 uses QUIC streams, preventing a lost packet on one stream from blocking delivery of data on other streams."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "87+",
+    "firefox": "88+",
+    "safari": "14+"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["DNS + TLS/QUIC Handshake", "Stream Frame Interleaving", "HPACK/QPACK Header Decoding", "Per-Stream Reassembly"],
+    "mechanism_summary": "Interleaves binary frames from concurrent requests over a single connection; HTTP/3 moves multiplexing from TCP to QUIC to isolate packet loss per stream."
+  },
+  "production_failures": [
+    {
+      "symptom": "High-packet-loss mobile users stall on all assets simultaneously despite HTTP/2",
+      "root_cause": "HTTP/2 multiplexes streams over a single TCP connection; one dropped TCP segment halts the entire kernel receive buffer (TCP head-of-line blocking).",
+      "mitigation": "Enable HTTP/3 (QUIC) on the CDN/edge and verify Alt-Svc headers are advertised."
+    },
+    {
+      "symptom": "Domain sharding degrades Time to First Byte under HTTP/2",
+      "root_cause": "Splitting assets across multiple hostnames forces redundant TLS handshakes and prevents HPACK header compression and prioritization across streams.",
+      "mitigation": "Consolidate static assets onto a single origin or coalesced certificate SAN so the browser reuses one multiplexed connection."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Glossary/HTTP_2",
+    "https://developer.mozilla.org/en-US/docs/Glossary/HTTP_3",
+    "https://www.rfc-editor.org/rfc/rfc9114"
+  ]
+}

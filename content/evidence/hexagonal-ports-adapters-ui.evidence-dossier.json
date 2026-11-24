@@ -1,0 +1,61 @@
+{
+  "concept_id": "hexagonal-ports-adapters-ui",
+  "compiled_at": "2026-11-21",
+  "normative_extracts": [
+    {
+      "source_url": "https://alistair.cockburn.us/hexagonal-architecture/",
+      "spec_section": "Intent & Ports and Adapters",
+      "quote": "Allow an application to equally be driven by users, programs, automated test or batch scripts, and to be developed and tested in isolation from its eventual run-time devices and databases."
+    },
+    {
+      "source_url": "https://tc39.es/ecma262/#sec-modules",
+      "spec_section": "ECMA-262 §16.2 Modules",
+      "quote": "Static module records resolve imports before evaluation, allowing module graphs to enforce strict directional dependency boundaries at link time."
+    },
+    {
+      "source_url": "https://www.typescriptlang.org/docs/handbook/2/objects.html",
+      "spec_section": "Object Types & Structural Interfaces",
+      "quote": "TypeScript interfaces define structural contracts that are erased completely at emit time, introducing zero runtime class hierarchy overhead."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "All modern (ES2015+ modules)",
+    "firefox": "All modern (ES2015+ modules)",
+    "safari": "All modern (ES2015+ modules)",
+    "notes": "Language-level architectural pattern relying on ES Modules, closures, and structural typing; requires no browser-specific Web APIs."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "ES Module Graph Resolution (Inward-Only Dependency Edges)",
+      "Composition Root Binding (Adapter Instantiation & Closure Capture)",
+      "Driving Adapter Event Dispatch (DOM / Framework to Inbound Port)",
+      "Domain Use-Case Execution (Pure JS Heap Evaluation)",
+      "Driven Port Invocation (V8 Inline Cache Dispatch to Concrete Adapter)",
+      "Boundary Serialization & Validation (Wire DTO to Domain Entity)"
+    ],
+    "mechanism_summary": "Static ES Module imports restrict domain files to pure JavaScript with zero DOM or SDK edges. At startup, a composition root binds concrete adapters into port closures. At runtime, V8 dispatches port calls through monomorphic or polymorphic inline caches while isolating domain heap objects from DOM nodes and network clients."
+  },
+  "production_failures": [
+    {
+      "symptom": "Domain unit tests fail in Node.js with ReferenceError or require JSDOM and network mocks to assert basic pricing arithmetic.",
+      "root_cause": "Port interfaces leak concrete infrastructure types such as fetch Response, AxiosError, or React Dispatch into the domain module graph.",
+      "mitigation": "Define ports exclusively with plain serializable domain types and translate SDK errors inside driven adapters before returning."
+    },
+    {
+      "symptom": "Main-thread frame drops (> 16.6 ms) and frequent minor GC pauses during 60 Hz WebSocket or pointer event streams.",
+      "root_cause": "Driven adapters deep-clone and re-validate every high-frequency tick into fresh domain objects while > 4 adapter shapes push V8 port call sites megamorphic.",
+      "mitigation": "Bypass full object-mapper layers on hot 60 Hz paths, reuse typed buffers or structural views, and keep production adapter shapes monomorphic."
+    },
+    {
+      "symptom": "Initial route JavaScript bundle grows by 80-200 KB on lightweight landing pages.",
+      "root_cause": "A single monolithic composition root statically imports every concrete adapter (IndexedDB, analytics SDK, payment client) at module evaluation time.",
+      "mitigation": "Split composition roots per route or lazy-load heavy driven adapters behind dynamic import() inside an async port factory."
+    }
+  ],
+  "sources": [
+    "https://alistair.cockburn.us/hexagonal-architecture/",
+    "https://tc39.es/ecma262/#sec-modules",
+    "https://www.typescriptlang.org/docs/handbook/2/objects.html"
+  ]
+}

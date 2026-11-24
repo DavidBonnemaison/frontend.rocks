@@ -1,0 +1,42 @@
+{
+  "concept_id": "css-subgrid",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-grid-2/#subgrids",
+      "spec_section": "2. Subgrids",
+      "quote": "A nested grid container whose grid-template-columns or grid-template-rows is subgrid adopts the tracks of its parent grid along that axis."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-newly",
+    "chrome": "117+",
+    "firefox": "71+",
+    "safari": "16+",
+    "notes": "Baseline Newly Available across Chromium, Firefox, and Safari."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Parent Track Sizing",
+      "Subgrid Item Contribution",
+      "Shared Track Resolution"
+    ],
+    "mechanism_summary": "Items inside a subgrid contribute their intrinsic sizes directly to the parent grid’s track-sizing pass."
+  },
+  "production_failures": [
+    {
+      "symptom": "Card content overlaps or stacks into row 1 when grid-template-rows: subgrid is applied",
+      "root_cause": "The subgrid item only spans 1 parent row (default grid-row: auto) instead of spanning the number of internal rows.",
+      "mitigation": "Set grid-row: span 3 (matching header, body, footer) on the card so it claims 3 parent tracks."
+    },
+    {
+      "symptom": "Subgrid inherits an unwanted huge gap from the parent grid",
+      "root_cause": "Subgrids inherit the parent’s gap by default unless explicitly overridden.",
+      "mitigation": "Declare row-gap: 0.5rem directly on the subgrid element to override the parent gap."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-grid-2/#subgrids",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout/Subgrid"
+  ]
+}

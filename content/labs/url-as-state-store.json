@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "url-as-state-store",
+  "title": "History Hygiene: pushState Spam vs replaceState + Validation",
+  "description": "Compare polluting browser history on every keystroke against schema-validated replaceState updates.",
+  "before": {
+    "label": "Naive pushState on Every Input",
+    "code": "input.addEventListener('input', (e) => {\n  // Typing 'shoes' pushes 5 separate Back-button entries!\n  history.pushState(null, '', `?q=${e.target.value}`);\n});",
+    "metrics": {
+      "lines": 4,
+      "reflows": "5 history entries for 1 word",
+      "dependencies": "Unescaped raw string interpolation"
+    },
+    "previewNote": "Pressing Back steps through 'shoe', 'sho', 'sh', 's' instead of leaving the page."
+  },
+  "after": {
+    "label": "URLSearchParams + replaceState",
+    "code": "const url = new URL(location.href);\nurl.searchParams.set('q', query.trim());\nhistory.replaceState(null, '', url);\n// Discrete pagination still uses pushState()",
+    "metrics": {
+      "lines": 4,
+      "reflows": "1 clean history entry",
+      "dependencies": "Native URL + URLSearchParams"
+    },
+    "previewNote": "URL stays shareable and bookmarkable while the Back button works as expected."
+  }
+}

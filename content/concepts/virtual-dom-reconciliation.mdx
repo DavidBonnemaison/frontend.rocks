@@ -1,0 +1,63 @@
+---
+id: virtual-dom-reconciliation
+title: "Virtual DOM & Reconciliation"
+domain: state-architecture
+maturity_status: baseline-widely
+summary_tldr: "Diffs lightweight JS element trees in O(n) using type and key heuristics, batching minimal DOM mutations into a single commit phase."
+relations:
+  - target_id: fine-grained-signals
+    type: contrasts_with
+    note: "VDOM diffs whole component subtrees on state changes; Signals update subscribed DOM nodes in O(1)."
+  - target_id: layout-thrashing
+    type: under_the_hood
+    note: "Batching DOM writes in a single commit phase avoids interleaved read/write layout thrashing."
+sources:
+  - "https://react.dev/learn/preserving-and-resetting-state"
+  - "https://react.dev/learn/rendering-lists#why-does-react-need-keys"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "virtual-dom"
+  - "reconciliation"
+  - "fiber"
+  - "keys"
+  - "diffing"
+---
+
+## TL;DR
+
+Virtual DOM reconciliation trades cheap JavaScript object allocations for expensive live DOM mutations. By assuming different element types produce different trees and matching siblings via `key`, it reduces tree diffing from $O(n^3)$ to $O(n)$ and flushes minimal patches during commit.
+
+## Interactive Lab
+
+Step through the render, keyed diff, and batched commit phases using `StepMachineLab`.
+
+## Under the Hood
+
+Mutating the live DOM directly inside scattered event handlers easily triggers [Layout Thrashing](/concepts/layout-thrashing). A Virtual DOM acts like an architect's redline markup: you sketch the entire next UI state in plain JS objects first, compare against the previous blueprint, and hand the browser only the final delta.
+
+1. **Render phase**: Component functions execute and allocate a fresh tree of plain JS descriptors (`{ type, key, props }`), which is interruptible in concurrent schedulers.
+2. **Heuristic diff**: Same `type` and `key` reuses the underlying DOM node and patches changed attributes; a changed `type` destroys and remounts the entire subtree.
+3. **Commit phase**: The runtime applies all collected DOM insertions, removals, and attribute writes in one synchronous pass, contrasting with [Fine-Grained Signals](/concepts/fine-grained-signals) that bypass tree diffing altogether.
+
+```jsx
+// Stable domain IDs preserve DOM identity across reorders
+function TaskList({ tasks }) {
+  return tasks.map((task) => (
+    <TaskRow key={task.id} title={task.title} />
+  ));
+}
+```
+
+## Problem Genealogy
+
+- **2010 (Backbone & Manual jQuery)**: Required hand-wiring imperative DOM updates on every model event, breeding stale UI bugs.
+- **2013 (React Virtual DOM)**: Introduced declarative `UI = f(state)` with $O(n)$ keyed diffing, freeing developers from manual DOM surgery.
+- **2020+ (Fiber & Fine-Grained Compilers)**: Added time-sliced Fiber scheduling and compiler memoization to curb unnecessary top-down VDOM re-renders.
+
+## Production Pitfalls
+
+- **`key={index}` on dynamic lists**: Reordering, filtering, or prepending items shifts array indices, causing the reconciler to attach row A's `<input>` DOM state to row B's data.
+- **Defining components inside components**: Writing `function Inner() {}` inside `Parent` creates a new function reference every render, forcing a full unmount/remount of `Inner` on every state change.
+- **When not to use VDOM**: For high-frequency 60 fps canvas/drag coordinates or 10,000-cell spreadsheets, bypass VDOM diffing and update CSS transforms or signals directly.

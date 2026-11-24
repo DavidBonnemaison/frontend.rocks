@@ -1,0 +1,42 @@
+{
+  "concept_id": "actor-over-worker-architecture",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/workers.html",
+      "spec_section": "10.1.2 Processing model",
+      "quote": "Each worker has its own event loop, global scope, and task queues, executing independently from the Window event loop."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "4+",
+    "firefox": "3.5+",
+    "safari": "4+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Main Thread Dispatches Command + MessagePort",
+      "Worker Event Loop Enqueues Mailbox Task",
+      "Actor Mutates Isolated State / OPFS",
+      "Zero-Copy Transferable Reply to Main Thread"
+    ],
+    "mechanism_summary": "A dedicated Worker runs an isolated V8 isolate and event loop, processing serialized commands sequentially from its message queue and returning results via MessageChannel ports or transferable ArrayBuffers."
+  },
+  "production_failures": [
+    {
+      "symptom": "Input lag and janky animations despite moving logic to a Web Worker",
+      "root_cause": "Sending high-frequency pointermove events or huge nested JSON objects over postMessage saturates structured clone serialization on both threads.",
+      "mitigation": "Coalesce high-frequency events on the main thread and transfer binary TypedArrays instead of cloning deep object graphs."
+    },
+    {
+      "symptom": "Memory spike in Worker during rapid user interactions",
+      "root_cause": "Fire-and-forget postMessage calls queue faster than the Worker can execute heavy queries, creating an unbounded mailbox.",
+      "mitigation": "Track in-flight request IDs and coalesce or drop superseded commands before posting."
+    }
+  ],
+  "sources": [
+    "https://html.spec.whatwg.org/multipage/workers.html",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers"
+  ]
+}

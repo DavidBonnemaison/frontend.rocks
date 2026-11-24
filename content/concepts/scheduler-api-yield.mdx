@@ -1,0 +1,76 @@
+---
+id: scheduler-api-yield
+title: Prioritized Task Scheduling and scheduler.yield()
+domain: js-runtime
+maturity_status: interop-experimental
+summary_tldr: "Cooperative main-thread yielding primitive that pauses long JS work for input and rendering, then resumes in a prioritized continuation queue."
+relations:
+  - target_id: event-loop-tasks-microtasks
+    type: requires
+    note: "scheduler.yield() exits the current macrotask so the Event Loop can process input and paint."
+  - target_id: promises-async-await-internals
+    type: requires
+    note: "await scheduler.yield() suspends the async function context until the continuation task fires."
+  - target_id: performance-observer-rum
+    type: under_the_hood
+    note: "PerformanceObserver longtask and LoAF entries measure the main-thread stalls that scheduler.yield() breaks up."
+  - target_id: regexp-backtracking-unicode
+    type: contrasts_with
+    note: "scheduler.yield() pauses between loop iterations, whereas catastrophic regex backtracking stalls a single synchronous call frame."
+sources:
+  - "https://wicg.github.io/scheduling-apis/#dom-scheduler-yield"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Scheduler/yield"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "scheduler.yield"
+  - "postTask"
+  - "main thread"
+  - "cooperative scheduling"
+web_feature_id: scheduler
+---
+
+## TL;DR
+
+`scheduler.yield()` pauses a long-running `async` function so the [Event Loop](/concepts/event-loop-tasks-microtasks) can handle user input and paint a frame, then schedules the [Promise continuation](/concepts/promises-async-await-internals) in a prioritized continuation queue, ahead of queued third-party scripts that would bury `setTimeout(0)`.
+
+## Interactive Lab
+
+Compare `setTimeout(0)` queue starvation against budgeted `scheduler.yield()` in `PatternComparatorLab`.
+
+## Under the Hood
+
+Picture stepping aside at a grocery checkout so a shopper with one item (`click` event) can pay, while keeping your place right behind them instead of walking to the back of the store line (`setTimeout(0)`).
+
+1. **Task Break**: Calling `await scheduler.yield()` unwinds the active task and yields control to the browser scheduler.
+2. **Input & Frame Window**: Pending high-priority input events and `Update the Rendering` execute immediately.
+3. **Continuation Priority**: The engine places the resumed chunk in a dedicated continuation queue that drains before normal `postTask` or third-party timers.
+
+```js
+const yieldMain = () =>
+  globalThis.scheduler?.yield?.() ??
+  new Promise((r) => setTimeout(r, 0));
+
+async function processBatch(items) {
+  let sliceStart = performance.now();
+  for (const item of items) {
+    transform(item);
+    if (performance.now() - sliceStart > 16) {
+      await yieldMain();
+      sliceStart = performance.now();
+    }
+  }
+}
+```
+
+## Problem Genealogy
+
+- **2010 (`setTimeout(fn, 0)`)**: Forced 4ms nesting clamp and surrendered queue position to every third-party script.
+- **2021 (`scheduler.postTask()`)**: Added explicit `user-blocking`, `user-visible`, and `background` priority queues.
+- **2024 (`scheduler.yield()`)**: Standardized priority-preserving mid-task yielding for responsive hydration and parsing.
+
+## Production Pitfalls
+
+- **Yielding Every Iteration**: Calling `await yieldMain()` on every loop step adds massive async overhead; gate it with a 12ms–16ms `performance.now()` budget.
+- **Missing Fallback**: Safari and older Firefox versions lack `scheduler.yield()`; always feature-detect before calling.
+- **When not to use `scheduler.yield()`**: Never run heavy pure computation (image encoding, crypto, AST parsing, or [catastrophic RegExp backtracking](/concepts/regexp-backtracking-unicode)) on the main thread at all; move it to a Web Worker, and track remaining stalls via [PerformanceObserver RUM](/concepts/performance-observer-rum).

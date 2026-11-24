@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "beacon-api-visibilitychange",
+  "title": "Page-Exit Telemetry: unload + XHR vs visibilitychange + sendBeacon",
+  "before": {
+    "label": "window.onunload + Sync XHR (Broken)",
+    "code": "window.addEventListener('unload', () => {\n  const xhr = new XMLHttpRequest();\n  xhr.open('POST', '/telemetry', false);\n  xhr.send(payload); // Blocks navigation & kills bfcache\n});",
+    "metrics": {
+      "lines": 5,
+      "reflows": "Kills bfcache",
+      "dependencies": "0 kB"
+    },
+    "previewNote": "Fails on mobile backgrounding, stalls page exit, disqualifies bfcache."
+  },
+  "after": {
+    "label": "visibilitychange + navigator.sendBeacon",
+    "code": "document.addEventListener('visibilitychange', () => {\n  if (document.visibilityState === 'hidden') {\n    navigator.sendBeacon('/telemetry', new Blob([payload], { type: 'application/json' }));\n  }\n});",
+    "metrics": {
+      "lines": 5,
+      "reflows": "0 ms exit delay",
+      "dependencies": "0 kB"
+    },
+    "previewNote": "Preserves bfcache; browser network process delivers POST in background."
+  }
+}

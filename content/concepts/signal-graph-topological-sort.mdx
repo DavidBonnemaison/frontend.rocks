@@ -1,0 +1,81 @@
+---
+id: "signal-graph-topological-sort"
+title: "Fine-Grained Signals & Glitch-Free Topological Evaluation"
+domain: "framework-internals"
+maturity_status: "baseline-widely"
+summary_tldr: "Eliminates double-renders and torn intermediate state in diamond dependency graphs. Push-pull topological evaluation marks downstream nodes dirty in one pass and lazily recomputes only what effects actually read."
+relations:
+  - target_id: "fine-grained-signals"
+    type: "under_the_hood"
+    note: "Defines the directed acyclic graph traversal and tri-state dirty-checking machine that keeps fine-grained signal graphs glitch-free."
+  - target_id: "proxy-vs-compiler-reactivity"
+    type: "requires"
+    note: "Depends on runtime Proxy traps or compile-time getter wrappers to record dynamic dependency edges during pull evaluation."
+  - target_id: "virtual-dom-reconciliation"
+    type: "contrasts_with"
+    note: "Avoids top-down component tree diffing by propagating exact invalidation marks directly along subscribed graph edges."
+sources:
+  - "https://github.com/tc39/proposal-signals"
+  - "https://github.com/modderme123/reactively"
+  - "https://preactjs.com/blog/signal-boosting/"
+  - "https://docs.solidjs.com/concepts/derived-values/memos"
+last_verified_at: "2026-11-21"
+proof_status: unverified
+keywords:
+  - "signals"
+  - "topological-sort"
+  - "diamond-problem"
+  - "push-pull-reactivity"
+  - "glitch-free"
+---
+
+## TL;DR
+
+Naive reactive graphs recompute shared descendants twice on a single upstream write, exposing torn intermediate state to side effects. Push-pull topological evaluation separates eager dirty-marking from lazy value recomputation, guaranteeing every derived node executes at most once per transaction.
+
+## Interactive Lab
+
+Step through a four-node diamond graph (`A -> B, C -> D`) as a single write to `A` propagates `Dirty` and `Check` marks before `D` lazily pulls updated values. Observe how `D` evaluates once with consistent inputs instead of firing twice.
+
+## Under the Hood
+
+A reactive runtime maintains a directed acyclic graph (DAG) on the JavaScript main thread heap. Rather than allocating `Set` instances per node, modern engines store dependencies as doubly-linked list nodes connecting sources to subscribers in `O(1)` time. Every derived node carries a tri-state flag (`Clean`, `Check`, or `Dirty`) and a monotonic version counter.
+
+This scheduling layer powers [fine-grained signals](/concepts/fine-grained-signals) and replaces top-down [Virtual DOM reconciliation](/concepts/virtual-dom-reconciliation) with targeted graph invalidation. When a source signal updates, the engine executes four deterministic steps:
+
+1. **Push Phase (Eager Marking)**: Writing to source `A` increments its version and traverses outgoing subscriber edges. Direct dependents (`B`, `C`) are marked `Dirty`; transitive dependents (`D`) are marked `Check`. No derived user code executes during this pass.
+2. **Effect Scheduling**: Any reactive sink (DOM binding or `effect`) reached during the push phase is appended to a pending flush queue without running immediately.
+3. **Pull Phase (Topological Verification)**: When an effect flushes or user code reads `D`, the runtime inspects `D`'s state. Because `D` is `Check`, it recursively calls `updateIfNecessary()` on upstream sources (`B`, then `C`) before running `D`'s own computation.
+4. **Equality Cutoff & Edge Pruning**: When `B` recomputes, the engine compares the new output against the cached value via `Object.is`. If neither `B` nor `C` changed, `D` transitions back to `Clean` without executing. Dynamic edges recorded via [Proxy or compiler reactivity](/concepts/proxy-vs-compiler-reactivity) that were not touched during the run are unlinked.
+
+```ts
+const enum State { Clean, Check, Dirty }
+function updateIfNecessary(node: ComputedNode): void {
+  if (node.state === State.Clean) return;
+  if (node.state === State.Check) {
+    for (const src of node.sources) {
+      updateIfNecessary(src);
+      if (node.state === State.Dirty) break;
+    }
+  }
+  const next = node.state === State.Dirty ? node.compute() : node.value;
+  if (!Object.is(node.value, next)) { node.value = next; markChildrenDirty(node); }
+  node.state = State.Clean;
+}
+```
+
+All traversal runs synchronously on the main thread Call Stack. Memory cost scales linearly with active edge count (`O(V + E)`), while CPU cost skips untouched subgraphs entirely when an upstream equality check short-circuits.
+
+## Problem Genealogy
+
+- **2010: Naive Push Observables (Knockout.js, early RxJS)**: Synchronous depth-first push notifications fired `D` immediately after `B` updated, before `C` saw the new `A`. A single upstream write triggered 2x redundant DOM updates and exposed impossible transient states (`B` new, `C` stale).
+- **2015: Topological Push-Pull (MobX)**: Introduced two-phase propagation with observer state flags, eliminating diamond glitches at the cost of `Set` allocation overhead and extra object wrappers per observable property.
+- **2018-2022: Tri-State & Linked-List Graphs (SolidJS, Reactively, Preact Signals)**: Standardized `Clean`/`Check`/`Dirty` coloring with doubly-linked dependency lists, cutting per-signal heap footprint and eliminating GC churn during dynamic branch switching.
+- **2024-2026: TC39 Signals Proposal**: Consolidated push-pull glitch-free evaluation into a Stage 1 ECMAScript specification so frameworks can share one underlying graph scheduler.
+
+## Production Pitfalls
+
+- **Stack overflow on cyclic derivations**: Reading a computed signal inside its own evaluation chain (`A -> B -> A`) throws `RangeError: Maximum call stack size exceeded` during the recursive pull phase. Track a transient `Computing` flag on each active node and throw an explicit cycle error before recursing.
+- **Silent heap growth in dynamic branches**: Conditional reads (`flag() ? a() : b()`) retain dead references to `a` after `flag` flips false if the graph only appends subscriptions without pruning. Stamp every edge with an evaluation epoch and unlink stale incoming sources when a node finishes recomputing.
+- **Unbatched multi-write flushes causing layout thrashing**: Mutating five leaf signals sequentially in a loop flushes downstream DOM effects five separate times, triggering repeated style recalculations. Wrap synchronous multi-signal writes inside a `batch()` transaction so the push phase completes before effects flush once.
+- **When not to use**: Do not model high-frequency numerical streams (such as 60-120 Hz WebGL particle positions, physics ticks, or audio buffers) as individual reactive graph nodes. Allocating linked-list edges and traversing dirty states per element burns the 8.3 ms frame budget; store contiguous numeric state in [Typed Arrays](/concepts/typed-arrays-zero-copy) and drive updates imperatively inside a [requestAnimationFrame](/concepts/requestanimationframe-vsync) loop.

@@ -1,0 +1,53 @@
+{
+  "type": "step-machine",
+  "id": "cross-tab-leader-election",
+  "title": "Web Locks Leader Election & Crash Failover",
+  "description": "Trace how Tab A holds an exclusive Web Lock, broadcasts updates to Tab B, and how Tab B promotes on Tab A close.",
+  "steps": [
+    {
+      "label": "1. Tab A Acquires Leader Lock",
+      "description": "Tab A wins navigator.locks.request('tab-leader'), opens the WebSocket, and posts updates to BroadcastChannel.",
+      "codeHighlight": "navigator.locks.request('tab-leader', () => runLeaderLoop());",
+      "state": {
+        "tabA": "leader",
+        "tabB": "queued-follower",
+        "openSockets": 1
+      },
+      "visualNodes": [
+        { "id": "lock", "label": "Lock: Held by Tab A", "status": "active" },
+        { "id": "tabA", "label": "Tab A (Leader + WS)", "status": "active" },
+        { "id": "tabB", "label": "Tab B (Follower)", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Tab A Closes or Crashes",
+      "description": "User closes Tab A; the browser engine automatically releases the Web Lock without heartbeat timeouts.",
+      "codeHighlight": "// Browser Lock Manager releases 'tab-leader' on context termination",
+      "state": {
+        "tabA": "terminated",
+        "tabB": "promoting",
+        "openSockets": 0
+      },
+      "visualNodes": [
+        { "id": "lock", "label": "Lock: Released", "status": "error" },
+        { "id": "tabA", "label": "Tab A (Closed)", "status": "done" },
+        { "id": "tabB", "label": "Tab B (Waking)", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Tab B Promotes to Leader",
+      "description": "Tab B's queued lock callback resolves immediately, opening a single replacement WebSocket.",
+      "codeHighlight": "ws = new WebSocket('wss://api.example.com/stream');",
+      "state": {
+        "tabA": "terminated",
+        "tabB": "leader",
+        "openSockets": 1
+      },
+      "visualNodes": [
+        { "id": "lock", "label": "Lock: Held by Tab B", "status": "done" },
+        { "id": "tabA", "label": "Tab A (Closed)", "status": "done" },
+        { "id": "tabB", "label": "Tab B (Leader + WS)", "status": "done" }
+      ]
+    }
+  ]
+}

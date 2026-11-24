@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "green-ci-broken-prod-jsdom",
+  "title": "CI Fidelity: JSDOM Synthetic Clicks vs Real Browser Hit-Testing",
+  "description": "Compare a green JSDOM test that bypasses layout and touch listeners against a real Chromium Playwright test that catches the unclickable mobile dropdown.",
+  "before": {
+    "label": "JSDOM + Enzyme/RTL Synthetic Test (False Green)",
+    "code": "vi.useFakeTimers();\nconst { container } = render(<MobileNavDropdown />);\nfireEvent.click(container.querySelector('.nav-trigger')!);\n// JSDOM ignores zero-rect box geometry, passive touchstart,\n// and pointer-events: none overlays — passes in 14ms\nexpect(container.querySelector('.dropdown-menu')).toBeTruthy();",
+    "metrics": {
+      "lines": 6,
+      "reflows": "0 layout / 0 hit-test",
+      "dependencies": "JSDOM + vi.useFakeTimers()"
+    },
+    "previewNote": "Passes 100% in CI even when a sticky header overlay intercepts every tap at (x, y) in production."
+  },
+  "after": {
+    "label": "Real Chromium Engine + A11y Locator (Playwright)",
+    "code": "await page.setViewportSize({ width: 390, height: 844 });\nconst trigger = page.getByRole('button', { name: 'Menu' });\nawait trigger.tap();\n// Blink computes box tree, hit-tests stacking context,\n// and verifies ARIA expanded state in a real frame\nawait expect(page.getByRole('menu')).toBeVisible();",
+    "metrics": {
+      "lines": 6,
+      "reflows": "Full Blink layout + hit-test",
+      "dependencies": "Playwright Chromium"
+    },
+    "previewNote": "Fails immediately with 'element intercepts pointer events' when the sticky backdrop covers the trigger."
+  }
+}

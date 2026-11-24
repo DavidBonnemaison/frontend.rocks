@@ -1,0 +1,137 @@
+---
+id: double-payment-race-condition
+case_number: 1
+title: "Autopsy #01: Double Payment on a Disabled Button"
+symptom: "Rapid double-click or 3G network blip charges the user twice despite a disabled={isSubmitting} React button."
+failure_mode: silent-data-corruption
+format: narrative
+case_type: composite
+cast:
+  - thomas
+  - julie
+  - nadia
+traversed_concepts:
+  - concept_id: dom-event-propagation
+    step_order: 1
+    role_in_chain: "Two queued click tasks fire before React commits disabled={true} when an await precedes setIsSubmitting(true)."
+  - concept_id: debounce-throttle-raf-coalescing
+    step_order: 2
+    role_in_chain: "Uncoalesced click handlers invoke submitPayment() twice in consecutive tasks instead of locking on the leading edge."
+  - concept_id: finite-state-machines-ui
+    step_order: 3
+    role_in_chain: "Boolean flags (isLoading, hasError) permit re-entry after a timeout while the first request remains in flight."
+  - concept_id: abortcontroller-cancellation
+    step_order: 4
+    role_in_chain: "Missing AbortSignal leaves orphaned POST streams active on the network socket after UI reset or retry."
+  - concept_id: idempotency-optimistic-queues
+    step_order: 5
+    role_in_chain: "Absent Idempotency-Key headers cause the payment gateway to treat retried TCP packets as two distinct charges."
+case_file:
+  trigger: "Swapped `<form onSubmit>` for `<button onClick={handlePay}>` to fire an analytics event before checkout"
+  symptom: "Customers on mobile and slow connections billed twice; two `200 OK` charges 38 ms apart, zero Sentry errors"
+  root_cause: "Both native `click` tasks enter the queue before React commits `disabled={true}`, and `isSubmitting` is stale in the second closure"
+  bad_fixes:
+    - label: "`disabled={isSubmitting}`"
+      outcome: "Passed Playwright locally; still double-charged on slow Android main threads"
+    - label: "300 ms `debounce` on `onClick`"
+      outcome: "Delayed every click by 300 ms and failed again when a 3G `POST` took 4 seconds"
+  fix: "Synchronous `useRef` state machine lock (`idle → submitting → settled`) plus a deterministic per-attempt `Idempotency-Key`"
+  how_to_spot: "Gateway logs show two `POST /api/charge` calls with distinct `charge_id` values for one `cart_id`"
+  deleted: "Boolean `isSubmitting` guard, 300 ms click debounce, client-side timeout retry loop"
+reading_time_min: 7
+sources:
+  - "https://dom.spec.whatwg.org/#concept-event-dispatch"
+  - "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#attr-fe-disabled"
+  - "https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/"
+  - "https://docs.stripe.com/api/idempotent_requests"
+last_verified_at: "2026-11-17"
+proof_status: unverified
+lab_id: double-payment-race-condition
+---
+
+## One analytics event before the weekend
+
+Thomas wanted an analytics event called `checkout_apple_pay_clicked` to fire right before payment submission. The native `<form onSubmit>` had been handling checkout for two years without complaint, so Julie swapped it for a `<button onClick={handlePay}>` in a pull request titled `feat: track checkout click`.
+
+We tested it on office fiber. One click, one `200 OK`, one analytics beacon, and everybody logged off for the weekend.
+
+Forty minutes later, Nadia from support dropped a ticket into `#frontend`. A customer on the Eurostar had just been charged twice for the same pair of socks. Sentry was completely empty. In the gateway logs, there were no timeouts and no 500s, just two clean `POST /api/charge` requests, 38 milliseconds apart, both returning `200 OK` with different `charge_id` values.
+
+## Disabled in React, enabled in the DOM
+
+The first hotfix took three minutes. Julie added `disabled={isSubmitting}` to the button and `if (isSubmitting) return;` at the top of `handlePay`.
+
+```tsx
+function PayButton({ cartId }: { cartId: string }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handlePay() {
+    if (isSubmitting) return;
+    await trackCheckoutClick(cartId); // yields before state update
+    setIsSubmitting(true);
+    await fetch('/api/charge', { method: 'POST', body: JSON.stringify({ cartId }) });
+  }
+
+  return <button disabled={isSubmitting} onClick={handlePay}>Pay now</button>;
+}
+```
+
+Our Playwright test hammered the button in a loop on localhost and produced one charge. We shipped it before dinner.
+
+In production on mid-tier Android phones, the duplicate rate did not budge.
+
+Here is why. In React 18+, a discrete `onClick` handler flushes synchronous state updates before yielding, but because `handlePay` awaited `trackCheckoutClick` first, `setIsSubmitting(true)` ran in a microtask after the handler yielded. When a user double-taps while the main thread is busy, both pointer events queue up in the browser task queue. During [DOM event dispatch](/concepts/dom-event-propagation), the first `click` task runs `handlePay` up to the `await`, leaving `button.disabled` as `false` on the actual DOM node when the browser pulls the second `click` task off the queue. Worse, the second handler reads the closure from the previous render, where `isSubmitting` is still `false`.
+
+## Debouncing the wrong century
+
+Since the first fix missed two clicks 38 milliseconds apart, we tried the classic reflex: wrap `handlePay` in a 300-millisecond [debounce](/concepts/debounce-throttle-raf-coalescing).
+
+That made every single-click user wait 300 milliseconds before anything happened on screen, which felt broken, and it still failed on trains. When a user tapped inside a 3G tunnel, the first `POST` sat open on the socket for four seconds. At 3.1 seconds, the spinner looked stuck, the user tapped again, the 300-millisecond window had long expired, and two identical payloads raced each other to the payment gateway.
+
+<CausalChainStepper />
+
+## Booleans lie under latency
+
+A boolean flag like `isSubmitting` can only answer yes or no. It cannot tell you whether a request is in flight, timed out locally, or waiting for a retry, and it lives in React render state rather than synchronous memory.
+
+We replaced the boolean with a [finite state machine](/concepts/finite-state-machines-ui) backed by a synchronous `useRef` lock (`idle → submitting → settled`). The moment the first DOM `click` fires, `lockRef.current` flips to `'submitting'` synchronously in the same call stack, before React even thinks about scheduling a render. A second `click` 12 milliseconds later sees the ref immediately and exits.
+
+```tsx
+const phaseRef = useRef<'idle' | 'submitting' | 'settled'>('idle');
+const idempotencyKeyRef = useRef<string | null>(null);
+
+async function handlePay() {
+  if (phaseRef.current !== 'idle') return;
+  phaseRef.current = 'submitting';
+  idempotencyKeyRef.current ??= crypto.randomUUID();
+  // ...
+}
+```
+
+That closed the double-click race on the main thread. It did not close the tunnel race.
+
+## Aborting a charge does not un-charge a card
+
+First try on the network side: we wired an [AbortController](/concepts/abortcontroller-cancellation) with a 4-second timeout so a stalled `POST /api/charge` would cancel cleanly, reset `phaseRef.current` back to `'idle'`, and let the user try again.
+
+In staging with simulated packet loss, the first `POST` reached the backend, Stripe charged the test card, and then the 4-second timer fired on the client before the `200 OK` response packet made it back. `controller.abort()` tore down the browser's `fetch` stream, threw `AbortError`, and unlocked the button. The user saw "Request timed out, please try again", clicked again, and paid a second time.
+
+Aborting a `fetch` only tells the browser to stop reading the socket. It does not send a rewind signal to a bank.
+
+For non-mutating reads like search autocomplete, `AbortController` is the right tool. For a payment mutation, cancelling on the client while leaving the server clueless just guarantees a silent duplicate.
+
+<FailureSimulator />
+
+## One key per cart attempt
+
+The real fix had two halves. On the client, we kept the synchronous `useRef` state machine lock and stopped aborting `POST /api/charge` after dispatch. Before the first request leaves the tab, we generate a single UUID [idempotency key](/concepts/idempotency-optimistic-queues) tied to that cart attempt and store it in `idempotencyKeyRef` (and `sessionStorage` in case of a reload).
+
+On every retry after a dropped connection, the client sends the exact same `Idempotency-Key` header. Stripe and our backend cache the first response against that key: if the card was already charged, the second request receives the original `200 OK` receipt instead of running a new transaction. We only mint a fresh key if the server returns an explicit `402` card decline or the cart contents change.
+
+## What stayed in the codebase
+
+<CaseFile />
+
+A React state variable is a promise to update the DOM later; a double-click does not wait for later.
+
+Thomas still gets his `checkout_apple_pay_clicked` analytics event. For the customer on the Eurostar, he actually got two.

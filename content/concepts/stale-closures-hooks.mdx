@@ -1,0 +1,74 @@
+---
+id: stale-closures-hooks
+title: "Stale Closures in Hooks & Callbacks"
+domain: state-architecture
+maturity_status: baseline-widely
+summary_tldr: "Explains how JavaScript lexical closures snapshot primitive state per render, causing timers, listeners, and suppressed dependency arrays to read outdated values."
+relations:
+  - target_id: virtual-dom-reconciliation
+    type: requires
+    note: "Each VDOM re-render invokes the component function anew, creating fresh lexical scopes."
+  - target_id: event-loop-tasks-microtasks
+    type: under_the_hood
+    note: "Deferred timers and promises execute long after the render call stack that created their closure popped."
+  - target_id: fine-grained-signals
+    type: contrasts_with
+    note: "Signals pass a stable box reference whose .get() always reads the current value without stale closures."
+  - target_id: url-as-state-store
+    type: contrasts_with
+    note: "Hook closures snapshot per-render filter state, whereas URL search params act as a single external source of truth."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures"
+  - "https://react.dev/reference/react/useEffect"
+  - "https://react.dev/learn/separating-events-from-effects"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "closures"
+  - "hooks"
+  - "useeffect"
+  - "useref"
+  - "stale-state"
+---
+
+## TL;DR
+
+Every component re-render creates a brand-new JavaScript lexical environment with its own frozen `props` and `state` constants. When a `setInterval`, `addEventListener`, or `useEffect(..., [])` skips re-subscribing, its callback keeps reading the ghost of Render #1 forever.
+
+## Interactive Lab
+
+Step through how a timer's lexical environment drifts from the current render using `StepMachineLab`.
+
+## Under the Hood
+
+A stale closure is standard ECMAScript lexical scoping colliding with [Virtual DOM](/concepts/virtual-dom-reconciliation) re-renders and [Event Loop](/concepts/event-loop-tasks-microtasks) callbacks. Each render prints a dated Polaroid: a timer created in Render #1 carries that Polaroid even after Render #10 hangs a newer photo.
+
+1. Render #1 declares `const count = 0` and passes `() => setCount(count + 1)` to `setInterval`.
+2. When the timer fires 1,000 ms later, V8 resolves `count` against Render #1's `LexicalEnvironment` (`0`), writing `1` every single tick.
+3. Passing a functional updater `c => c + 1`, reading a mutable `.current` ref, or switching to [Fine-Grained Signals](/concepts/fine-grained-signals) (which pass a live box rather than a frozen primitive) eliminates the snapshot drift.
+
+```js
+// Buggy: closes over Render #1's `count`
+useEffect(() => {
+  const id = setInterval(() => setCount(count + 1), 1000);
+  return () => clearInterval(id);
+}, []); // eslint-disable-next-line react-hooks/exhaustive-deps
+
+// Fixed: functional updater reads latest state from the queue
+useEffect(() => {
+  const id = setInterval(() => setCount((c) => c + 1), 1000);
+  return () => clearInterval(id);
+}, []);
+```
+
+## Problem Genealogy
+
+- **2013–2018 (Class `this.state`)**: Avoided stale closures because `this` was a single mutable object, at the cost of unpredictable mid-async `this.state` mutations.
+- **2019 (Hooks & `exhaustive-deps`)**: Embraced pure per-render closures, making async effects deterministic while surfacing stale-closure traps whenever `[]` lied about dependencies.
+- **2023+ (`useEffectEvent` & Signals)**: Separated non-reactive event reads from reactive effect lifecycles.
+
+## Production Pitfalls
+
+- **Silencing `react-hooks/exhaustive-deps`**: Adding `// eslint-disable-next-line` to force an effect to run once is the fastest way to ship stale auth tokens or outdated filters in WebSocket handlers.
+- **Debounced callbacks capturing old props**: Creating a debounced `save()` inside render without memoizing or reading a ref sends yesterday's form state to the API.
+- **When not to use `useRef` to bypass dependencies**: Don't stuff reactive UI state into a ref just to silence a linter, if the effect should re-run when `userId` changes, keep `userId` in the dependency array, or move filter/navigation state to [URL as State Store](/concepts/url-as-state-store).

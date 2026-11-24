@@ -1,0 +1,67 @@
+---
+id: speculation-rules-prerender
+title: "Speculation Rules & Prerendering"
+domain: network-perf
+maturity_status: interop-experimental
+summary_tldr: "Declarative JSON rules that prefetch or fully prerender predicted next navigations in a hidden browsing context, delivering near-instant 0 ms LCP on click."
+relations:
+  - target_id: preload-scanner-hints
+    type: contrasts_with
+    note: "Preload fetches subresources for the current page; Speculation Rules fetches or prerenders full future navigations."
+  - target_id: bfcache-navigation
+    type: contrasts_with
+    note: "bfcache accelerates Back/Forward history traversal; Speculation Rules accelerates forward navigations."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Speculation_Rules_API"
+  - "https://developer.chrome.com/docs/web-platform/prerender-pages"
+  - "https://wicg.github.io/nav-speculation/speculation-rules.html"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "speculation-rules"
+  - "prerender"
+  - "prefetch"
+  - "lcp"
+  - "prerenderingchange"
+web_feature_id: speculation-rules
+---
+
+## TL;DR
+
+`<script type="speculationrules">` instructs Chromium to prefetch HTML or fully prerender predicted next pages in a hidden tab before the user clicks. When the user clicks the link, the engine swaps the pre-painted page in atomically for near-zero LCP.
+
+## Interactive Lab
+
+Step through pointer-hover triggering, hidden prerender execution, and `prerenderingchange` activation using `StepMachineLab`.
+
+## Under the Hood
+
+While [bfcache](/concepts/bfcache-navigation) handles instant Back/Forward navigation and the [Preload Scanner](/concepts/preload-scanner-hints) handles subresources on the current page, Speculation Rules tackle forward clicks. Think of it as staging the next theater set behind a closed curtain before the scene change.
+
+1. A `<script type="speculationrules">` block (or `Speculation-Rules` HTTP header) defines `prefetch` or `prerender` rules using URL lists or CSS `where` selectors.
+2. When an `eagerness` trigger fires (`moderate` on 200 ms hover, `conservative` on pointerdown), the engine allocates an isolated hidden browsing context.
+3. The hidden document parses HTML, runs JS, and paints frames, while blocking intrusive APIs (camera, audio, `alert`) until activation.
+4. On click, `document.prerendering` flips from `true` to `false` and `prerenderingchange` fires.
+
+```html
+<script type="speculationrules">
+{
+  "prerender": [{
+    "where": { "href_matches": "/docs/*" },
+    "eagerness": "moderate"
+  }]
+}
+</script>
+```
+
+## Problem Genealogy
+
+- **2011 (`<link rel="prerender">`)**: Rendered full pages unconditionally, burning battery and bandwidth; deprecated across browsers.
+- **2018 (No-state Prefetch)**: Downloaded subresources without executing JS, saving bandwidth at the cost of slower activation.
+- **2023+ (Speculation Rules API)**: Reintroduced full prerendering with strict `eagerness` controls, `Sec-Purpose: prefetch;prerender` headers, and a privacy-preserving proxy for cross-site prefetch.
+
+## Production Pitfalls
+
+- **Inflated analytics & ad beacons**: Scripts that fire on `DOMContentLoaded` count phantom pageviews for every hovered link; gate telemetry on `!document.prerendering` and `prerenderingchange`.
+- **`eagerness: immediate` on large lists**: Putting `immediate` on a 30-item catalog grid DDoS-attacks your own origin server on every page load.
+- **When not to use `prerender`**: Avoid prerendering URLs with server-side side effects (logout links, add-to-cart GET endpoints) or pages heavy on WebGL/video memory.

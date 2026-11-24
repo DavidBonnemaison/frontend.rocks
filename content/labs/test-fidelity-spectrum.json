@@ -1,0 +1,53 @@
+{
+  "type": "step-machine",
+  "id": "test-fidelity-spectrum",
+  "title": "Test Fidelity Spectrum Across Engine Layers",
+  "description": "Trace how each test tier trades execution latency for real browser and backend subsystems.",
+  "steps": [
+    {
+      "label": "1. Unit Tier (V8 Isolate, ~1ms)",
+      "description": "Executes pure JS/TS functions and fake timers with zero DOM or browser process overhead.",
+      "codeHighlight": "expect(calculateTax(100, 'FR')).toBe(20);",
+      "state": {
+        "latencyMs": 1,
+        "domEngine": "none",
+        "network": "none"
+      },
+      "visualNodes": [
+        { "id": "v8", "label": "V8 Isolate (1ms)", "status": "done" },
+        { "id": "blink", "label": "Blink Layout", "status": "idle" },
+        { "id": "server", "label": "Backend HTTP", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Browser Component Tier (Blink Frame, ~60ms)",
+      "description": "Mounts isolated UI in a real browser frame with mocked network, verifying layout, focus, and ARIA.",
+      "codeHighlight": "await expect(page.getByRole('dialog')).toBeVisible();",
+      "state": {
+        "latencyMs": 60,
+        "domEngine": "Blink / WebKit",
+        "network": "intercepted"
+      },
+      "visualNodes": [
+        { "id": "v8", "label": "V8 Isolate", "status": "done" },
+        { "id": "blink", "label": "Blink Layout (60ms)", "status": "done" },
+        { "id": "server", "label": "Backend HTTP (Mock)", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. E2E Tier (Full Stack, ~3500ms)",
+      "description": "Drives real browser navigation, cookies, and backend persistence end-to-end for critical paths.",
+      "codeHighlight": "await page.goto('/checkout'); await page.getByRole('button', { name: 'Pay' }).click();",
+      "state": {
+        "latencyMs": 3500,
+        "domEngine": "Blink / WebKit",
+        "network": "real HTTP + DB"
+      },
+      "visualNodes": [
+        { "id": "v8", "label": "V8 Isolate", "status": "done" },
+        { "id": "blink", "label": "Blink Layout", "status": "done" },
+        { "id": "server", "label": "Full Stack (3500ms)", "status": "done" }
+      ]
+    }
+  ]
+}

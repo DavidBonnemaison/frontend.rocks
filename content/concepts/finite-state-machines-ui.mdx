@@ -1,0 +1,66 @@
+---
+id: finite-state-machines-ui
+title: "Finite State Machines for UI"
+domain: state-architecture
+maturity_status: baseline-widely
+summary_tldr: "Replaces overlapping boolean flags (isLoading, isError, isRetrying) with a discriminated union and explicit (state, event) transition table that makes invalid states unrepresentable."
+relations:
+  - target_id: optimistic-ui-rollback
+    type: under_the_hood
+    note: "Modeling pending, confirmed, and rolled-back phases as finite states prevents double-mutations."
+  - target_id: stale-closures-hooks
+    type: contrasts_with
+    note: "Pure (state, event) => nextState reducers evaluate transitions cleanly without closing over stale flags."
+sources:
+  - "https://www.w3.org/TR/scxml/"
+  - "https://stately.ai/docs/state-machines-and-statecharts"
+  - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/switch"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "state-machine"
+  - "fsm"
+  - "statecharts"
+  - "discriminated-union"
+  - "reducer"
+---
+
+## TL;DR
+
+Four boolean flags (`isLoading`, `isError`, `isSuccess`, `isEmpty`) create $2^4 = 16$ possible combinations, 12 of which are bugs. A Finite State Machine collapses them into one explicit `status` enum and a `(state, event) -> nextState` table so impossible UI states cannot exist.
+
+## Interactive Lab
+
+Compare 16-combination boolean soup against a 4-state transition table using `PatternComparatorLab`.
+
+## Under the Hood
+
+Boolean flags act like four light switches wired to one bulb: nothing stops code from flipping `isLoading` and `isError` on together. A Finite State Machine works like a rotary dial, only one position is active, blocking [Optimistic UI](/concepts/optimistic-ui-rollback) races and [Stale Closures](/concepts/stale-closures-hooks).
+
+1. **Finite states**: Enumerate every legal mode (`idle | loading | success | error`) as a tagged union.
+2. **Events**: Represent triggers as explicit objects (`{ type: 'SUBMIT' }`) rather than ad-hoc setter calls.
+3. **Transition function**: A pure `transition(state, event)` checks the current state first, ignoring any event not valid for that state.
+
+```ts
+type State = { status: 'idle' } | { status: 'loading' } | { status: 'error'; message: string };
+type Event = { type: 'FETCH' } | { type: 'FAIL'; message: string } | { type: 'RESET' };
+
+function transition(state: State, event: Event): State {
+  if (state.status === 'idle' && event.type === 'FETCH') return { status: 'loading' };
+  if (state.status === 'loading' && event.type === 'FAIL') return { status: 'error', message: event.message };
+  if (state.status === 'error' && event.type === 'RESET') return { status: 'idle' };
+  return state; // Invalid event for current state is safely ignored
+}
+```
+
+## Problem Genealogy
+
+- **1987 (David Harel Statecharts)**: Formalized hierarchical and parallel state machines for avionics and embedded UIs.
+- **2015 (Redux Reducers)**: Popularized `(state, action) => nextState`, though teams still stored `isLoading`/`isError` booleans inside the state object.
+- **2018+ (XState & Tagged Unions)**: Brought strict TypeScript discriminated unions and W3C SCXML statecharts to frontend workflows.
+
+## Production Pitfalls
+
+- **Event explosion on simple toggles**: Writing a 60-line statechart configuration for an open/closed disclosure panel adds ceremony with zero safety gain.
+- **Forgetting cleanup on state exit**: Cancelling an in-flight `AbortController` when leaving `loading` -> `idle` must happen deterministically on transition, or stale responses still land.
+- **When not to use an FSM**: For continuous numeric values (scroll offset, canvas coordinates) or simple independent form fields, plain state or reactive signals are far lighter.

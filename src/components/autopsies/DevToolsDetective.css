@@ -1,0 +1,314 @@
+.detective-panel {
+  margin: 0 0 28px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.detective-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.detective-header--collapsed {
+  border-bottom: none;
+}
+
+.detective-title-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.detective-title {
+  margin: 0;
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  letter-spacing: -0.01em;
+}
+
+.detective-tag {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.detective-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.detective-skip-link,
+.detective-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.detective-skip-link:hover,
+.detective-toggle-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  text-decoration: none;
+}
+
+.detective-skip-link:focus-visible,
+.detective-toggle-btn:focus-visible,
+.detective-option:focus-visible,
+.detective-reveal-btn:focus-visible,
+.detective-anchor-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.detective-body {
+  padding: 16px 18px 18px;
+}
+
+.detective-prompt {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.detective-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detective-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.detective-option:hover {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.detective-option--selected {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.detective-option--rejected {
+  border-color: var(--semantic-legacy-border);
+  background: var(--semantic-legacy-bg);
+}
+
+.detective-option--confirmed {
+  border-color: var(--semantic-native-border);
+  background: var(--semantic-native-bg);
+}
+
+.detective-option-key {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-top: 1px;
+  border-radius: 5px;
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.detective-option--rejected .detective-option-key {
+  color: var(--semantic-legacy-text);
+  border-color: var(--semantic-legacy-border);
+}
+
+.detective-option--confirmed .detective-option-key {
+  color: var(--semantic-native-text);
+  border-color: var(--semantic-native-border);
+}
+
+.detective-option-label {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.detective-option-label code,
+.detective-feedback code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.detective-feedback-region {
+  margin-top: 14px;
+}
+
+.detective-feedback {
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.detective-feedback--rejected {
+  background: var(--semantic-legacy-bg);
+  border-color: var(--semantic-legacy-border);
+}
+
+.detective-feedback--confirmed {
+  background: var(--semantic-native-bg);
+  border-color: var(--semantic-native-border);
+}
+
+.detective-feedback-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.detective-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.detective-status-badge--rejected {
+  color: var(--semantic-legacy-text);
+  background: rgba(245, 118, 66, 0.16);
+  border: 1px solid var(--semantic-legacy-border);
+}
+
+.detective-status-badge--confirmed {
+  color: var(--semantic-native-text);
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid var(--semantic-native-border);
+}
+
+.detective-feedback-text {
+  margin: 0;
+  color: var(--text);
+}
+
+.detective-feedback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: 12px;
+}
+
+.detective-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.detective-reveal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 11px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.detective-reveal-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.detective-anchor-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 11px;
+  text-decoration: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.detective-anchor-link:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  text-decoration: none;
+}
+
+@media (max-width: 640px) {
+  .detective-header,
+  .detective-body {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .detective-option {
+    padding: 10px 12px;
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "content-visibility",
+  "title": "Eager Off-Screen Rendering vs content-visibility: auto",
+  "description": "Compare initial frame cost on a 200-section document.",
+  "before": {
+    "label": "Eager Full-Document Layout",
+    "code": ".article-section {\n  margin-bottom: 2rem;\n  /* All 200 sections laid out & painted at load */\n}",
+    "metrics": {
+      "lines": 4,
+      "reflows": "Full tree (~180ms)",
+      "dependencies": "0 JS"
+    },
+    "previewNote": "Main thread blocks on off-screen sections nobody sees yet."
+  },
+  "after": {
+    "label": "content-visibility: auto + intrinsic hint",
+    "code": ".article-section {\n  content-visibility: auto;\n  contain-intrinsic-size: auto 420px;\n}",
+    "metrics": {
+      "lines": 4,
+      "reflows": "Viewport only (~18ms)",
+      "dependencies": "0 JS"
+    },
+    "previewNote": "Off-screen sections reserve 420px and skip Layout/Paint."
+  }
+}

@@ -1,0 +1,69 @@
+---
+id: dedicated-web-workers
+title: Dedicated Web Workers and Transferables
+domain: web-apis
+maturity_status: baseline-widely
+summary_tldr: "Isolated OS-thread JavaScript runtimes with their own event loop and no DOM access, communicating via structured cloning or zero-copy transferable ownership."
+relations:
+  - target_id: event-loop-tasks-microtasks
+    type: requires
+    note: "Dedicated workers run an independent event loop with their own task and microtask queues."
+  - target_id: browser-rendering-pipeline
+    type: under_the_hood
+    note: "Offloading CPU work keeps the main thread free for style, layout, and paint deadlines."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers"
+  - "https://html.spec.whatwg.org/multipage/workers.html"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "web worker"
+  - "transferable"
+  - "structured clone"
+  - "off-main-thread"
+web_feature_id: dedicated-workers
+---
+
+## TL;DR
+
+A Dedicated Web Worker spawns an isolated JavaScript engine instance on a separate OS thread. It has zero DOM access and exchanges data through `postMessage`, either copying values via structured cloning or transferring `ArrayBuffer` ownership in constant time.
+
+## Interactive Lab
+
+Step through zero-copy `ArrayBuffer` transfer between the main thread and a worker isolate.
+
+## Under the Hood
+
+A Dedicated Worker acts like an air-gapped branch office: it runs its own [Event Loop](/concepts/event-loop-tasks-microtasks), processes its own mailbag, and never touches the main office's whiteboard (the DOM).
+
+1. **Isolate Allocation**: Calling `new Worker(url, { type: 'module' })` fetches the script and spins up a separate JS heap and stack.
+2. **Structured Clone**: `worker.postMessage(payload)` serializes objects into an internal wire format on the sender thread, then deserializes them on the receiver.
+3. **Transferable Detachment**: Listing `[buffer]` in the second argument detaches the `ArrayBuffer` from the sender (`byteLength` becomes `0`) and moves its pointer to the worker, keeping [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline) frames unblocked.
+
+```js
+// Main thread: transfer 8 MB buffer without copying bytes
+const worker = new Worker(new URL('./parser.worker.js', import.meta.url), {
+  type: 'module',
+});
+const bytes = new Uint8Array(8 * 1024 * 1024);
+worker.postMessage(bytes.buffer, [bytes.buffer]);
+// bytes.buffer.byteLength === 0 (detached)
+
+// parser.worker.js
+self.onmessage = ({ data }) => {
+  const view = new Uint8Array(data);
+  self.postMessage({ checksum: view[0] ^ view[view.length - 1] });
+};
+```
+
+## Problem Genealogy
+
+- **2009 (HTML5 Web Workers)**: Introduced to stop synchronous XHR and image filters from freezing the single UI thread.
+- **2011 (Transferable Objects)**: Added zero-copy `ArrayBuffer` detachment so WebGL and audio pipelines could pass megabytes without serialization stalls.
+- **2020+ (ES Module Workers)**: Replaced `importScripts()` with standard `import` syntax across all major engines.
+
+## Production Pitfalls
+
+- **Chatty `postMessage` loops**: Sending 10,000 tiny messages per second burns more CPU on serialization than the actual math; batch work into coarse chunks.
+- **Unbounded worker spawning**: Spawning one worker per component instance exhausts OS threads; reuse a fixed pool sized to `navigator.hardwareConcurrency`.
+- **When not to use Dedicated Workers**: Tasks under ~2ms (small JSON parses, simple array sorts) cost more to serialize across thread boundaries than to execute inline on the main thread.

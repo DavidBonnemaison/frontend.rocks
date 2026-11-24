@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "responsive-images-decoding",
+  "title": "Hero LCP Image: Naive <img> vs Prioritized Responsive <img>",
+  "description": "Compare a lazy-loaded un-sized <img> against a fetchpriority=high, intrinsic-sized responsive image.",
+  "before": {
+    "label": "Naive <img> (Delayed LCP + Layout Shift)",
+    "code": "<img\n  src=\"/hero-2400w.jpg\"\n  loading=\"lazy\"\n  alt=\"Product hero\"\n/>",
+    "metrics": {
+      "lines": 5,
+      "reflows": "CLS 0.24 (no aspect ratio)",
+      "dependencies": "Delayed until layout + main-thread decode"
+    },
+    "previewNote": "Lazy loading stalls LCP discovery; missing width/height shifts content on load."
+  },
+  "after": {
+    "label": "Prioritized Responsive <img> (Fast LCP, Zero CLS)",
+    "code": "<img\n  src=\"/hero-800w.avif\" srcset=\"/hero-800w.avif 800w, /hero-1600w.avif 1600w\"\n  sizes=\"(max-width: 768px) 100vw, 800px\"\n  width=\"800\" height=\"450\" fetchpriority=\"high\" decoding=\"async\"\n  alt=\"Product hero\"\n/>",
+    "metrics": {
+      "lines": 6,
+      "reflows": "CLS 0.00 (intrinsic aspect ratio)",
+      "dependencies": "Preload Scanner + off-thread decode"
+    },
+    "previewNote": "Preload scanner fetches exact AVIF width immediately with high network priority."
+  }
+}

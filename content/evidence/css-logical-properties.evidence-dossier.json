@@ -1,0 +1,42 @@
+{
+  "concept_id": "css-logical-properties",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-logical-1/",
+      "spec_section": "2. Flow-Relative Values and Properties",
+      "quote": "Flow-relative properties resolve to physical properties during computed-value resolution based on the element’s writing-mode and direction."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "87+",
+    "firefox": "66+",
+    "safari": "14.1+",
+    "notes": "Core inline/block properties shipped earlier; inset and border-start-start-radius reached full parity by 2021."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Style Resolution",
+      "Writing-Mode Mapping",
+      "Physical Box Model"
+    ],
+    "mechanism_summary": "Engine maps inline-start/end and block-start/end to physical top/right/bottom/left based on direction (ltr/rtl) and writing-mode."
+  },
+  "production_failures": [
+    {
+      "symptom": "Arabic/Hebrew (dir=\"rtl\") layout renders icons and borders on the wrong side",
+      "root_cause": "Stylesheet hardcodes margin-left, border-left, and text-align: left instead of logical equivalents.",
+      "mitigation": "Replace physical left/right with inline-start/inline-end and text-align: start."
+    },
+    {
+      "symptom": "Overriding margin-inline with margin-left fails unexpectedly",
+      "root_cause": "Physical and logical properties share the same underlying computed slots; specificity and source order decide the winner.",
+      "mitigation": "Standardize on logical properties across the entire codebase rather than mixing physical and logical."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-logical-1/",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_logical_properties_and_values"
+  ]
+}

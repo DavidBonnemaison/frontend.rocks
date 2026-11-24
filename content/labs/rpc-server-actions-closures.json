@@ -1,0 +1,52 @@
+{
+  "type": "step-machine",
+  "id": "rpc-server-actions-closures",
+  "title": "Server Action RPC & Closure Boundary",
+  "description": "Trace how a 'use server' closure compiles into an encrypted RPC boundary.",
+  "steps": [
+    {
+      "label": "1. Build-Time Stub & Closure Bind",
+      "description": "Compiler strips server code from client bundle and binds encrypted orgId to actionId.",
+      "codeHighlight": "const stub = createServerReference('act_9f2a').bind(null, encrypt(orgId));",
+      "state": {
+        "actionId": "act_9f2a",
+        "boundClosure": "encrypted(orgId)",
+        "serverCodeInClient": false
+      },
+      "visualNodes": [
+        { "id": "client", "label": "Client Stub (act_9f2a)", "status": "active" },
+        { "id": "wire", "label": "HTTP POST", "status": "idle" },
+        { "id": "server", "label": "Server Handler", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Serialize & POST Across Wire",
+      "description": "Form submission serializes FormData and encrypted closure token over HTTP POST.",
+      "codeHighlight": "fetch('/', { method: 'POST', headers: { 'Next-Action': 'act_9f2a' }, body });",
+      "state": {
+        "method": "POST",
+        "payloadSerializable": true
+      },
+      "visualNodes": [
+        { "id": "client", "label": "Client Stub", "status": "done" },
+        { "id": "wire", "label": "POST + FormData", "status": "active" },
+        { "id": "server", "label": "Server Handler", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Verify Auth & Stream UI Diff",
+      "description": "Server decrypts closure, checks session RBAC, writes DB, and streams updated RSC tree.",
+      "codeHighlight": "const session = await requireSession(); await db.invites.create(...);",
+      "state": {
+        "authVerified": true,
+        "dbUpdated": true,
+        "revalidatedInSameRoundTrip": true
+      },
+      "visualNodes": [
+        { "id": "client", "label": "UI Reconciled", "status": "done" },
+        { "id": "wire", "label": "Streamed RSC Response", "status": "done" },
+        { "id": "server", "label": "Auth + DB Committed", "status": "done" }
+      ]
+    }
+  ]
+}

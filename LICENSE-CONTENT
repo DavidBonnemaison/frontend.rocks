@@ -1,0 +1,12 @@
+The content of this repository (everything under content/, and the generated
+data files published at https://frontend.rocks/data/results.json and
+https://frontend.rocks/data/claims.json) is licensed under the Creative Commons
+Attribution 4.0 International License (CC BY 4.0).
+https://creativecommons.org/licenses/by/4.0/
+
+Attribution: "frontend.rocks" with a link to https://frontend.rocks/
+
+Exceptions: short quotations of specifications and of browser engine source
+code remain under the license of their source (for example WHATWG: CC BY 4.0;
+W3C: W3C Document License or CC BY 4.0; Chromium and WebKit: BSD-style;
+Firefox: MPL 2.0). Each quotation links to its source.

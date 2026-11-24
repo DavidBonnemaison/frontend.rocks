@@ -1,0 +1,60 @@
+---
+id: popover-api-light-dismiss
+title: Popover API (HTML popover Attribute)
+domain: dom-events
+maturity_status: baseline-newly
+summary_tldr: "Declarative HTML attribute rendering menus, tooltips, or toasts in the Top Layer with automatic light-dismiss and zero JavaScript."
+relations:
+  - target_id: native-dialog-element
+    type: requires
+    note: "Reuses the engine's Top Layer mechanism without making the rest of the document inert."
+  - target_id: roving-tabindex-focus-order
+    type: contrasts_with
+    note: "Popover handles Top Layer light-dismiss, while roving tabindex manages arrow-key focus inside menus."
+sources:
+  - "https://html.spec.whatwg.org/multipage/popover.html"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Popover_API"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "popover"
+  - "light-dismiss"
+  - "tooltip"
+  - "dropdown"
+web_feature_id: popover
+---
+
+## TL;DR
+
+The `popover` attribute promotes a non-modal element into the Top Layer via `popovertarget`. The browser handles outside clicks (*light-dismiss*), the `Escape` key, and mutual exclusivity between `auto` popovers natively.
+
+## Interactive Lab
+
+Compare a dropdown menu with global click listeners against declarative `popover` in `PatternComparatorLab`.
+
+## Under the Hood
+
+1. An element with `popover="auto"` enters the Top Layer (shared with the [Native `<dialog>` Element](/concepts/native-dialog-element)) when its `popovertarget` button is clicked, without blocking background interaction.
+2. The engine maintains an internal stack of open `auto` popovers: opening a second popover closes the previous one automatically (unless it is a direct ancestor).
+3. Any `pointerdown` outside the popover or pressing `Escape` triggers native *light-dismiss* without fragile [DOM Event Propagation](/concepts/dom-event-propagation) hacks.
+
+```html
+<button popovertarget="actions-menu">Actions</button>
+
+<div id="actions-menu" popover="auto">
+  <button type="button">Duplicate</button>
+  <button type="button">Archive</button>
+</div>
+```
+
+## Problem Genealogy
+
+- **2014 (`document.addEventListener('click')`)**: Shipping 40 KB of JavaScript just to close a dropdown when the user clicks outside, and watching it break whenever a third-party widget calls `stopPropagation()`.
+- **2020 (Popper / Floating UI wrappers)**: Manual portal mounting and outside-click dismissal hooks.
+- **2024+ (Popover API Baseline)**: Top Layer lifecycle and declarative dismissal directly in HTML.
+
+## Production Pitfalls
+
+- **Confusing `auto` and `manual`**: A notification toast using `popover="auto"` vanishes as soon as the user clicks anywhere; use `popover="manual"` for persistent toasts.
+- **Anchor positioning**: `popover` does not automatically position the surface next to its trigger; pair it with CSS Anchor Positioning or lightweight coordinate math.
+- **When not to use `popover`**: For a critical page-blocking modal (such as a destructive confirmation), use `<dialog>.showModal()`. For arrow-key navigation across menu items inside a popover, pair it with [Roving Tabindex](/concepts/roving-tabindex-focus-order).

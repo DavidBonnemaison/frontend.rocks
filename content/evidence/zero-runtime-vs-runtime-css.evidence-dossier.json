@@ -1,0 +1,42 @@
+{
+  "concept_id": "zero-runtime-vs-runtime-css",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/cssom/#dom-cssstylesheet-insertrule",
+      "spec_section": "6.4.1 CSSStyleSheet.insertRule()",
+      "quote": "Inserting a CSS rule into an active stylesheet invalidates the style engine's selector match cache and requires style recalculation before the next layout."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "99+",
+    "firefox": "97+",
+    "safari": "15.4+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Build-Time AST Style Extraction & Atomic Deduplication",
+      "Deterministic @layer & Precedence Ordering",
+      "Runtime CSSOM insertRule() vs Inline CSS Custom Property Binding",
+      "Selector Match & Style Recalculation"
+    ],
+    "mechanism_summary": "Zero-runtime compilers extract static atomic classes at build time and bind dynamic values to CSS custom properties, avoiding runtime CSSStyleSheet.insertRule() invalidations."
+  },
+  "production_failures": [
+    {
+      "symptom": "Scroll jank and 60+ ms Recalculate Style frames in virtualized grids",
+      "root_cause": "Passing dynamic coordinates into runtime CSS-in-JS props calls sheet.insertRule() on every scroll tick, invalidating the CSSOM.",
+      "mitigation": "Move dynamic coordinates to inline style CSS custom properties or transform properties, leaving static rules in compiled classes."
+    },
+    {
+      "symptom": "Button overrides fail unpredictably after route-based code splitting",
+      "root_cause": "Lazy-loaded CSS chunks inject rules in network arrival order without @layer isolation.",
+      "mitigation": "Wrap base, component, and utility styles in explicit @layer declarations or atomic precedence tables."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/cssom/#dom-cssstylesheet-insertrule",
+    "https://stylexjs.com/docs/learn/thinking-in-stylex/"
+  ]
+}

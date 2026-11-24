@@ -1,0 +1,41 @@
+{
+  "concept_id": "csp-nonces-strict-dynamic",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://w3c.github.io/webappsec-csp/#strict-dynamic-usage",
+      "spec_section": "Content Security Policy Level 3 §8.3 'strict-dynamic'",
+      "quote": "If a script is trusted via a cryptographic nonce or hash and 'strict-dynamic' is present, trust propagates to any parser-inserted or dynamically appended child scripts it creates, while host allowlists are ignored."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "52+",
+    "firefox": "52+",
+    "safari": "15.4+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "HTTP Response Header CSP Parsing",
+      "Per-Request Cryptographic Nonce Verification",
+      "strict-dynamic Trust Propagation Across Dynamic Imports"
+    ],
+    "mechanism_summary": "The HTML parser and script loader compare each <script nonce> attribute against the response header's one-time random token, propagating trust to dynamically loaded chunks under 'strict-dynamic'."
+  },
+  "production_failures": [
+    {
+      "symptom": "All scripts blocked in production when a CDN caches an HTML response with a static nonce",
+      "root_cause": "Nonces must be cryptographically random per HTTP response; caching HTML or hardcoding nonce='1234' lets attackers reuse the known nonce.",
+      "mitigation": "Generate a fresh 128-bit base64 nonce per SSR/edge response, or use script hashes for static CDN-cached HTML."
+    },
+    {
+      "symptom": "CSP blocks dynamically loaded ES module chunks despite host allowlists",
+      "root_cause": "Missing 'strict-dynamic' forces every dynamically appended <script> to match brittle domain allowlists.",
+      "mitigation": "Use script-src 'nonce-<random>' 'strict-dynamic' and attach the nonce to the root entry <script>."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP",
+    "https://w3c.github.io/webappsec-csp/"
+  ]
+}

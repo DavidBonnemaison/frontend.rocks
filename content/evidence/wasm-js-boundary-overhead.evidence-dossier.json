@@ -1,0 +1,42 @@
+{
+  "concept_id": "wasm-js-boundary-overhead",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://webassembly.github.io/spec/js-api/",
+      "spec_section": "4.6.3 Memory.prototype.grow",
+      "quote": "Growing a Memory detaches the previous ArrayBuffer and creates a new ArrayBuffer backed by the enlarged memory."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "57+",
+    "firefox": "52+",
+    "safari": "11+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "JS-to-Wasm Trampoline & Value Unboxing",
+      "Linear Memory Pointer Read/Write via TypedArray",
+      "Optional memory.grow() & ArrayBuffer Detachment",
+      "Batched Result Readback"
+    ],
+    "mechanism_summary": "JS invokes Wasm through a JIT trampoline that translates calling conventions; high-throughput code writes batches into WebAssembly.Memory via TypedArrays and refreshes views after memory.grow()."
+  },
+  "production_failures": [
+    {
+      "symptom": "Cached Uint8Array view silently reads zeros or throws after Wasm processes a large file",
+      "root_cause": "Wasm executed memory.grow(), detaching the previous ArrayBuffer while JS still held a reference to the old TypedArray.",
+      "mitigation": "Re-create TypedArray views from wasm.exports.memory.buffer after any Wasm call that can allocate."
+    },
+    {
+      "symptom": "Wasm image or text processor runs slower than the pure JavaScript version it replaced",
+      "root_cause": "JS calls into Wasm inside a tight per-pixel or per-token loop, paying trampoline and UTF-8 TextEncoder overhead on every iteration.",
+      "mitigation": "Batch input buffers into linear memory once and invoke a single Wasm entry point per frame or chunk."
+    }
+  ],
+  "sources": [
+    "https://webassembly.github.io/spec/js-api/",
+    "https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Memory"
+  ]
+}

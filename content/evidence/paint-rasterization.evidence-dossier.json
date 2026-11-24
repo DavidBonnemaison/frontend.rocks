@@ -1,0 +1,42 @@
+{
+  "concept_id": "paint-rasterization",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://developer.chrome.com/docs/chromium/renderingng-architecture",
+      "spec_section": "RenderingNG Architecture — Paint & Raster",
+      "quote": "Paint walks the layout tree in stacking order to produce a list of display items, which rasterization then converts into bitmap tiles on worker threads."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+",
+    "firefox": "1+",
+    "safari": "1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Paint (DisplayItemList)",
+      "Layerization",
+      "Tile Rasterization",
+      "GPU Texture Upload"
+    ],
+    "mechanism_summary": "Main thread records draw ops via Skia/CoreGraphics; compositor worker threads rasterize 256x256 or 512x512 tiles into GPU memory."
+  },
+  "production_failures": [
+    {
+      "symptom": "Checkerboarding (blank tiles) during fast mobile scrolling",
+      "root_cause": "Expensive SVG filters, large box-shadows, or blur radii exceed the tile rasterization budget per vsync.",
+      "mitigation": "Simplify blur/shadow radii, rasterize static vectors to bitmaps, or isolate animated regions onto their own layer."
+    },
+    {
+      "symptom": "Full-viewport repaint on a 1px hover border change",
+      "root_cause": "A child shares a backing layer with a large scrolling container without paint containment.",
+      "mitigation": "Apply contain: paint or promote the animated element so invalidation stays local."
+    }
+  ],
+  "sources": [
+    "https://developer.chrome.com/docs/chromium/renderingng-architecture",
+    "https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/Rendering_performance"
+  ]
+}

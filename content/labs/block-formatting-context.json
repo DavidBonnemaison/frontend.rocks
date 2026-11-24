@@ -1,0 +1,45 @@
+{
+  "type": "live-sandbox",
+  "id": "block-formatting-context",
+  "title": "BFC Float Enclosure & Margin Collapse Sandbox",
+  "description": "Toggle display: flow-root in a live rendering context to observe float enclosure and top-margin isolation.",
+  "height": 250,
+  "html": "<div class=\"outer-frame\"><div class=\"frame-label\">Outer Reference Frame (top: 0)</div><div class=\"bfc-parent\" id=\"parent\"><div class=\"floated-box\">float: left</div><div class=\"first-child\">First child (margin-top)</div></div><div class=\"readout mono\" id=\"readout\"></div></div>",
+  "css": ".outer-frame { position: relative; border: 1px dashed #334155; border-radius: 6px; padding: 0 10px 12px; background: #0d1016; min-height: 210px; }\n.frame-label { font-size: 11px; color: #94a3b8; padding: 6px 0 4px; border-bottom: 1px solid #1e293b; }\n.bfc-parent { border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.08); border-radius: 6px; padding: 0 10px; }\n#sandbox-root.is-flow-root .bfc-parent { display: flow-root; border-color: #34d399; background: rgba(52, 211, 153, 0.08); }\n.floated-box { float: left; width: 100px; height: var(--float-h, 110px); margin: 8px 12px 8px 0; border-radius: 5px; background: rgba(251, 146, 60, 0.25); border: 1px solid #fb923c; color: #fed7aa; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-align: center; }\n.first-child { margin-top: var(--child-mt, 24px); padding: 8px 10px; border-radius: 4px; background: rgba(167, 139, 250, 0.16); border: 1px solid #a78bfa; color: #ddd6fe; font-size: 12px; }\n.readout { position: absolute; left: 10px; right: 10px; bottom: 8px; font-size: 11px; color: #cbd5e1; background: #090b0f; border: 1px solid #1e293b; border-radius: 4px; padding: 5px 8px; }",
+  "js": "var p = document.getElementById('parent'); var r = document.getElementById('readout'); if (p && r) { var rect = p.getBoundingClientRect(); var cs = getComputedStyle(p); r.textContent = 'display: ' + cs.display + ' | parent height: ' + Math.round(rect.height) + 'px | offsetTop: ' + p.offsetTop + 'px'; }",
+  "controls": [
+    {
+      "key": "flowRoot",
+      "label": "display: flow-root",
+      "kind": "toggle",
+      "target": "class",
+      "className": "is-flow-root",
+      "defaultValue": false
+    },
+    {
+      "key": "floatChild",
+      "label": "Floated child height",
+      "kind": "range",
+      "target": "css-var",
+      "cssVar": "--float-h",
+      "min": 40,
+      "max": 140,
+      "step": 20,
+      "unit": "px",
+      "defaultValue": 100
+    },
+    {
+      "key": "childMarginTop",
+      "label": "First child margin-top",
+      "kind": "range",
+      "target": "css-var",
+      "cssVar": "--child-mt",
+      "min": 0,
+      "max": 48,
+      "step": 8,
+      "unit": "px",
+      "defaultValue": 24
+    }
+  ],
+  "expectedObservation": "With display: flow-root off, the floated box protrudes below the parent border and the first child's margin-top escapes outside the parent. Enabling display: flow-root establishes a new Block Formatting Context: the parent expands to enclose the float and traps the top margin internally."
+}

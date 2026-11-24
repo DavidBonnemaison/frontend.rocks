@@ -1,0 +1,69 @@
+---
+id: core-web-vitals-mechanics
+title: "Core Web Vitals Mechanics (LCP, INP, CLS)"
+domain: network-perf
+maturity_status: baseline-newly
+summary_tldr: "Breaks down the three user-centric engine metrics—LCP (<=2.5s), INP (<=200ms), and CLS (<=0.1)—by the exact browser pipeline phases they measure."
+relations:
+  - target_id: browser-rendering-pipeline
+    type: requires
+    note: "LCP, INP, and CLS directly measure paint timestamps, layout shifts, and next-frame presentation."
+  - target_id: event-loop-tasks-microtasks
+    type: requires
+    note: "INP input delay occurs when a long main-thread task blocks event dispatch."
+  - target_id: font-loading-cls
+    type: under_the_hood
+    note: "Late webfont swaps without metric overrides are a primary driver of CLS."
+  - target_id: responsive-images-decoding
+    type: under_the_hood
+    note: "Hero image prioritization and aspect-ratio reservation govern LCP and CLS."
+sources:
+  - "https://web.dev/articles/vitals"
+  - "https://web.dev/articles/inp"
+  - "https://w3c.github.io/largest-contentful-paint/"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "lcp"
+  - "inp"
+  - "cls"
+  - "core-web-vitals"
+  - "presentation-delay"
+---
+
+## TL;DR
+
+Core Web Vitals measure three concrete engine milestones at the 75th percentile of real users: **LCP** (largest viewport element painted, ≤ 2.5 s), **INP** (worst interaction from input to next painted frame, ≤ 200 ms), and **CLS** (unexpected layout shift bursts, ≤ 0.1).
+
+## Interactive Lab
+
+Simulate how input delay, JS handler duration, and `scheduler.yield()` affect the 200 ms INP budget using `ConstraintSimulatorLab`.
+
+## Under the Hood
+
+Treating Core Web Vitals as a single Lighthouse score is like diagnosing an engine knock by staring at the odometer. Each metric hooks into a distinct stage of the [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline) and [Event Loop](/concepts/event-loop-tasks-microtasks):
+
+- **LCP** splits into four sub-parts: TTFB, resource load delay, resource load duration, and element render delay.
+- **INP** sums three phases per interaction: **Input Delay** (waiting for an in-flight task) + **Processing Time** (event handlers) + **Presentation Delay** (Style, Layout, Paint, Composite).
+- **CLS** accumulates `impactFraction * distanceFraction` across 5-second session windows with a 1-second gap, excluding shifts within 500 ms of user input.
+
+```js
+// Break up heavy post-click work so the next frame paints under 200ms INP
+button.addEventListener('click', async () => {
+  updateButtonStateImmediately();
+  await scheduler.yield?.() ?? new Promise((r) => setTimeout(r, 0));
+  runExpensiveAnalyticsAndSync();
+});
+```
+
+## Problem Genealogy
+
+- **2015 (`window.onload` & SpeedIndex)**: Measured technical load events that fired long after (or before) users saw content.
+- **2020 (Core Web Vitals v1, LCP, FID, CLS)**: Standardized user-perceived loading and stability, though First Input Delay (FID) only measured the *first* click's input delay.
+- **2024 (INP Replaces FID)**: Measured *all* interactions through full frame presentation, exposing bloated hydration and synchronous [Layout Thrashing](/concepts/layout-thrashing) in production.
+
+## Production Pitfalls
+
+- **Optimizing Lighthouse instead of p75 field data**: Lab runs test a cold load with zero clicks; INP failures only appear when real users type, filter, and scroll.
+- **Client-side-only LCP elements**: Hiding the hero image behind a `useEffect` fetch adds full JS download + parse + hydration latency to LCP.
+- **When not to use 0 ms micro-optimizations**: Once all three vitals sit comfortably inside the Good p75 band, further micro-optimizations yield diminishing returns compared to fixing conversion or reliability bugs.

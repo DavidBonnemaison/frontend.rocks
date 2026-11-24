@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "preload-scanner-hints",
+  "title": "LCP Prioritization: Default vs fetchpriority='high'",
+  "before": {
+    "label": "LCP image without explicit priority",
+    "code": "<img src=\"/hero.webp\" alt=\"Product\" />\n<!-- Queued at Low priority until Layout -->",
+    "metrics": {
+      "lines": 1,
+      "reflows": "Post-Layout promotion",
+      "dependencies": "None"
+    },
+    "previewNote": "Delayed behind defer/async scripts."
+  },
+  "after": {
+    "label": "fetchpriority='high' on LCP image",
+    "code": "<img src=\"/hero.webp\" alt=\"Product\"\n     fetchpriority=\"high\" decoding=\"sync\" />",
+    "metrics": {
+      "lines": 2,
+      "reflows": "Immediate High priority",
+      "dependencies": "0 JS"
+    },
+    "previewNote": "Scheduled as soon as the Preload Scanner parses it."
+  }
+}

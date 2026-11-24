@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "third-party-script-xss-takeover",
+  "title": "Supply-Chain Widget: Raw innerHTML Sink vs Trusted Types + CSP Nonce",
+  "description": "Compare an unguarded third-party widget writing raw HTML and reading unvalidated postMessage payloads against a TrustedHTML-enforced boundary.",
+  "before": {
+    "label": "Unguarded Widget Sink + Unsafe CSP",
+    "code": "// CSP: script-src 'self' 'unsafe-inline' https://cdn.widget.example\nwindow.addEventListener('message', (ev) => {\n  const { html, config } = JSON.parse(ev.data);\n  if (config?.isAdmin) enableDebugTokens();\n  widgetRoot.innerHTML = html; // Executes <img src=x onerror=fetch(...)>\n});",
+    "metrics": {
+      "lines": 6,
+      "reflows": "DOM XSS + Prototype Gadget",
+      "dependencies": "0 kB"
+    },
+    "previewNote": "A compromised CDN script injects an inline event handler into innerHTML and pollutes Object.prototype.isAdmin to exfiltrate session tokens."
+  },
+  "after": {
+    "label": "Trusted Types + Nonce CSP + Schema Gate",
+    "code": "// CSP: require-trusted-types-for 'script'; script-src 'nonce-9f3a' 'strict-dynamic'\nconst policy = trustedTypes.createPolicy('widget-sanitize', {\n  createHTML: (dirty) => DOMPurify.sanitize(dirty, { RETURN_TRUSTED_TYPE: false }),\n});\nwindow.addEventListener('message', (ev) => {\n  if (ev.origin !== 'https://app.widget.example') return;\n  const parsed = WidgetPayloadSchema.parse(JSON.parse(ev.data));\n  if (Object.hasOwn(parsed, 'html')) widgetRoot.innerHTML = policy.createHTML(parsed.html);\n});",
+    "metrics": {
+      "lines": 9,
+      "reflows": "TypeError on Raw Strings",
+      "dependencies": "DOMPurify + Zod"
+    },
+    "previewNote": "Raw string assignments to innerHTML throw TypeError, inline scripts fail nonce verification, and Object.hasOwn blocks prototype gadgets."
+  }
+}

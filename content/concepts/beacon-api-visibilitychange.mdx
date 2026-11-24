@@ -1,0 +1,66 @@
+---
+id: beacon-api-visibilitychange
+title: Beacon API and visibilitychange Lifecycle
+domain: web-apis
+maturity_status: baseline-widely
+summary_tldr: "Prevent dropped analytics and broken bfcache on tab close by handing <= 64 KB POST payloads to the browser network process on visibilitychange."
+relations:
+  - target_id: bfcache-navigation
+    type: requires
+    note: "Using visibilitychange and pagehide instead of unload keeps pages eligible for bfcache."
+  - target_id: cors-preflight-samesite
+    type: under_the_hood
+    note: "Cross-origin sendBeacon with application/json triggers a CORS preflight or fails if disallowed."
+  - target_id: async-clipboard-activation
+    type: contrasts_with
+    note: "sendBeacon dispatches background requests without user gesture, whereas Async Clipboard requires transient user activation."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Navigator/sendBeacon"
+  - "https://w3c.github.io/beacon/"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "sendBeacon"
+  - "visibilitychange"
+  - "keepalive"
+  - "telemetry"
+---
+
+## TL;DR
+
+`navigator.sendBeacon()` hands a small POST payload (up to 64 KB) to the browser's network process so transmission finishes after the tab closes. Firing it on `visibilitychange` (`hidden`) instead of `unload` captures mobile app switches and keeps [bfcache](/concepts/bfcache-navigation) intact.
+
+## Interactive Lab
+
+Compare legacy `unload` synchronous XHR against `visibilitychange` + `navigator.sendBeacon()`.
+
+## Under the Hood
+
+`navigator.sendBeacon()` hands the serialized payload directly to the browser's network process over IPC, decoupling socket transmission from the renderer lifecycle. Unlike `fetch()` without `keepalive`, which aborts on tab close, the network process finishes delivery after the renderer tears down.
+
+1. **Reliable Trigger**: Mobile browsers freeze or kill backgrounded tabs without firing `unload`; `document.visibilityState === 'hidden'` fires reliably when switching tabs or locking the screen.
+2. **64 KB Keepalive Pool**: All pending beacons and `fetch(..., { keepalive: true })` requests share a strict 64 KB per-origin buffer; `sendBeacon()` returns `false` if full.
+3. **CORS Constraints**: Passing a `Blob` with `application/json` triggers a [CORS preflight](/concepts/cors-preflight-samesite) on cross-origin endpoints; `text/plain` or `FormData` avoids preflight overhead.
+
+```js
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'hidden') return;
+  const body = JSON.stringify({ route: location.pathname, ts: Date.now() });
+  const queued = navigator.sendBeacon('/api/telemetry', body);
+  if (!queued) {
+    localStorage.setItem('pending-telemetry', body);
+  }
+});
+```
+
+## Problem Genealogy
+
+- **2006–2013 (Synchronous XHR on `unload`)**: Stalled the next page's navigation by hundreds of milliseconds while waiting for analytics TCP handshakes.
+- **2014 (W3C Beacon API)**: Delegated fire-and-forget POSTs to the browser process with zero exit delay.
+- **2019+ (bfcache & `fetch` `keepalive`)**: Deprecated `unload` across engines in favor of `visibilitychange` + `pagehide` + `keepalive` fetches.
+
+## Production Pitfalls
+
+- **Wiring `sendBeacon()` to `unload`**: Any `unload` listener disqualifies the document from bfcache in Chrome and Firefox; use `visibilitychange` and `pagehide`.
+- **Ignoring the boolean return value**: `sendBeacon()` never throws on quota overflow, it silently returns `false` when the 64 KB buffer is exhausted.
+- **When not to use `sendBeacon()`**: If your code needs the HTTP response status, custom `Authorization` headers, or payloads > 64 KB, use `fetch(..., { keepalive: true })` (for headers/status within 64 KB) or flush eagerly before exit; unlike [Async Clipboard](/concepts/async-clipboard-activation), `sendBeacon()` requires no transient user activation.

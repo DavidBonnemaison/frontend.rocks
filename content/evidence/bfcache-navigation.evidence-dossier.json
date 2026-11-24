@@ -1,0 +1,37 @@
+{
+  "concept_id": "bfcache-navigation",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/browsing-the-web.html#history-traversal",
+      "spec_section": "7.4 Session history and navigation",
+      "quote": "Persisted documents are thawed and pageshow is fired with persisted set to true."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "96+",
+    "firefox": "1.5+",
+    "safari": "1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Eligibility Check", "Task Freezing", "RAM Snapshot", "Thaw + pageshow"],
+    "mechanism_summary": "Full JS heap and DOM tree preserved in RAM."
+  },
+  "production_failures": [
+    {
+      "symptom": "0% bfcache hit rate in RUM telemetry",
+      "root_cause": "Presence of an unload listener or Cache-Control: no-store on the HTML document.",
+      "mitigation": "Replace unload with pagehide and reserve no-store for strictly sensitive pages."
+    },
+    {
+      "symptom": "Stale user data after clicking Back",
+      "root_cause": "Initialization code only listens to DOMContentLoaded, which does not re-fire.",
+      "mitigation": "Listen to pageshow and check event.persisted."
+    }
+  ],
+  "sources": [
+    "https://web.dev/articles/bfcache",
+    "https://developer.mozilla.org/en-US/docs/Glossary/bfcache"
+  ]
+}

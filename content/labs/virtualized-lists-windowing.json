@@ -1,0 +1,33 @@
+{
+  "type": "constraint-simulator",
+  "id": "virtualized-lists-windowing",
+  "title": "List Rendering: Full DOM vs Windowed Viewport",
+  "description": "Adjust total dataset size and overscan buffer to compare live DOM node count and layout cost.",
+  "presetMode": "virtualized-list",
+  "controls": [
+    {
+      "key": "totalRows",
+      "label": "Dataset Row Count",
+      "kind": "range",
+      "min": 100,
+      "max": 50000,
+      "step": 500,
+      "defaultValue": 10000
+    },
+    {
+      "key": "overscanCount",
+      "label": "Overscan Buffer (Rows)",
+      "kind": "range",
+      "min": 0,
+      "max": 20,
+      "step": 1,
+      "defaultValue": 5
+    },
+    {
+      "key": "windowingEnabled",
+      "label": "Enable Viewport Windowing",
+      "kind": "toggle",
+      "defaultValue": true
+    }
+  ]
+}

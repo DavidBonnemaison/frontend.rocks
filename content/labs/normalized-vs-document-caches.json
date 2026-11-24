@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "normalized-vs-document-caches",
+  "title": "Document-Keyed Cache vs Normalized Entity Graph",
+  "description": "Compare query-keyed snapshot invalidation against pointer-based entity normalization.",
+  "before": {
+    "label": "Document-Keyed Cache (Invalidate & Refetch)",
+    "code": "cache.set('GET:/projects/1', { id: 1, name: 'V2' });\n// 'GET:/projects' still holds { id: 1, name: 'V1' } until refetched:\nawait invalidatePrefix('GET:/projects');",
+    "metrics": {
+      "lines": 3,
+      "reflows": "1 extra network round-trip on mutation",
+      "dependencies": "~12 KB query client"
+    },
+    "previewNote": "Simple mental model and zero schema coupling; overlapping views converge after background refetch."
+  },
+  "after": {
+    "label": "Normalized Entity Graph (Pointer Propagation)",
+    "code": "entities.set('Project:1', { id: 1, name: 'V2' });\n// Both 'GET:/projects/1' and 'GET:/projects' resolve 'Project:1' ref:\nnotifySubscribers('Project:1'); // zero extra fetches",
+    "metrics": {
+      "lines": 3,
+      "reflows": "Synchronous multi-view update",
+      "dependencies": "35-50 KB normalized graph runtime"
+    },
+    "previewNote": "All views reading Project:1 update immediately, though filtered list membership still needs eviction."
+  }
+}

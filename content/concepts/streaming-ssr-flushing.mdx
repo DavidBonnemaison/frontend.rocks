@@ -1,0 +1,74 @@
+---
+id: streaming-ssr-flushing
+title: "Streaming SSR & Progressive Flushing"
+domain: network-perf
+maturity_status: baseline-widely
+summary_tldr: "Streams the HTML <head> and shell immediately over HTTP/2+ while slow backend queries run, then flushes deferred <template> chunks for out-of-order DOM replacement."
+relations:
+  - target_id: preload-scanner-hints
+    type: requires
+    note: "Flushing <head> early lets the preload scanner fetch CSS and JS while the server awaits DB queries."
+  - target_id: http2-http3-multiplexing
+    type: requires
+    note: "Chunked DATA frames stream progressively over a single multiplexed connection."
+  - target_id: early-hints-103
+    type: contrasts_with
+    note: "103 sends Link headers before 200 OK; Streaming SSR flushes actual 200 OK HTML bytes early."
+  - target_id: streams-api-backpressure
+    type: requires
+    note: "Streaming SSR writes HTML chunks through a ReadableStream that respects socket backpressure."
+  - target_id: resumability-vs-hydration
+    type: contrasts_with
+    note: "Streaming SSR still hydrates streamed HTML on the client, whereas resumability serializes listener boundaries to skip eager hydration."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Streams_API"
+  - "https://html.spec.whatwg.org/multipage/parsing.html"
+  - "https://web.dev/articles/rendering-on-the-web"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "streaming-ssr"
+  - "ttfb"
+  - "suspense"
+  - "chunked-encoding"
+  - "out-of-order"
+---
+
+## TL;DR
+
+Streaming SSR stops waiting for the slowest database query before sending byte zero. The server flushes `<head>` and the static shell immediately (letting the browser fetch CSS and paint FCP) then streams deferred `<template>` chunks with tiny inline swap scripts as slow data resolves.
+
+## Interactive Lab
+
+Step through initial shell flushing, parallel CSS/JS fetching, and out-of-order `<template>` swapping using `StepMachineLab`.
+
+## Under the Hood
+
+Classic buffered SSR holds the entire HTTP response hostage until the slowest microservice replies, starving both the [Preload Scanner](/concepts/preload-scanner-hints) and the user's screen. Streaming SSR works like a sushi conveyor belt: plates leave the kitchen as soon as they're ready over [HTTP/2 & HTTP/3](/concepts/http2-http3-multiplexing).
+
+1. The server commits `200 OK` and flushes `<!doctype html><head>...` plus fallback placeholders immediately, dropping TTFB to ~20 ms.
+2. The HTML parser builds the DOM incrementally without waiting for `</html>`, starting CSS/JS fetches and painting the shell.
+3. When an async boundary resolves, the server appends a hidden `<template id="B:1">` and a 2-line inline `<script>` that swaps it into the placeholder.
+
+```js
+const stream = new ReadableStream({
+  async start(controller) {
+    controller.enqueue(encode('<!doctype html><html><head><link rel="stylesheet" href="/app.css"></head><body><div id="slot">Loading...</div>'));
+    const data = await fetchSlowRecommendations();
+    controller.enqueue(encode(`<template id="t1">${renderList(data)}</template><script>slot.replaceWith(t1.content)</script></body></html>`));
+    controller.close();
+  },
+});
+```
+
+## Problem Genealogy
+
+- **2010 (Facebook BigPipe)**: Pioneered out-of-order HTML chunk flushing with inline `<script>` pagelet swaps, years before React existed.
+- **2016 (Buffered `renderToString`)**: Forced synchronous full-tree rendering on Node.js, blocking the server event loop and delaying TTFB.
+- **2022+ (`renderToReadableStream` & Web Streams)**: Combined Web Streams with Suspense boundaries and `ReadableStream` across Node, Deno, and Edge runtimes.
+
+## Production Pitfalls
+
+- **Proxy buffering eating your stream**: Reverse proxies (Nginx, misconfigured CDNs, or synchronous compression) often buffer the first 4–64 KB before forwarding, defeating [Streams API Backpressure](/concepts/streams-api-backpressure) and turning streaming back into buffered SSR.
+- **Locked HTTP 200 status codes**: Once the `<head>` flushes, you cannot retroactively send a `404` or `500` status code if a deep query fails, SEO crawlers will index the `200` error fallback.
+- **When not to use Streaming SSR**: On static or edge-cached pages that render in under 15 ms, full-response caching with `s-maxage` is simpler and avoids open long-lived connections; if client hydration cost dominates, compare against [Resumability vs Hydration](/concepts/resumability-vs-hydration).

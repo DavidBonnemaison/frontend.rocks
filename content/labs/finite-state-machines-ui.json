@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "finite-state-machines-ui",
+  "title": "State Modeling: 4 Booleans (16 States) vs FSM (4 States)",
+  "description": "Compare error-prone boolean flags against an explicit discriminated-union transition table.",
+  "before": {
+    "label": "Boolean Soup (Impossible States Allowed)",
+    "code": "if (isLoading && !isError && isSuccess) {\n  // How did we get here? Forgot to reset isSuccess on retry.\n}\nsetIsLoading(true); // forgot setIsError(false)!",
+    "metrics": {
+      "lines": 4,
+      "reflows": "2^4 = 16 implicit combinations",
+      "dependencies": "Defensive if/else guards everywhere"
+    },
+    "previewNote": "Spinner and error toast can render at the same time; double-clicks fire duplicate requests."
+  },
+  "after": {
+    "label": "Finite State Machine (Explicit Transitions)",
+    "code": "const transitions = {\n  idle: { FETCH: 'loading' },\n  loading: { RESOLVE: 'success', REJECT: 'error' },\n  error: { RETRY: 'loading' }\n};",
+    "metrics": {
+      "lines": 5,
+      "reflows": "4 valid states only",
+      "dependencies": "Zero external runtime required"
+    },
+    "previewNote": "FETCH in 'loading' state is structurally ignored—zero double-submits."
+  }
+}

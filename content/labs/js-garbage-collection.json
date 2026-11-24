@@ -1,0 +1,52 @@
+{
+  "type": "step-machine",
+  "id": "js-garbage-collection",
+  "title": "Orinoco Generational Scavenge & Mark-Sweep",
+  "description": "Observe Young Generation semi-space evacuation and Old Generation promotion.",
+  "steps": [
+    {
+      "label": "1. Bump-Pointer Allocation",
+      "description": "New short-lived objects allocate sequentially in Young Generation From-space.",
+      "codeHighlight": "const tmp = { x: 1, y: 2 };",
+      "state": {
+        "fromSpace": ["tmp", "req", "btnRef"],
+        "toSpace": [],
+        "oldGen": ["appStore"]
+      },
+      "visualNodes": [
+        { "id": "roots", "label": "GC Roots", "status": "done" },
+        { "id": "young", "label": "Young Gen (From)", "status": "active" },
+        { "id": "old", "label": "Old Gen", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Parallel Scavenge",
+      "description": "GC traces from Stack and Global roots; live objects evacuate to To-space, dead objects vanish without per-object free.",
+      "codeHighlight": "// tmp unreachable -> reclaimed in bulk",
+      "state": {
+        "fromSpace": [],
+        "toSpace": ["req", "btnRef"],
+        "reclaimed": ["tmp"]
+      },
+      "visualNodes": [
+        { "id": "roots", "label": "GC Roots", "status": "active" },
+        { "id": "young", "label": "Young Gen (To)", "status": "active" },
+        { "id": "old", "label": "Old Gen", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Promotion & Concurrent Mark",
+      "description": "Objects surviving two scavenges promote to Old Generation, marked concurrently by background threads.",
+      "codeHighlight": "// btnRef survives 2nd scavenge -> Old Gen",
+      "state": {
+        "youngGen": ["req"],
+        "oldGen": ["appStore", "btnRef"]
+      },
+      "visualNodes": [
+        { "id": "roots", "label": "GC Roots", "status": "done" },
+        { "id": "young", "label": "Young Gen", "status": "done" },
+        { "id": "old", "label": "Old Gen (Marked)", "status": "active" }
+      ]
+    }
+  ]
+}

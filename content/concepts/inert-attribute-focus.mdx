@@ -1,0 +1,62 @@
+---
+id: inert-attribute-focus
+title: The inert Attribute and Modal Focus Containment
+domain: dom-events
+maturity_status: baseline-widely
+summary_tldr: "Boolean HTML attribute that removes an entire subtree from pointer hit-testing, keyboard focus order, text selection, find-in-page, and the accessibility tree."
+relations:
+  - target_id: dom-event-propagation
+    type: requires
+    note: "Inert subtrees suppress pointer and keyboard event dispatch during hit-testing before propagation."
+  - target_id: browser-top-layer
+    type: requires
+    note: "Opening a <dialog> via showModal() automatically marks all non-Top-Layer DOM subtrees inert."
+sources:
+  - "https://html.spec.whatwg.org/multipage/interaction.html#the-inert-attribute"
+  - "https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/inert"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "inert"
+  - "focus trap"
+  - "accessibility"
+  - "aria-hidden"
+web_feature_id: inert
+---
+
+## TL;DR
+
+Adding `inert` to a DOM container disables clicks, keyboard focus, text selection, find-in-page, and screen-reader visibility for every descendant in one attribute. It replaces brittle `aria-hidden="true"` plus `tabindex="-1"` loops and powers [Native Dialog](/concepts/native-dialog-element) modal containment in the [Browser Top Layer](/concepts/browser-top-layer).
+
+## Interactive Lab
+
+Compare manual `aria-hidden` + `tabindex` patching against `el.inert` in `PatternComparatorLab`.
+
+## Under the Hood
+
+Picture flipping the master circuit breaker on one wing of a museum: every interactive kiosk, light switch, and doorway in that wing stops responding to [DOM Event Propagation](/concepts/dom-event-propagation) and vanishes from the floor map until power returns.
+
+1. **Hit-Test Suppression**: The engine ignores pointer events inside an `inert` subtree, as if `pointer-events: none` were set natively.
+2. **Focus & A11y Pruning**: Tab navigation skips every descendant, and the accessibility tree drops the entire inert subtree.
+3. **Automatic Modal Inertness**: `<dialog>.showModal()` applies engine-level inertness to everything outside the active Top Layer dialog.
+
+```html
+<main inert>
+  <button>Unreachable while drawer is open</button>
+</main>
+<aside id="drawer">
+  <button onclick="closeDrawer()">Close Drawer</button>
+</aside>
+```
+
+## Problem Genealogy
+
+- **2014 (`aria-hidden` + `tabindex="-1"` Hacks)**: Developers wrote fragile recursive DOM walkers that broke on dynamically injected buttons.
+- **2017 (WICG `inert` Polyfill)**: Required MutationObservers to patch `tabindex` across subtrees.
+- **2023 (Baseline `inert` Attribute)**: Native support landed across Chrome, Firefox, and Safari.
+
+## Production Pitfalls
+
+- **Self-Inert Deadlock**: Setting `inert` on a parent wrapper that also contains the active modal locks the user out of the close button.
+- **Forgetting Focus Restoration**: Making the currently focused button `inert` drops focus back to `<body>`; restore focus to the trigger when closing.
+- **When not to use `inert`**: Never use `inert` to disable a single `<button>`, use `disabled` or `aria-disabled` so the control remains discoverable.

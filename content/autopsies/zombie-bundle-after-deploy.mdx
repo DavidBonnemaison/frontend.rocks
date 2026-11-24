@@ -1,0 +1,100 @@
+---
+id: zombie-bundle-after-deploy
+case_number: 4
+title: "Autopsy #04: The Morning Yesterday's Bundle Corrupts Today's Database"
+symptom: "Active tabs throw ChunkLoadError or corrupt local IndexedDB state after a production deploy."
+failure_mode: silent-data-corruption
+format: narrative
+case_type: composite
+cast:
+  - marc
+  - julie
+  - thomas
+traversed_concepts:
+  - concept_id: service-worker-lifecycle
+    step_order: 1
+    role_in_chain: "An outdated Service Worker keeps serving stale HTML and chunk manifests to open tabs during deploy."
+  - concept_id: http-caching-directives
+    step_order: 2
+    role_in_chain: "Immutable asset headers and stale-while-revalidate HTML responses split the module graph across versions."
+  - concept_id: es-modules-live-bindings
+    step_order: 3
+    role_in_chain: "Cached ESM modules retain live bindings to stale exports while new dynamic imports fail or mismatch."
+  - concept_id: bfcache-navigation
+    step_order: 4
+    role_in_chain: "Restoring a page from the back-forward cache resumes an old JS runtime after IndexedDB already upgraded."
+  - concept_id: client-storage-schema-migrations
+    step_order: 5
+    role_in_chain: "An older tab writes records using a deprecated schema after another tab bumped the IndexedDB version."
+case_file:
+  trigger: "Deployed workspace IndexedDB `v2` migration alongside `chore: prune old CDN chunks on deploy`"
+  symptom: "Overnight tabs threw `ChunkLoadError` and Back-button OAuth returns silently wiped offline drafts"
+  root_cause: "Deleted `v1` chunks broke lazy imports, while `bfcache` resumed `v1` ESM heaps against a `v2` IndexedDB"
+  bad_fixes:
+    - label: "`self.skipWaiting()` + `location.reload()`"
+      outcome: "Hijacked active `v1` tabs mid-write while `bfcache` pages still bypassed the Service Worker"
+  fix: "Keep `N-1`/`N-2` CDN chunks immutable, close DB immediately on `onversionchange`, and revalidate on `pageshow`"
+  how_to_spot: "Network shows `404` for old chunk hashes while IndexedDB contains `v1` record shapes under `version: 2`"
+  deleted: "`chore: prune old CDN chunks on deploy` CI step, unconditional `self.skipWaiting()`"
+reading_time_min: 7
+sources:
+  - https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers
+  - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
+  - https://web.dev/articles/bfcache
+  - https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB
+last_verified_at: "2026-11-17"
+proof_status: unverified
+---
+
+## Saving S3 pennies, breaking yesterday's tabs
+
+At 10:00 on Wednesday, Marc deployed `v2` of the workspace IndexedDB schema along with a tidy CI step called `chore: prune old CDN chunks on deploy` to stop old build artifacts from piling up on S3. He opened an incognito window, clicked through onboarding in three seconds, saw the new workspace columns load cleanly, and went back to his backend tickets.
+
+Twelve minutes later, Thomas walked over from product with his laptop open. People who had left a tab open since Tuesday were seeing `ChunkLoadError` whenever they opened a lazy-loaded settings panel. Worse, users returning from an OAuth redirect via the browser Back button watched their offline drafts vanish with no error message at all.
+
+## Why skipWaiting() made it worse
+
+Julie's first instinct was to force everyone onto the new version immediately so old code could not linger in memory. She added `self.skipWaiting()` inside the Service Worker `install` handler and wired a global error listener to call `window.location.reload()` on `ChunkLoadError`.
+
+In local dev with one tab open, reloading cleared everything cleanly and the new `v2` bundle booted right up.
+
+In production, it turned a chunk mismatch into data corruption. Calling `self.skipWaiting()` during the [Service Worker lifecycle](/concepts/service-worker-lifecycle) swapped the controller out from under `v1` tabs that were still running in memory. If a `v1` tab was mid-sync or loading a lazy chunk, the new Service Worker served `v2` manifests to a `v1` runtime, while an unguarded `location.reload()` threw away unsaved editor buffers. Meanwhile, users hitting Back after OAuth did not hit the network or the Service Worker at all.
+
+## Two versions sharing one browser
+
+What happened across those tabs crossed five layers of browser state, because a browser tab is not a stateless terminal that restarts when CI turns green.
+
+<CausalChainStepper />
+
+First, pruning `v1` chunks broke any `v1` tab whose HTML had been cached or served before 10:00. With proper [HTTP caching directives](/concepts/http-caching-directives), `index.html` uses `Cache-Control: no-cache` while hashed JS bundles use `public, max-age=31536000, immutable` and stay on the CDN for at least `N-1` and `N-2` releases. Deleting old chunks while old HTML still points to them breaks the module dependency graph—and leaves cached [ES module live bindings](/concepts/es-modules-live-bindings) pointing at exports that no longer resolve—the moment a user triggers a dynamic `import()`.
+
+Second, the OAuth Back-button users were hitting the [back-forward cache (`bfcache`)](/concepts/bfcache-navigation). When a browser restores a page from `bfcache`, it thaws the exact `v1` JavaScript heap that was frozen before the redirect. If another tab had already opened after 10:00 and upgraded IndexedDB to `v2`, that thawed `v1` tab woke up and wrote `v1` records straight into a `v2` object store during [client storage schema migrations](/concepts/client-storage-schema-migrations).
+
+<FailureSimulator />
+
+## Giving old tabs an orderly exit
+
+The real fix stopped fighting old tabs and gave them an orderly exit. We restored `N-1` and `N-2` hashed chunks on the CDN with immutable caching so any tab already open from Tuesday could still fetch its own lazy modules without hitting a 404. Because the hashed filenames never collide across releases, keeping three releases of static assets on S3 costs pennies and gives every long-lived browser session a safe runway to finish its current workflow.
+
+We also removed `self.skipWaiting()` so waiting Service Workers activate only when all old tabs close, paired with a polite "New version available" reload banner in the top bar. Finally, we attached `onversionchange` to every open `IDBDatabase` connection and a `pageshow` listener checking `event.persisted === true` so any tab waking up from `bfcache` immediately verifies its schema version before touching local storage.
+
+## Closing the database before the banner
+
+First try on `onversionchange`: when a new tab triggered `upgradeneeded`, the old tab displayed the reload banner, waited for an in-flight `flushDraft()` async write to finish, and then called `db.close()`.
+
+```ts
+db.onversionchange = () => {
+  showReloadBanner();
+  pendingFlush.finally(() => db.close()); // blocked upgradeneeded for 15s
+};
+```
+
+In IndexedDB, `upgradeneeded` in the new tab cannot start until every existing connection closes. Waiting for an async `flushDraft()` kept the old connection open and stalled the new tab in `onblocked` for 15 seconds, which looked like a frozen login screen. We changed `onversionchange` to abort the in-memory write queue and call `db.close()` synchronously on the spot, letting the new tab upgrade in 12 milliseconds while the old tab showed the reload prompt.
+
+## What stayed in the codebase
+
+<CaseFile />
+
+A web deploy is not an atomic swap; it is a window where two versions of your code share the same browser.
+
+Marc's CDN cleanup script had saved roughly \$1.40 a month in S3 storage, and cost us two afternoons of restoring corrupted customer drafts from server logs. We now keep the last three releases on S3 by policy, and `ChunkLoadError` alerts have stayed at zero across twelve consecutive deploys.

@@ -1,0 +1,52 @@
+{
+  "generated_at": "2026-01-01T00:00:00.000Z",
+  "node_count": 3,
+  "nodes": [
+    {
+      "id": "fixture-concept-a",
+      "title": "Fixture Concept A",
+      "domain": "rendering-pipeline",
+      "maturity_status": "baseline-widely",
+      "superseded_by": [],
+      "summary_tldr": "Synthetic summary for Fixture Concept A, used only by the test fixtures.",
+      "last_verified_at": "2026-01-01",
+      "url": "https://frontend.rocks/concepts/fixture-concept-a/"
+    },
+    {
+      "id": "fixture-concept-b",
+      "title": "Fixture Concept B",
+      "domain": "rendering-pipeline",
+      "maturity_status": "superseded",
+      "superseded_by": [
+        "fixture-concept-a"
+      ],
+      "summary_tldr": "Synthetic summary for Fixture Concept B, used only by the test fixtures.",
+      "last_verified_at": "2026-01-01",
+      "url": "https://frontend.rocks/concepts/fixture-concept-b/"
+    },
+    {
+      "id": "fixture-concept-c",
+      "title": "Fixture Concept C",
+      "domain": "rendering-pipeline",
+      "maturity_status": "baseline-widely",
+      "superseded_by": [],
+      "summary_tldr": "Synthetic summary for Fixture Concept C, used only by the test fixtures.",
+      "last_verified_at": "2026-01-01",
+      "url": "https://frontend.rocks/concepts/fixture-concept-c/"
+    }
+  ],
+  "edges": [
+    {
+      "source": "fixture-concept-a",
+      "target": "fixture-concept-b",
+      "type": "replaces",
+      "note": "Fixture A replaces fixture B in this synthetic graph."
+    },
+    {
+      "source": "fixture-concept-a",
+      "target": "fixture-concept-c",
+      "type": "requires",
+      "note": "Fixture A requires fixture C in this synthetic graph."
+    }
+  ]
+}

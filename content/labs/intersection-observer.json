@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "intersection-observer",
+  "title": "scroll + getBoundingClientRect() vs IntersectionObserver",
+  "before": {
+    "label": "Scroll Listener + getBoundingClientRect()",
+    "code": "window.addEventListener('scroll', () => {\n  cards.forEach((c) => {\n    const rect = c.getBoundingClientRect(); // Forces sync Layout\n    if (rect.top < innerHeight) loadImage(c);\n  });\n});",
+    "metrics": {
+      "lines": 6,
+      "reflows": "Forced sync reflow/tick",
+      "dependencies": "Main-thread scroll jank"
+    },
+    "previewNote": "Reads layout geometry on every scroll event, causing Layout Thrashing."
+  },
+  "after": {
+    "label": "Single Shared IntersectionObserver",
+    "code": "const io = new IntersectionObserver((entries) => {\n  for (const e of entries) if (e.isIntersecting) { loadImage(e.target); io.unobserve(e.target); }\n}, { rootMargin: '200px' });\ncards.forEach((c) => io.observe(c));",
+    "metrics": {
+      "lines": 4,
+      "reflows": "0 forced reflows",
+      "dependencies": "Batched post-layout"
+    },
+    "previewNote": "Piggybacks on the browser's post-layout frame pass and fires only on threshold crossings."
+  }
+}

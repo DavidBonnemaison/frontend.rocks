@@ -1,0 +1,43 @@
+{
+  "concept_id": "shadow-dom-encapsulation",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://dom.spec.whatwg.org/#shadow-trees",
+      "spec_section": "4.8 Shadow trees",
+      "quote": "When an event is retargeted against a shadow root boundary, its target is adjusted to the shadow host for listeners outside the shadow tree."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "90+",
+    "firefox": "123+",
+    "safari": "16.4+",
+    "notes": "Shadow DOM v1 is Baseline Widely; Declarative Shadow DOM (<template shadowrootmode>) shipped across all engines in 2024."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "ShadowRoot Attachment (open / closed)",
+      "Slot Distribution (Flat Tree Composition)",
+      "Style Scoping (:host & ::slotted)",
+      "Event Retargeting Across Shadow Boundary"
+    ],
+    "mechanism_summary": "Shadow DOM isolates a scoped DOM and CSS tree behind a ShadowRoot, composing light-DOM children via <slot> and retargeting bubbling events to the host."
+  },
+  "production_failures": [
+    {
+      "symptom": "Global analytics click handler reports event.target as <my-card> instead of the inner <button>",
+      "root_cause": "Composed events crossing a ShadowRoot boundary are retargeted to the shadow host so outer listeners cannot inspect internal DOM.",
+      "mitigation": "Inspect event.composedPath()[0] when open shadow internals must be audited, or dispatch custom composed events from the host."
+    },
+    {
+      "symptom": "ARIA aria-labelledby or form <label for='id'> fails across a ShadowRoot boundary",
+      "root_cause": "ID references are scoped to their own DOM tree and cannot cross ShadowRoot boundaries.",
+      "mitigation": "Keep label and input inside the same shadow tree, or use ElementInternals / Reference Target."
+    }
+  ],
+  "sources": [
+    "https://dom.spec.whatwg.org/#shadow-trees",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_shadow_DOM"
+  ]
+}

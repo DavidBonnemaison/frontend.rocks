@@ -1,0 +1,64 @@
+---
+id: native-dialog-element
+title: <dialog> Element and Native Top Layer
+domain: dom-events
+maturity_status: baseline-widely
+summary_tldr: "HTML primitive placing modals in the browser Top Layer above any z-index, with built-in focus management and Escape key handling."
+relations:
+  - target_id: css-stacking-context
+    type: contrasts_with
+    note: "The Top Layer bypasses the entire stacking context hierarchy and overflow: hidden clipping."
+  - target_id: react-portal-zindex-legacy
+    type: replaces
+    note: "Native showModal() replaces React createPortal and z-index hacks with engine-managed Top Layer and inert."
+sources:
+  - "https://html.spec.whatwg.org/multipage/interactive-elements.html#the-dialog-element"
+  - "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dialog"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "modal"
+  - "top layer"
+  - "inert"
+  - "showModal"
+web_feature_id: dialog
+---
+
+## TL;DR
+
+Opening a `<dialog>` via `.showModal()` promotes the element into the engine's Top Layer, outside every `stacking context` and `overflow: hidden`. The rest of the document automatically becomes `inert`.
+
+## Interactive Lab
+
+Compare a React modal using portals and a focus-trap against `<dialog>.showModal()` in `PatternComparatorLab`.
+
+## Under the Hood
+
+1. `dialog.showModal()` appends the element to the `Document` internal `top layer` list, painted after the root [CSS Stacking Context](/concepts/css-stacking-context).
+2. The engine generates a `::backdrop` pseudo-element immediately beneath the dialog inside the same Top Layer.
+3. Every node outside the dialog is marked `inert`: pointer clicks, text selection, and keyboard tabbing are blocked natively without global listeners.
+
+```html
+<dialog id="confirm-modal">
+  <p>Delete production index?</p>
+  <form method="dialog">
+    <button value="cancel">Cancel</button>
+    <button value="confirm">Confirm</button>
+  </form>
+</dialog>
+<script>
+  document.getElementById('confirm-modal').showModal();
+</script>
+```
+
+## Problem Genealogy
+
+- **2012 ([React Portals + `z-index: 9999`](/concepts/react-portal-zindex-legacy))**: Moving modals manually to `document.body` to escape `overflow: hidden`, a ceremony that only existed because CSS lacked a real Top Layer.
+- **2018 (`focus-trap` + manual `aria-hidden`)**: Fragile JS boilerplate to trap Tab navigation and hide background nodes from screen readers.
+- **2022+ (`<dialog>` Baseline)**: Top Layer, `::backdrop`, `inert`, and `Escape` dismissal built directly into the engine.
+
+## Production Pitfalls
+
+- **Calling `.show()` instead of `.showModal()`**: `.show()` activates neither the Top Layer, nor `::backdrop`, nor background inertness, leaving your modal trapped in the same `z-index` swamp you were trying to escape.
+- **Exit animations**: `dialog.close()` switches immediately to `display: none`; combine `@starting-style` with `transition-behavior: allow-discrete` to animate exits.
+- **When not to use `<dialog>`**: For non-modal tooltips or dropdown menus that do not block the background, use the [Popover API](/concepts/popover-api-light-dismiss) instead.

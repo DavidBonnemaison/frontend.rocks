@@ -1,0 +1,154 @@
+---
+id: zindex-9999-tooltip-war
+case_number: 5
+title: "Autopsy #05: 2,147,483,647 Loses to 10"
+symptom: "Row menus with z-index: 9999 render under a z-index: 10 sticky header, and the portal hotfix makes scrolling drop frames on Android."
+failure_mode: main-thread-freeze
+format: narrative
+case_type: composite
+cast:
+  - julie
+  - karim
+  - nadia
+traversed_concepts:
+  - concept_id: css-stacking-context
+    step_order: 1
+    role_in_chain: "Parent properties like opacity < 1 or transform isolate child z-index: 9999 inside a local stacking context."
+  - concept_id: gpu-compositor-layers
+    step_order: 2
+    role_in_chain: "Applying transform or will-change promotes the parent to a GPU compositor layer, implicitly sealing its stacking context."
+  - concept_id: react-portal-zindex-legacy
+    step_order: 3
+    role_in_chain: "Portaling the modal to document.body escapes the parent context but triggers JS scroll listeners and z-index escalation."
+  - concept_id: browser-top-layer
+    step_order: 4
+    role_in_chain: "Native dialog.showModal() and popover=\"manual\" render in the browser top layer above all document stacking contexts."
+  - concept_id: css-anchor-positioning
+    step_order: 5
+    role_in_chain: "CSS anchor() and position-try-fallbacks position and flip tooltips in the layout engine with zero JS reflows."
+case_file:
+  trigger: "`opacity: 0.99` and `transform: translateZ(0)` added to a scroll container to fix horizontal jitter"
+  symptom: "Row menus with `z-index: 9999` painted under a `z-index: 10` sticky header"
+  root_cause: "The wrapper became a stacking context, so the menu's `z-index` only competed with its siblings inside it"
+  bad_fixes:
+    - label: "Bigger integer"
+      outcome: "`2147483647` still lost to 10"
+    - label: "`will-change: transform`"
+      outcome: "Created a third reason for the same stacking context"
+    - label: "Portal + scroll listeners"
+      outcome: "200 listeners interleaved reads and writes; p75 INP went from 140 ms to 480 ms"
+  fix: "`popover` puts the menu in the top layer; CSS anchor positioning with one anchor name per row places it"
+  how_to_spot: "DevTools → Layers: the overlay is painted inside an ancestor's layer"
+  deleted: "200 scroll listeners, one positioning hook, one z-index registry"
+reading_time_min: 8
+sources:
+  - https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_positioned_layout/Understanding_z-index/Stacking_context
+  - https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/popover
+  - https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_anchor_positioning
+  - https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/anchor-name
+  - https://developer.chrome.com/blog/anchor-positioning-api
+  - https://fullscreen.spec.whatwg.org/#top-layer
+last_verified_at: "2026-11-17"
+proof_status: unverified
+---
+
+## Two lines, one coffee
+
+The pull request was called `fix: smoother grid scroll`. It touched two lines of CSS on the data grid wrapper.
+
+```css
+.grid-wrapper {
+  opacity: 0.99;
+  transform: translateZ(0);
+}
+```
+
+Julie had found them in a 2016 forum thread about horizontal scroll jitter. They worked. The jitter was gone. Karim approved the PR from his phone while waiting for a coffee, which is how most of the CSS in our codebase gets approved, and how it will keep getting approved whatever this article says.
+
+Storybook snapshots were green. They're taken on an unscrolled viewport with every menu closed, which in hindsight is like testing a parachute by checking that the bag is the right colour.
+
+## 9999 versus 10
+
+Twenty-two minutes after deploy, Nadia from support posted a screenshot in `#frontend`. A customer had opened the `…` menu on a row near the top of the grid, and the menu had slid neatly under the sticky page header, like it was embarrassed to be seen.
+
+We checked the numbers. The menu had `z-index: 9999`. The header had `z-index: 10`.
+
+Someone replied "lol". A minute later, the same person replied "wait".
+
+## The largest number CSS will take
+
+The first fix was the one everybody has written at least once and nobody puts on their CV. `9999` became `2147483647`, the largest 32-bit signed integer and the value browsers clamp `z-index` to anyway. It's a number chosen less for its technical merits than for its emotional ones.
+
+It lost to 10.
+
+Karim, back at his desk with the coffee, suggested adding `will-change: transform` to the wrapper "so it gets its own layer". It did get its own layer. The menu went on losing to 10, now with better compositing.
+
+## Being tallest in the elevator
+
+The clue was in Chrome's Layers panel, which nobody opens until something has gone wrong. The menu wasn't floating above the page. It sat quietly inside the grid wrapper's layer, and that whole layer was painted below the header.
+
+Julie's two lines were the reason. `opacity: 0.99` creates a [stacking context](/concepts/css-stacking-context). So does any `transform` other than `none`. And so, it turns out, does `will-change: transform`, so Karim's fix had added a third reason for the bug to exist.
+
+A stacking context is a sealed box. Everything inside it is sorted against everything else in the same box, and then the box is painted as a single unit at the level of its root. Our menu really was at 2,147,483,647, but only inside the box. The box itself was an unpositioned `div` with `z-index: auto`, which puts it in the same paint band as positioned elements at `z-index: 0`. The header was at 10. Being the tallest person in the elevator doesn't help you see over the building next door.
+
+The `translateZ(0)` trick did exactly what the 2016 thread promised. It promoted the wrapper to its own [GPU compositor layer](/concepts/gpu-compositor-layers), and that's what fixed the jitter. The thread just never mentioned the stacking context that comes with it, probably because the menus on that forum didn't overlap anything.
+
+We tried removing the two lines. The menu came back above the header and the jitter came back with it. Julie said she preferred the jitter. Product said they preferred the menu. That settled it: the lines stayed, and the menu would have to leave the box.
+
+<CausalChainStepper />
+
+## A small physics engine
+
+Leaving the box is a solved problem, or at least a well-worn one. `createPortal` renders the menu straight into `document.body`, outside the wrapper and every stacking context above it. The clipping disappeared on the first try.
+
+What also disappeared was any idea of where the button was. A menu living in `body` has to be told, in pixels, where to show up, and has to be told again whenever the page scrolls. So the `RowMenu` component got a `scroll` listener that read `getBoundingClientRect()` on its trigger and wrote `top` and `left` back to the menu.
+
+The listener was attached on mount. Every row mounts a `RowMenu`. The grid shows 200 rows.
+
+On a mid-range Android phone, the Performance panel turned every scroll event into a purple wall of `Layout` blocks of about 18 ms each. Each of the 200 listeners read a rect, which forced layout. Then it wrote a style, which invalidated layout. Then the next listener read again. That's [the classic portal tax](/concepts/react-portal-zindex-legacy): you swap a paint-order problem for a layout problem, then multiply it by your row count. Scrolling dropped frames. Taps on the menu button had to wait behind the scroll handlers, and p75 INP on the grid page went from 140 ms to 480 ms.
+
+We had fixed a visual bug by building a small physics engine, and the physics engine had a performance problem.
+
+## Leaving the building
+
+The way out that doesn't involve integers or listeners is the [top layer](/concepts/browser-top-layer). Add the `popover` attribute to the menu, open it with `popovertarget`, and the browser renders it in a separate layer above the entire document. Ancestor `transform`, `opacity`, `overflow` and stacking contexts stop applying. Even `z-index` stops applying: inside the top layer, the order is simply the order things were opened. After a morning spent fighting over numbers, that was oddly soothing.
+
+First try: the menu opened in the exact centre of the screen.
+
+The default popover styles are `position: fixed; inset: 0; margin: auto`, which centres the element in the viewport. Technically, it was now above everything. Practically, it was nowhere near the button. Two resets fixed it: `inset: auto` and `margin: 0`.
+
+## Letting CSS do the arithmetic
+
+That still left positioning, the job the 200 scroll listeners had been doing badly. [CSS anchor positioning](/concepts/css-anchor-positioning) has been Baseline since Firefox 147 shipped it in January 2026. It does the same job inside the layout engine: the trigger declares an `anchor-name`, the menu declares a `position-anchor`, and `position-try-fallbacks: flip-block` flips the menu above the button when it would run off the bottom of the viewport.
+
+First try: every menu, on every row, opened next to the last row of the table.
+
+All 200 triggers had `anchor-name: --row-menu`, and the spec is explicit: when several elements share an anchor name, the last one in DOM order wins. Fair enough. We had given 200 buttons the same name. `anchor-scope` is the proper fix but isn't Baseline yet, so each row now gets its own name through an inline style, which is also what Chrome's own docs recommend.
+
+<FailureSimulator />
+
+## What stayed in the codebase
+
+<CaseFile />
+
+```html
+<button popovertarget="menu-42" style="anchor-name: --menu-42">…</button>
+
+<div id="menu-42" popover class="row-menu" style="position-anchor: --menu-42">
+  …
+</div>
+```
+
+```css
+.row-menu {
+  inset: auto; /* undo the UA centring */
+  margin: 0;
+  top: anchor(bottom);
+  left: anchor(left);
+  position-try-fallbacks: flip-block;
+}
+```
+
+You can't out-integer a stacking context. You can only leave it.
+
+Julie's two lines are still in the codebase. The jitter is gone, the menu is above the header, and Karim still approves CSS from his phone.

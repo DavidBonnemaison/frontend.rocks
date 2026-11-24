@@ -1,0 +1,164 @@
+/* Home Page Compaction & Semantic Signal Styling */
+
+.home-path-summary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.home-path-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.home-path-progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-path-progress-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.home-path-progress-label.is-started {
+  color: var(--accent);
+}
+
+.home-path-progress-label.is-complete {
+  color: var(--semantic-native-text);
+}
+
+.home-path-progress-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.home-path-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 180ms ease;
+}
+
+.home-path-progress-fill.is-complete {
+  background: var(--semantic-native-text);
+}
+
+/* Door B: Dense Clickable Symptom Rows */
+.home-symptoms-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.home-symptom-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 11px 14px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.15s ease;
+  min-width: 0;
+}
+
+.home-symptom-row:last-child {
+  border-bottom: none;
+}
+
+.home-symptom-row:hover {
+  background: var(--surface-2);
+  text-decoration: none;
+}
+
+.home-symptom-quote {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.home-symptom-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  font-family: var(--mono);
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.home-symptom-badge > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .home-symptom-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 11px 16px;
+  }
+}
+
+/* Door C: Semantic Signal Badges & Arrow */
+.home-page .home-signal-arrow {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+}
+
+.home-page .home-signal-legacy {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--semantic-legacy-text);
+  background: var(--semantic-legacy-bg);
+  border: 1px solid var(--semantic-legacy-border);
+}
+
+.home-page .home-signal-modern {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--semantic-native-text);
+  background: var(--semantic-native-bg);
+  border: 1px solid var(--semantic-native-border);
+}

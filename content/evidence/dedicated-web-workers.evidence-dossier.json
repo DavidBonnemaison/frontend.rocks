@@ -1,0 +1,42 @@
+{
+  "concept_id": "dedicated-web-workers",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/workers.html#dedicated-workers-and-the-worker-interface",
+      "spec_section": "HTML Living Standard §10.2.3 Dedicated workers and the Worker interface",
+      "quote": "A Worker object creates an OS-level or isolated thread with its own event loop, global scope (DedicatedWorkerGlobalScope), and message queue, communicating with its creator via structured cloning or transferable ownership."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "4+",
+    "firefox": "3.5+",
+    "safari": "4+",
+    "notes": "Module workers (type: 'module') are Baseline Widely Available across Chromium, Firefox 114+, and Safari 15+."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Worker Script Fetch & Isolate Creation",
+      "Structured Clone / Transferable Detachment",
+      "DedicatedWorkerGlobalScope Event Loop"
+    ],
+    "mechanism_summary": "The browser spawns an isolated JS engine instance (e.g., V8 Isolate) on an OS thread with no DOM access and communicates via asynchronous message ports."
+  },
+  "production_failures": [
+    {
+      "symptom": "Main thread freezes for 120ms when sending a 25MB parsed dataset to a worker",
+      "root_cause": "postMessage(data) without a transfer list invokes the structured clone algorithm synchronously on the sender thread, copying every byte.",
+      "mitigation": "Pass underlying ArrayBuffers in the second argument transfer list: worker.postMessage(buf, [buf])."
+    },
+    {
+      "symptom": "Memory leak and thread exhaustion after mounting a React component repeatedly",
+      "root_cause": "Each mount spawns new Worker() without calling worker.terminate() on unmount.",
+      "mitigation": "Pool long-lived workers at module scope or call worker.terminate() inside cleanup hooks."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers",
+    "https://html.spec.whatwg.org/multipage/workers.html"
+  ]
+}

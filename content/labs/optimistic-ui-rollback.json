@@ -1,0 +1,38 @@
+{
+  "type": "step-machine",
+  "id": "optimistic-ui-rollback",
+  "title": "Optimistic Mutation: Snapshot, Speculate & Rollback",
+  "description": "Step through cancelling stale refetches, applying an optimistic overlay, and rolling back on 500 error.",
+  "steps": [
+    {
+      "label": "1. Snapshot Confirmed State & Cancel Refetches",
+      "description": "Before mutating, cancel any in-flight GETs so a stale response can't overwrite the optimistic UI.",
+      "codeHighlight": "const prev = cache.get(['post', id]);\nawait queryClient.cancelQueries(['post', id]);",
+      "state": {
+        "confirmedLikes": 41,
+        "displayLikes": 41,
+        "pendingRequests": 0
+      }
+    },
+    {
+      "label": "2. Apply Speculative Overlay (t=0ms)",
+      "description": "UI updates immediately to 42 likes while POST /like is in flight—keeping INP under 16ms.",
+      "codeHighlight": "cache.set(['post', id], { likes: 42, pending: true });",
+      "state": {
+        "confirmedLikes": 41,
+        "displayLikes": 42,
+        "inFlight": true
+      }
+    },
+    {
+      "label": "3. Server Returns 500 -> Rollback",
+      "description": "Network fails at t=380ms. Rollback restores the confirmed snapshot (41) and surfaces a non-blocking retry toast.",
+      "codeHighlight": "onError: (_err, _vars, ctx) => cache.set(['post', id], ctx.prev);",
+      "state": {
+        "confirmedLikes": 41,
+        "displayLikes": 41,
+        "rolledBack": true
+      }
+    }
+  ]
+}

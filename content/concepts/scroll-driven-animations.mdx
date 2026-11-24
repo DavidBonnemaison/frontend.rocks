@@ -1,0 +1,63 @@
+---
+id: scroll-driven-animations
+title: "Scroll-Driven Animations"
+domain: rendering-pipeline
+maturity_status: interop-experimental
+summary_tldr: "animation-timeline: scroll() and view() bind CSS and WAAPI animations directly to scroll progress on the Compositor Thread."
+relations:
+  - target_id: web-animations-api
+    type: requires
+    note: "Scroll-driven timelines plug into the same Web Animations timing model."
+  - target_id: gpu-compositor-layers
+    type: requires
+    note: "Scroll progress updates on the Compositor Thread without main-thread scroll listeners."
+sources:
+  - "https://drafts.csswg.org/scroll-animations-1/"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/animation-timeline"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "scroll()"
+  - "view()"
+  - "animation-timeline"
+  - "scroll-driven animations"
+  - "compositor"
+web_feature_id: scroll-driven-animations
+---
+
+## TL;DR
+
+Scroll-Driven Animations replace `scroll` event listeners with native timelines: `scroll()` tracks a container's scroll offset, while `view()` tracks an element's visibility inside its scrollport. Both run on the Compositor Thread at full display refresh rate.
+
+## Interactive Lab
+
+Compare a main-thread `scroll` listener against `animation-timeline: scroll()` in `PatternComparatorLab`.
+
+## Under the Hood
+
+A JS scroll listener is a backseat driver shouting coordinates over a walkie-talkie; `animation-timeline` wires the speedometer directly to the axle.
+
+1. **Timeline Replacement**: Instead of wall-clock time, [Web Animations API](/concepts/web-animations-api) timelines sample progress from `0%` to `100%` based on scroll offset.
+2. **Compositor Execution**: When animating [GPU Compositor Layers](/concepts/gpu-compositor-layers) properties like `transform: scaleX()` or `opacity`, the Compositor Thread updates pixels without waking the main thread.
+3. **Named Ranges**: `animation-range: entry 0% cover 40%` scopes `view()` animations to exact entry and exit phases.
+
+```css
+@supports (animation-timeline: view()) {
+  .reveal-card {
+    animation: fade-slide linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 80%;
+  }
+}
+```
+
+## Problem Genealogy
+
+- **2013–2022**: Parallax and reading-progress bars relied on throttled `scroll` handlers or `IntersectionObserver` + rAF, lagging one frame behind async compositor scrolling.
+- **2023+**: CSS Scroll-Driven Animations introduced `scroll()` and `view()` timelines in Chromium, with Safari 26 following and Firefox implementing.
+
+## Production Pitfalls
+
+- **Missing `@supports` guard**: Setting `opacity: 0` at `0%` leaves elements permanently invisible in browsers lacking `animation-timeline` support.
+- **Animating `width` instead of `scaleX()`**: Using `width` forces Layout on every scroll tick, forfeiting compositor offloading.
+- **When not to use Scroll-Driven Animations**: Do not use them for critical navigation state or binary sticky-header triggers where `IntersectionObserver` or `position: sticky` suffices.

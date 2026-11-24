@@ -1,0 +1,43 @@
+{
+  "concept_id": "browser-top-layer",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://fullscreen.spec.whatwg.org/#top-layer",
+      "spec_section": "6. Top Layer",
+      "quote": "Each document has an associated top layer, an ordered set of elements rendered above all other elements in the document."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "114+",
+    "firefox": "125+",
+    "safari": "17+",
+    "notes": "Top Layer existed for fullscreen and <dialog>.showModal() earlier, and expanded to Popover API across all browsers in 2024."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Top Layer Ordered Set Append",
+      "Containing Block Override (Viewport)",
+      "Root Stacking Context Bypass",
+      "::backdrop Pseudo-Element Paint"
+    ],
+    "mechanism_summary": "The Top Layer is a document-level paint list rendered after the root stacking context, escaping ancestor overflow: hidden, clip-path, and z-index."
+  },
+  "production_failures": [
+    {
+      "symptom": "Modal or tooltip appears clipped inside a scrollable card despite z-index: 99999",
+      "root_cause": "An ancestor has overflow: hidden, transform, or isolation: isolate, trapping the element inside a local stacking context.",
+      "mitigation": "Promote the overlay with <dialog>.showModal() or [popover].showPopover() to move it into the Browser Top Layer."
+    },
+    {
+      "symptom": "Older popover covers a newer modal dialog opened on top of it",
+      "root_cause": "Top Layer paints in insertion (LIFO) order regardless of CSS z-index values.",
+      "mitigation": "Invoke showModal() / showPopover() in the exact order overlays should stack, and close stale popovers before opening lower layers."
+    }
+  ],
+  "sources": [
+    "https://fullscreen.spec.whatwg.org/#top-layer",
+    "https://developer.chrome.com/blog/what-is-the-top-layer"
+  ]
+}

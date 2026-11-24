@@ -1,0 +1,68 @@
+---
+id: virtualized-lists-windowing
+title: "Virtualized Lists & Windowing"
+domain: state-architecture
+maturity_status: baseline-widely
+summary_tldr: "Keeps DOM node count O(1) relative to dataset size by mounting only the rows visible in the scroll viewport plus an overscan buffer inside a full-height spacer."
+relations:
+  - target_id: browser-rendering-pipeline
+    type: requires
+    note: "Rendering 10,000+ DOM nodes chokes style recalculation and layout passes; windowing caps active nodes."
+  - target_id: gpu-compositor-layers
+    type: under_the_hood
+    note: "Positioning windowed rows with transform: translateY() avoids triggering layout during scroll."
+  - target_id: js-resize-observer-pattern
+    type: requires
+    note: "Variable-height virtualized rows rely on ResizeObserver to measure and cache actual row heights."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/content-visibility"
+  - "https://web.dev/articles/virtualize-long-lists-react-window"
+  - "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-rowcount"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "virtualization"
+  - "windowing"
+  - "content-visibility"
+  - "overscan"
+  - "scroll-performance"
+---
+
+## TL;DR
+
+Mounting 20,000 list rows creates 200,000+ DOM nodes, blowing past memory and [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline) layout budgets. Windowing mounts only the ~20 rows currently inside the scroll viewport (plus a small overscan buffer), keeping DOM work constant regardless of dataset size.
+
+## Interactive Lab
+
+Adjust dataset size and overscan buffer to compare full DOM rendering against windowed rendering using `ConstraintSimulatorLab`.
+
+## Under the Hood
+
+A virtualized list behaves like a train window: the landscape has 50,000 trees, but only 15 trees exist outside the glass at any moment. Inside a single tall spacer container (`height: totalRows * rowHeight`), the list computes visible indices from `scrollTop` and positions rows via [GPU Compositor Layers](/concepts/gpu-compositor-layers) (`translateY`).
+
+1. Compute `startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan)` and `endIndex` from container height.
+2. Render only `items.slice(startIndex, endIndex)` with `transform: translateY(${i * rowHeight}px)`.
+3. For dynamic-height rows, attach a [ResizeObserver](/concepts/js-resize-observer-pattern) to measure rendered items once and update a prefix-sum offset table.
+
+```js
+function getVisibleRange(scrollTop, viewportHeight, rowHeight, total, overscan = 4) {
+  const first = Math.floor(scrollTop / rowHeight);
+  const count = Math.ceil(viewportHeight / rowHeight);
+  return {
+    start: Math.max(0, first - overscan),
+    end: Math.min(total, first + count + overscan),
+  };
+}
+```
+
+## Problem Genealogy
+
+- **2012 (Infinite Scroll DOM Append)**: Appended 50 items per page indefinitely until tabs hit 1 GB RAM and crashed on mobile.
+- **2015–2018 (`react-virtualized` / `react-window`)**: Standardized fixed- and variable-height windowing with overscan buffers.
+- **2020+ (CSS `content-visibility: auto`)**: Let the browser skip layout and paint for offscreen DOM nodes natively without JS windowing for medium-sized lists.
+
+## Production Pitfalls
+
+- **Breaking `Cmd+F` and accessibility**: Unmounting offscreen rows removes them from native browser find-in-page and shifts screen-reader row counts unless `aria-rowcount` and `aria-rowindex` are provided.
+- **Scrollbar jitter with estimated heights**: Guessing `estimatedHeight = 50px` for rows that actually measure `180px` causes the scrollbar thumb to jump wildly while scrolling.
+- **When not to use JS Virtualization**: For lists under ~500 simple rows, native DOM + CSS `content-visibility: auto; contain-intrinsic-size: 0 64px;` preserves `Cmd+F` search, text selection, and accessibility with zero JS complexity.

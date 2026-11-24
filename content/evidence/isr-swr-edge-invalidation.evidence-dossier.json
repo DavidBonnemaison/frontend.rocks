@@ -1,0 +1,42 @@
+{
+  "concept_id": "isr-swr-edge-invalidation",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://datatracker.ietf.org/doc/html/rfc9111",
+      "spec_section": "5.2.2.10 s-maxage",
+      "quote": "The s-maxage response directive indicates that, in shared caches, the maximum age specified by this directive overrides the maximum age specified by either the max-age directive or the Expires header field."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "60+",
+    "firefox": "55+",
+    "safari": "11+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Edge PoP Cache Key Lookup (URL + Vary)",
+      "Fresh Hit vs Stale-While-Revalidate Branch",
+      "Origin Single-Flight Background Regeneration",
+      "Surrogate-Key / Cache-Tag Global Purge"
+    ],
+    "mechanism_summary": "Shared CDN caches evaluate s-maxage and stale-while-revalidate directives to serve static HTML at the edge while coalescing background origin rebuilds and tag-based purges."
+  },
+  "production_failures": [
+    {
+      "symptom": "User A sees User B's account name on a cached SSR page",
+      "root_cause": "Returning public s-maxage headers on a route that reads session cookies causes the CDN PoP to cache and serve personalized HTML to other users.",
+      "mitigation": "Emit Cache-Control: private, no-store on personalized responses or keep the HTML shell generic and fetch user data client-side."
+    },
+    {
+      "symptom": "Origin database CPU spikes to 100% when cache TTL expires",
+      "root_cause": "Hundreds of concurrent requests hit an expired cache key simultaneously without request collapsing or stale-while-revalidate.",
+      "mitigation": "Enable stale-while-revalidate and origin single-flight locking so only one worker regenerates the expired key."
+    }
+  ],
+  "sources": [
+    "https://datatracker.ietf.org/doc/html/rfc9111",
+    "https://datatracker.ietf.org/doc/html/rfc5861"
+  ]
+}

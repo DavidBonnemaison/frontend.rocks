@@ -1,0 +1,42 @@
+{
+  "concept_id": "es-modules-live-bindings",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://tc39.es/ecma262/#sec-resolveexport",
+      "spec_section": "16.2.1.6.3 ResolveExport",
+      "quote": "A module namespace exotic object exposes indirect bindings to the Module Environment Record of the exporting module."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "61+",
+    "firefox": "60+",
+    "safari": "11+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Module Graph Construction (Fetch & Parse)",
+      "Instantiation (Allocate ModuleEnvironmentRecord Slots)",
+      "Live Binding Linking (Read-only Indirect Pointers)",
+      "Post-Order Evaluation"
+    ],
+    "mechanism_summary": "ESM links imports as read-only indirect pointers into the exporting module's LexicalEnvironment before executing a single line of module code."
+  },
+  "production_failures": [
+    {
+      "symptom": "ReferenceError: Cannot access export before initialization in circular imports",
+      "root_cause": "Module A imports a const/let binding from Module B, and B evaluates first and reads A's uninitialized TDZ export slot.",
+      "mitigation": "Break circular dependencies by extracting shared types/constants into a leaf module or deferring reads inside functions."
+    },
+    {
+      "symptom": "Large ESM waterfall delays initial interactive render by 800ms+",
+      "root_cause": "Deeply nested unbundled module graphs require sequential HTTP round-trips unless preloaded.",
+      "mitigation": "Emit <link rel='modulepreload'> hints for critical entry chunks or bundle static subgraphs."
+    }
+  ],
+  "sources": [
+    "https://tc39.es/ecma262/#sec-resolveexport",
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules"
+  ]
+}

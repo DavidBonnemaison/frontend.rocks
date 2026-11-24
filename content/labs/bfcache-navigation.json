@@ -1,0 +1,37 @@
+{
+  "type": "step-machine",
+  "id": "bfcache-navigation",
+  "title": "Page Lifecycle in bfcache",
+  "description": "Observe JS heap freezing and lifecycle events emitted during Back navigation.",
+  "steps": [
+    {
+      "label": "1. Outbound Navigation (pagehide)",
+      "description": "User clicks an external link. The engine checks for blockers (unload, Cache-Control: no-store).",
+      "codeHighlight": "window.addEventListener('pagehide', (e) => console.log(e.persisted));",
+      "state": {
+        "eligible": true,
+        "event": "pagehide (persisted: true)",
+        "jsTimers": "Freezing"
+      }
+    },
+    {
+      "label": "2. Page Frozen in RAM",
+      "description": "The V8 heap, DOM tree, and scroll offset stay in memory with zero CPU consumption.",
+      "state": {
+        "heapStatus": "FROZEN",
+        "networkRequests": 0,
+        "cpuUsage": "0%"
+      }
+    },
+    {
+      "label": "3. Back Navigation (pageshow)",
+      "description": "Instant restoration. load and DOMContentLoaded do NOT re-fire; only pageshow(persisted=true) runs.",
+      "codeHighlight": "window.addEventListener('pageshow', (e) => { if (e.persisted) syncCart(); });",
+      "state": {
+        "event": "pageshow (persisted: true)",
+        "restoreLatencyMs": 4.2,
+        "domContentLoadedFired": false
+      }
+    }
+  ]
+}

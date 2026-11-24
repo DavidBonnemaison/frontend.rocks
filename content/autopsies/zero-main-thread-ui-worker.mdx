@@ -1,0 +1,96 @@
+---
+id: zero-main-thread-ui-worker
+case_number: 12
+title: "Autopsy #12: Sorting 100,000 Rows Without Freezing the Tab"
+symptom: "Rich spreadsheet and graph app drops to 4 FPS during 100k-row sorts until state and OPFS move to a Worker."
+failure_mode: main-thread-freeze
+format: narrative
+case_type: composite
+cast:
+  - julie
+  - karim
+  - ines
+traversed_concepts:
+  - concept_id: dedicated-web-workers
+    step_order: 1
+    role_in_chain: "Relocates the 100k-row store and sort engine out of the main-thread event loop."
+  - concept_id: typed-arrays-zero-copy
+    step_order: 2
+    role_in_chain: "Transfers sorted row index buffers via ArrayBuffer transferables with zero structured-clone copy."
+  - concept_id: opfs-origin-private-fs
+    step_order: 3
+    role_in_chain: "Persists binary snapshots synchronously in the worker via FileSystemSyncAccessHandle."
+  - concept_id: wasm-js-boundary-overhead
+    step_order: 4
+    role_in_chain: "Batches 100k-row numeric sorts inside Wasm linear memory to avoid per-row JS boundary crossings."
+  - concept_id: actor-over-worker-architecture
+    step_order: 5
+    role_in_chain: "Decouples UI rendering from engine state via typed message-passing actor mailboxes."
+case_file:
+  trigger: "Added multi-column sorting and automatic snapshot saves to the spreadsheet view"
+  symptom: "Sorting a 100,000-row enterprise workbook froze the main thread for 620 ms and dropped scrolling to 4 FPS"
+  root_cause: "Main-thread `Array.prototype.sort` on 100k objects plus 90 MB `JSON.stringify` for IndexedDB triggered 140 ms V8 GC pauses"
+  bad_fixes:
+    - label: "`requestIdleCallback` in 5,000-row slices"
+      outcome: "User stared at a frozen table for 3 seconds, `JSON.stringify` still blocked 190 ms, and mid-sort edits corrupted order"
+  fix: "Move state, Wasm sort, and OPFS `createSyncAccessHandle` into an actor Worker; transfer only visible rows or `Uint32Array` indices"
+  how_to_spot: "Performance panel shows a 620 ms `Evaluate` + `Minor/Major GC` block on every column header click"
+  deleted: "`requestIdleCallback` sort slicer, main-thread `JSON.stringify(rows)` snapshot loop"
+reading_time_min: 7
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/FileSystemSyncAccessHandle"
+  - "https://webassembly.org/docs/high-level-goals/"
+last_verified_at: "2026-11-17"
+proof_status: unverified
+---
+
+## Two milliseconds in CI, 620 in production
+
+Julie shipped multi-column sorting and automatic snapshot persistence for the spreadsheet view. On our 200-row CI fixtures, clicking a column header finished in 2 milliseconds and the autosave went completely unnoticed. Nobody tested with an actual enterprise workbook until Thursday afternoon.
+
+Two days later, a customer opened a real 100,000-row workbook and clicked "Revenue". The tab froze for 620 milliseconds. `Array.prototype.sort` over 100,000 JS objects, followed by a 90 MB `JSON.stringify(rows)` call to save into IndexedDB, allocated tens of megabytes of transient strings, triggered a 140 ms V8 garbage collection pause, and dropped scroll frame rates to 4 FPS. Scrolling felt like dragging a filing cabinet across gravel, and clicking any cell during an autosave simply queued the input until the next second.
+
+## Slow in smaller pieces
+
+Karim suggested slicing the sort into 5,000-row chunks inside `requestIdleCallback` so the main thread could breathe between slices and keep animations moving.
+
+On a synthetic microbenchmark, the individual task bars looked shorter. On Inès's test machine with a real 100k workbook, the user experience was noticeably worse. A sort cannot display a half-sorted table, so the user stared at a frozen grid for three full seconds while waiting for all 20 idle slices to finish. `JSON.stringify` still blocked for 190 ms in one lump at the end, and if anyone edited a cell between two idle slices, the underlying array mutated mid-sort and produced a corrupted row order.
+
+## Moving the engine off the UI thread
+
+<CausalChainStepper />
+
+We moved the entire spreadsheet engine into a [Dedicated Web Worker](/concepts/dedicated-web-workers) structured as an [actor over Worker](/concepts/actor-over-worker-architecture). The UI thread no longer owns the 100,000 rows, runs any sorting loops, or holds 90 MB of V8 objects in the renderer heap; it acts purely as a thin viewport over the currently visible 40 rows.
+
+When a user clicks a column header or edits a cell, the UI sends a small typed command (`SORT_BY`, `PATCH_CELL`) to the Worker's mailbox. The Worker updates its columnar typed arrays and sends back only the 40 visible rows or a sorted `Uint32Array` of indices transferred via [zero-copy `ArrayBuffer` transferables](/concepts/typed-arrays-zero-copy) (`postMessage(indices, [indices.buffer])`). Transferring ownership moves the buffer pointer in microseconds without copying a single byte across the thread boundary.
+
+## Synchronous persistence in OPFS
+
+For snapshot persistence, we replaced `JSON.stringify` + IndexedDB on the UI thread with binary snapshots written synchronously inside the Worker using [OPFS (`FileSystemSyncAccessHandle`)](/concepts/opfs-origin-private-fs). Because `createSyncAccessHandle()` is only available inside Workers, it writes raw typed-array bytes directly to a private origin file without main-thread serialization, async transaction ceremony, or structured-clone overhead. Saving a 100k-row workbook dropped from 190 ms on the main thread to 6 ms inside the Worker, with zero GC pressure in the UI tab.
+
+```ts
+// Inside the Worker: zero-copy index transfer + synchronous OPFS flush
+postMessage({ type: 'SORT_DONE', indices }, [indices.buffer]);
+const accessHandle = await fileHandle.createSyncAccessHandle();
+accessHandle.write(snapshotBytes, { at: 0 });
+accessHandle.flush();
+```
+
+<FailureSimulator />
+
+## Crossing the Wasm border 1.7 million times
+
+First try when we moved the heavy numeric sort to WebAssembly inside the Worker: it was actually slower than plain JavaScript.
+
+Our Worker code had passed a Wasm comparator function straight into `indices.sort(wasmCompare)`. Because `Array.prototype.sort` invokes its comparator `O(n log n)` times, the engine was making 1.7 million JS-to-Wasm calls per column click, paying the [Wasm-JS boundary overhead](/concepts/wasm-js-boundary-overhead) on every single comparison. Each crossing had to marshal numbers across the boundary and defeated the speed of compiled code.
+
+Copying the column values and index array into Wasm linear memory once and running the entire radix/quicksort loop inside Wasm dropped the 100k-row sort to 14 ms off the main thread, while the UI thread stayed locked at 60 FPS throughout. Once the sort finishes, the Worker copies the sorted `Uint32Array` out of linear memory and transfers it back to the UI thread with zero copy, ready for the virtualized table to render the 40 visible rows.
+
+## What stayed in the codebase
+
+<CaseFile />
+
+Chopping 600 milliseconds of synchronous work into smaller pieces on the UI thread does not make it fast; it just makes it slow in installments.
+
+Inès's 100k-row workbook now sorts in 14 ms while the scroll bar stays at 60 FPS, and nobody has touched `requestIdleCallback` since. Even better, main-thread INP during background autosaves dropped from 620 ms to 11 ms, and enterprise customers stopped emailing support screenshots of frozen Chrome tabs. Our CI benchmark now runs against a 100,000-row fixture before any spreadsheet PR can merge, failing the build if a sort ever crosses 50 ms on the main thread or triggers a long GC pause. The Worker handles the heavy sorting and OPFS math; the main thread only paints what fits on screen.

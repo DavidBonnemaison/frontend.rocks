@@ -1,0 +1,38 @@
+{
+  "type": "step-machine",
+  "id": "streaming-ssr-flushing",
+  "title": "Streaming SSR: Shell Flush to Out-of-Order Swap",
+  "description": "Trace how progressive HTML chunk flushing unlocks early CSS/JS fetches before slow DB queries finish.",
+  "steps": [
+    {
+      "label": "1. Flush <head> + App Shell (t=15ms)",
+      "description": "Server commits HTTP 200 and flushes <head> with CSS/JS links plus a loading fallback placeholder.",
+      "codeHighlight": "res.write('<!doctype html><html><head><link rel=\"stylesheet\" href=\"/app.css\">...');",
+      "state": {
+        "ttfbMs": 15,
+        "cssFetchStarted": true,
+        "dbQueryComplete": false
+      }
+    },
+    {
+      "label": "2. Browser Parses Shell in Parallel",
+      "description": "While the server awaits a 400ms DB query, the browser downloads CSS, boots JS, and paints the shell.",
+      "codeHighlight": "<div id=\"slot-1\">Loading recommendations...</div>",
+      "state": {
+        "fcpPainted": true,
+        "streamOpen": true,
+        "waitingForChunk2": true
+      }
+    },
+    {
+      "label": "3. Stream Deferred <template> & Swap",
+      "description": "DB resolves at t=410ms. Server flushes hidden <template> + tiny inline script to replace slot-1.",
+      "codeHighlight": "<template id=\"B:1\">...</template><script>$RC('B:1','slot-1')</script>",
+      "state": {
+        "streamClosed": true,
+        "domSwapped": true,
+        "totalServerWaitSavedMs": 395
+      }
+    }
+  ]
+}

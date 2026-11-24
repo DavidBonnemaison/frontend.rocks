@@ -1,0 +1,115 @@
+{
+  "type": "step-machine",
+  "id": "dom-cssom-construction",
+  "title": "Parser Blocking: HTML + CSSOM + Sync Script",
+  "description": "Step through how a synchronous script stalls DOM construction while waiting on CSSOM.",
+  "steps": [
+    {
+      "label": "1. Byte Stream to HTML Tokens",
+      "description": "The HTML tokenizer converts UTF-8 bytes into StartTag and EndTag tokens incrementally.",
+      "codeHighlight": "<link rel=\"stylesheet\" href=\"/app.css\">",
+      "state": {
+        "domNodes": 4,
+        "cssomReady": false,
+        "parserState": "running"
+      },
+      "visualNodes": [
+        {
+          "id": "html",
+          "label": "HTML Parser",
+          "status": "active"
+        },
+        {
+          "id": "css",
+          "label": "CSSOM",
+          "status": "idle"
+        },
+        {
+          "id": "js",
+          "label": "Sync Script",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "2. CSSOM Blocks Script Execution",
+      "description": "Parser encounters <script src=\"/boot.js\"> and pauses because JS might call getComputedStyle().",
+      "codeHighlight": "<script src=\"/boot.js\"></script>",
+      "state": {
+        "domNodes": 7,
+        "cssomReady": false,
+        "parserState": "blocked-on-cssom"
+      },
+      "visualNodes": [
+        {
+          "id": "html",
+          "label": "HTML Parser",
+          "status": "error"
+        },
+        {
+          "id": "css",
+          "label": "CSSOM",
+          "status": "active"
+        },
+        {
+          "id": "js",
+          "label": "Sync Script",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "3. CSSOM Completes, Script Runs",
+      "description": "CSSOM finishes building its rule tree; the synchronous script executes and unblocks HTML tokenization.",
+      "codeHighlight": "document.documentElement.dataset.ready = \"1\";",
+      "state": {
+        "domNodes": 7,
+        "cssomReady": true,
+        "parserState": "executing-js"
+      },
+      "visualNodes": [
+        {
+          "id": "html",
+          "label": "HTML Parser",
+          "status": "idle"
+        },
+        {
+          "id": "css",
+          "label": "CSSOM",
+          "status": "done"
+        },
+        {
+          "id": "js",
+          "label": "Sync Script",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "label": "4. DOM Construction Resumes",
+      "description": "Remaining HTML tokens append to the DOM tree until EOF triggers DOMContentLoaded.",
+      "state": {
+        "domNodes": 142,
+        "cssomReady": true,
+        "parserState": "complete"
+      },
+      "visualNodes": [
+        {
+          "id": "html",
+          "label": "HTML Parser",
+          "status": "done"
+        },
+        {
+          "id": "css",
+          "label": "CSSOM",
+          "status": "done"
+        },
+        {
+          "id": "js",
+          "label": "Sync Script",
+          "status": "done"
+        }
+      ]
+    }
+  ]
+}

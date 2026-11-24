@@ -1,0 +1,43 @@
+{
+  "concept_id": "temporal-api-dates",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://tc39.es/proposal-temporal/docs/",
+      "spec_section": "TC39 Temporal Specification",
+      "quote": "Temporal provides separate classes for date-only, time-only, zoned date-time, and exact instant values, all immutable and calendar-aware."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "interop-experimental",
+    "chrome": "144+ (origin trial / flag)",
+    "firefox": "139+",
+    "safari": "In development",
+    "notes": "Use @js-temporal/polyfill or temporal-polyfill until Temporal reaches Baseline Newly Available."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Explicit Domain Type Selection (Instant vs PlainDate vs ZonedDateTime)",
+      "IANA Timezone & ICU4X Calendar Resolution",
+      "Immutable Arithmetic & Disambiguation",
+      "ISO-8601 / RFC 9557 Serialization"
+    ],
+    "mechanism_summary": "Temporal separates physical instants from wall-clock calendar dates and timezones, backed by immutable value objects and ICU4X timezone rules."
+  },
+  "production_failures": [
+    {
+      "symptom": "Recurring calendar event shifts by 1 hour after Daylight Saving Time transition",
+      "root_cause": "Adding 86,400,000 ms to a legacy Date timestamp ignores DST 23-hour and 25-hour days.",
+      "mitigation": "Use Temporal.ZonedDateTime.add({ days: 1 }) so calendar arithmetic preserves the wall-clock hour across DST."
+    },
+    {
+      "symptom": "User birthday displays as the previous day in US timezones",
+      "root_cause": "Parsing '1990-05-12' with new Date() creates UTC midnight, which shifts to May 11 when formatted in UTC-5.",
+      "mitigation": "Represent calendar-only dates with Temporal.PlainDate.from('1990-05-12') which has no timezone offset."
+    }
+  ],
+  "sources": [
+    "https://tc39.es/proposal-temporal/docs/",
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal"
+  ]
+}

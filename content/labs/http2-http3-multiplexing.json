@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "http2-http3-multiplexing",
+  "title": "Connection Strategy: HTTP/1.1 Sharding vs HTTP/3 QUIC",
+  "description": "Compare legacy domain-sharded HTTP/1.1 pools against single-origin QUIC stream multiplexing.",
+  "before": {
+    "label": "HTTP/1.1 Domain Sharding (6 TCP Sockets/Host)",
+    "code": "// Legacy bundling & sharding workaround\n<script src=\"https://static1.cdn.example/app.js\"></script>\n<link rel=\"stylesheet\" href=\"https://static2.cdn.example/app.css\" />\n// Separate TLS handshakes + 6-socket cap per host",
+    "metrics": {
+      "lines": 4,
+      "reflows": "Serial head-of-line blocking",
+      "dependencies": "Multiple TCP + TLS handshakes"
+    },
+    "previewNote": "Each stalled request blocks every queued asset behind it on that socket."
+  },
+  "after": {
+    "label": "HTTP/3 Single-Origin QUIC Streams",
+    "code": "// Single origin with Alt-Svc: h3=\":443\"; ma=86400\n<script type=\"module\" src=\"/assets/app.js\"></script>\n<link rel=\"stylesheet\" href=\"/assets/app.css\" />\n// Independent QUIC streams over 1-RTT UDP",
+    "metrics": {
+      "lines": 4,
+      "reflows": "Isolated per-stream loss recovery",
+      "dependencies": "Single QUIC connection + QPACK"
+    },
+    "previewNote": "A lost UDP packet only stalls its own stream; sibling CSS and JS continue arriving."
+  }
+}

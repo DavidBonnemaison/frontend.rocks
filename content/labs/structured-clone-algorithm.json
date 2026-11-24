@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "structured-clone-algorithm",
+  "title": "JSON.parse(JSON.stringify) vs structuredClone()",
+  "before": {
+    "label": "JSON Round-Trip Hack",
+    "code": "const copy = JSON.parse(JSON.stringify(state));\n// Drops Map, Set, Date -> string, RegExp -> {}\n// Crashes on circular references",
+    "metrics": {
+      "lines": 3,
+      "reflows": "2 string passes",
+      "dependencies": "Loses types & cycles"
+    },
+    "previewNote": "Silently corrupts Dates, Maps, Sets, undefined, and NaN."
+  },
+  "after": {
+    "label": "Native structuredClone(val, { transfer })",
+    "code": "const copy = structuredClone(state, {\n  transfer: [state.rawBuffer],\n});\n// Preserves Map, Set, Date, cycles, and moves buffer",
+    "metrics": {
+      "lines": 4,
+      "reflows": "1 binary C++ walk",
+      "dependencies": "0 JS dependencies"
+    },
+    "previewNote": "Preserves cyclic graphs and transfers ArrayBuffers in O(1)."
+  }
+}

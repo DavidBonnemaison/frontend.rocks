@@ -1,0 +1,43 @@
+{
+  "concept_id": "streaming-ssr-flushing",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/parsing.html#tree-construction",
+      "spec_section": "WHATWG HTML: Incremental Tree Construction",
+      "quote": "The HTML parser processes bytes incrementally as they arrive over the network, constructing DOM nodes and discovering subresources before EOF."
+    },
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/API/Streams_API/Using_readable_streams",
+      "spec_section": "MDN Streams API: ReadableStream Chunked Flushing",
+      "quote": "ReadableStream allows servers and workers to enqueue and flush HTML chunks progressively over HTTP/2 or HTTP/3."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "43+",
+    "firefox": "65+",
+    "safari": "10.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Head Shell Flush (<link>/<script>)", "Preload Scanner Early Start", "Async Suspense Chunk Stream", "Out-of-Order Template Swap"],
+    "mechanism_summary": "Flushes the HTML <head> and shell immediately over HTTP/2+ while slow data queries resolve, then streams deferred <template> chunks + inline swap scripts."
+  },
+  "production_failures": [
+    {
+      "symptom": "Streaming SSR behaves like buffered SSR (entire page arrives at once after 900ms)",
+      "root_cause": "An intermediate Nginx/CDN gzip buffer or framework middleware waited for the full response body before flushing the first byte.",
+      "mitigation": "Disable proxy response buffering (X-Accel-Buffering: no) and flush the <head> shell immediately."
+    },
+    {
+      "symptom": "HTTP 200 status is locked in even though a streamed Suspense boundary threw a 500 error",
+      "root_cause": "HTTP status codes and headers are committed with the very first flushed chunk; errors occurring mid-stream cannot change the status to 500.",
+      "mitigation": "Resolve critical route-level 404/500 checks before flushing the initial response headers, and render graceful fallback UI for deferred boundaries."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/Streams_API",
+    "https://html.spec.whatwg.org/multipage/parsing.html",
+    "https://web.dev/articles/rendering-on-the-web"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "type": "step-machine",
+  "id": "broadcast-channel-web-locks",
+  "title": "Cross-Tab Leader Election via Web Locks + BroadcastChannel",
+  "description": "Watch Tab 1 hold an exclusive lock while Tab 2 queues behind it and receives state updates.",
+  "steps": [
+    {
+      "label": "1. Tab 1 Acquires Exclusive Lock",
+      "description": "Tab 1 calls navigator.locks.request('sync-leader', fn) and holds the lock while its Promise remains pending.",
+      "codeHighlight": "navigator.locks.request('sync-leader', async () => { /* leader */ });",
+      "state": {
+        "tab1Role": "LEADER",
+        "tab2Role": "QUEUED",
+        "lockHolder": "Tab 1"
+      },
+      "visualNodes": [
+        { "id": "tab1", "label": "Tab 1 (Lock Held)", "status": "active" },
+        { "id": "tab2", "label": "Tab 2 (Waiting)", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Tab 1 Broadcasts Sync State",
+      "description": "Tab 1 fetches fresh data and posts it over BroadcastChannel('sync'), updating Tab 2 without a second network call.",
+      "codeHighlight": "channel.postMessage({ type: 'SYNCED', version: 42 });",
+      "state": {
+        "tab1Role": "LEADER",
+        "tab2Role": "FOLLOWER_SYNCED",
+        "channelMessages": 1
+      },
+      "visualNodes": [
+        { "id": "tab1", "label": "Tab 1 (Broadcasting)", "status": "done" },
+        { "id": "tab2", "label": "Tab 2 (Received v42)", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Tab 1 Closes -> Auto-Release",
+      "description": "When Tab 1 closes or crashes, the browser process releases 'sync-leader' and immediately grants it to Tab 2.",
+      "codeHighlight": "// Browser releases lock on unload; Tab 2 callback fires",
+      "state": {
+        "tab1Role": "CLOSED",
+        "tab2Role": "LEADER",
+        "lockHolder": "Tab 2"
+      },
+      "visualNodes": [
+        { "id": "tab1", "label": "Tab 1 (Closed)", "status": "idle" },
+        { "id": "tab2", "label": "Tab 2 (Promoted)", "status": "done" }
+      ]
+    }
+  ]
+}

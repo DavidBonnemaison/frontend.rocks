@@ -1,0 +1,44 @@
+{
+  "concept_id": "core-web-vitals-mechanics",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://w3c.github.io/largest-contentful-paint/",
+      "spec_section": "W3C Largest Contentful Paint",
+      "quote": "The Largest Contentful Paint API reports the render time of the largest image or text block visible within the viewport relative to navigation start."
+    },
+    {
+      "source_url": "https://w3c.github.io/event-timing/#sec-inp",
+      "spec_section": "W3C Event Timing: Interaction to Next Paint (INP)",
+      "quote": "Interaction to Next Paint measures the latency from user input until the next frame is presented after all event handlers, layout, and paint complete."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-newly",
+    "chrome": "79+ (INP: 96+)",
+    "firefox": "122+ (LCP/INP)",
+    "safari": "26.2+ (LCP/INP)",
+    "notes": "LCP and INP are standardized in Chrome/Firefox/Safari; CLS layout-shift entries remain Chromium-led."
+  },
+  "engine_internals": {
+    "pipeline_phases": ["LCP Candidate Paint", "CLS Session Window Max", "INP Input Delay + Processing + Presentation", "p75 Field Aggregation"],
+    "mechanism_summary": "Quantifies loading (LCP <= 2.5s), visual stability (CLS <= 0.1), and responsiveness (INP <= 200ms) directly from browser rendering and event-timing hooks."
+  },
+  "production_failures": [
+    {
+      "symptom": "Lighthouse Lab score is 99/100 while Search Console flags Poor INP (> 350ms)",
+      "root_cause": "Lighthouse only simulates initial page load; real users tap filter menus and accordions that trigger synchronous React state updates and layout thrashing.",
+      "mitigation": "Instrument INP in production RUM and break up long click/keydown handlers with scheduler.yield() or Web Workers."
+    },
+    {
+      "symptom": "LCP degrades to 4.2s despite fast 200ms TTFB",
+      "root_cause": "The LCP hero image URL was injected dynamically by client-side JS after hydration instead of appearing in server-rendered HTML.",
+      "mitigation": "Render the LCP element in initial HTML with fetchpriority=\"high\" so the preload scanner fetches it immediately."
+    }
+  ],
+  "sources": [
+    "https://web.dev/articles/vitals",
+    "https://web.dev/articles/inp",
+    "https://w3c.github.io/largest-contentful-paint/"
+  ]
+}

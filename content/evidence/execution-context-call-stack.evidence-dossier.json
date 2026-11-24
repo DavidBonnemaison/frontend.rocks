@@ -1,0 +1,42 @@
+{
+  "concept_id": "execution-context-call-stack",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://tc39.es/ecma262/#sec-execution-contexts",
+      "spec_section": "9.4 Execution Contexts",
+      "quote": "An execution context is a specification device that is used to track the runtime evaluation of code by an ECMAScript implementation."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+",
+    "firefox": "1+",
+    "safari": "1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Creation Phase (LexicalEnvironment & VariableEnvironment)",
+      "Stack Frame Push",
+      "Execution Phase",
+      "Stack Frame Pop"
+    ],
+    "mechanism_summary": "V8 pushes an execution context frame onto the single-threaded Call Stack per function invocation, resolving bindings via nested LexicalEnvironments."
+  },
+  "production_failures": [
+    {
+      "symptom": "RangeError: Maximum call stack size exceeded in recursive tree walkers",
+      "root_cause": "Unbounded recursion exhausts the fixed-size native Call Stack (~10k frames in V8) because JS engines do not implement general tail-call optimization.",
+      "mitigation": "Rewrite deep recursion as an explicit heap-allocated work stack loop."
+    },
+    {
+      "symptom": "ReferenceError: Cannot access variable before initialization (TDZ)",
+      "root_cause": "Hoisted let/const bindings are allocated in the LexicalEnvironment during the creation phase but remain uninitialized until evaluation reaches their declaration.",
+      "mitigation": "Declare let and const bindings at the top of their block scope before any read."
+    }
+  ],
+  "sources": [
+    "https://tc39.es/ecma262/#sec-execution-contexts",
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Too_much_recursion"
+  ]
+}

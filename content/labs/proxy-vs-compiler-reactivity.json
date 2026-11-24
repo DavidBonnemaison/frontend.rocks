@@ -1,0 +1,53 @@
+{
+  "type": "step-machine",
+  "id": "proxy-vs-compiler-reactivity",
+  "title": "Runtime Proxy Traps vs Compiled Updates",
+  "description": "Compare how a runtime Proxy intercepts writes at execution time vs how a compiler emits direct updates.",
+  "steps": [
+    {
+      "label": "1. Runtime: Wrap & Intercept [[Get]]",
+      "description": "Reading state.count inside an effect invokes the Proxy get trap and records a dependency.",
+      "codeHighlight": "get(target, key) { track(target, key); return Reflect.get(target, key); }",
+      "state": {
+        "mode": "runtime-proxy",
+        "proxyAllocations": 1,
+        "trackedKey": "count"
+      },
+      "visualNodes": [
+        { "id": "ast", "label": "No Build Transform", "status": "idle" },
+        { "id": "proxy", "label": "Proxy [[Get]] Trap", "status": "active" },
+        { "id": "dom", "label": "Effect Subscribed", "status": "active" }
+      ]
+    },
+    {
+      "label": "2. Runtime: [[Set]] Trap Broadcast",
+      "description": "Assigning state.count++ triggers the set trap, checks Object.is, and queues the effect.",
+      "codeHighlight": "set(target, key, val) { trigger(target, key); return true; }",
+      "state": {
+        "mode": "runtime-proxy",
+        "trapInvocations": 2,
+        "domPatched": true
+      },
+      "visualNodes": [
+        { "id": "ast", "label": "No Build Transform", "status": "idle" },
+        { "id": "proxy", "label": "Proxy [[Set]] Trap", "status": "done" },
+        { "id": "dom", "label": "DOM Patched", "status": "done" }
+      ]
+    },
+    {
+      "label": "3. Compiler: Direct Signal Mutation",
+      "description": "Build-time AST transform rewrites count++ into $.set(count, v + 1) with zero Proxy wrappers.",
+      "codeHighlight": "$.set(count, $.get(count) + 1);",
+      "state": {
+        "mode": "static-compiler",
+        "proxyAllocations": 0,
+        "domPatched": true
+      },
+      "visualNodes": [
+        { "id": "ast", "label": "AST Rewritten", "status": "done" },
+        { "id": "proxy", "label": "0 Proxy Traps", "status": "idle" },
+        { "id": "dom", "label": "Direct Text Patch", "status": "done" }
+      ]
+    }
+  ]
+}

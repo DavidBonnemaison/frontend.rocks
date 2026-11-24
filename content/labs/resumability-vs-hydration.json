@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "resumability-vs-hydration",
+  "title": "Boot Architecture: Eager Hydration vs Resumability",
+  "description": "Compare eager full-tree JS hydration on load against serialized HTML state with lazy interaction-time execution.",
+  "before": {
+    "label": "Eager Hydration (O(N) Boot on Load)",
+    "code": "// Server rendered HTML, then client downloads & executes ALL components\nhydrateRoot(document.getElementById('root'), <App initialData={window.__DATA__} />);\n// Main thread blocked 400ms attaching listeners user may never click",
+    "metrics": {
+      "lines": 3,
+      "reflows": "O(N) component tree execution",
+      "dependencies": "Full app bundle downloaded upfront"
+    },
+    "previewNote": "Creates the 'uncanny valley': buttons look clickable before hydration finishes."
+  },
+  "after": {
+    "label": "Resumability (O(1) Boot, Lazy Handler)",
+    "code": "<!-- 1KB global listener delegates click; chunk loads only on tap -->\n<button on:click=\"./chunk-cart.js#addItem\" q:state=\"12\">Add</button>\n<script type=\"qwik/json\">{\"12\":{\"count\":0}}</script>",
+    "metrics": {
+      "lines": 3,
+      "reflows": "O(1) startup (< 5ms JS)",
+      "dependencies": "Zero component JS until interaction"
+    },
+    "previewNote": "Execution resumes at the exact interaction point without replaying SSR."
+  }
+}

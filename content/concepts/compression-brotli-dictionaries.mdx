@@ -1,0 +1,64 @@
+---
+id: compression-brotli-dictionaries
+title: "Brotli & Compression Dictionaries"
+domain: network-perf
+maturity_status: baseline-newly
+summary_tldr: "Shrinks text payloads 15–25% beyond gzip with Brotli, and turns cached prior bundles into external LZ77 dictionaries so minor releases ship only binary diffs."
+relations:
+  - target_id: http-caching-directives
+    type: requires
+    note: "Shared dictionaries reuse cached HTTP responses and require Cache-Control + Vary headers."
+  - target_id: http2-http3-multiplexing
+    type: requires
+    note: "Compressed streams reduce frame count and header overhead across multiplexed connections."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Compression_dictionaries"
+  - "https://developer.chrome.com/blog/compression-dictionary-transport"
+  - "https://www.rfc-editor.org/rfc/rfc7932"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "brotli"
+  - "compression-dictionary"
+  - "dcb"
+  - "zstd"
+  - "use-as-dictionary"
+---
+
+## TL;DR
+
+Brotli (`br`) beats gzip by 15–25% on JS and CSS using a built-in static dictionary of common web tokens. Compression Dictionary Transport (`dcb`/`dcz`) goes further: the browser feeds your cached `app.v1.js` into the decompressor so `app.v2.js` transfers as a tiny delta.
+
+## Interactive Lab
+
+Test how Brotli quality levels and shared dictionary deltas affect wire size and CPU cost using `ConstraintSimulatorLab`.
+
+## Under the Hood
+
+Standard compression treats every hashed bundle (`app.v2.js`) as a brand-new stranger, forcing users to re-download 98% unchanged code. Shared dictionaries work like `git diff` over HTTP: the [HTTP Cache](/concepts/http-caching-directives) supplies `app.v1.js` as a reference window, and the server only streams the bytes that changed.
+
+1. On the initial fetch, the server sends `Use-As-Dictionary: match="/assets/app.*.js"` alongside a cacheable response.
+2. On the next deploy, the client advertises `Available-Dictionary: :<sha256>:` and `Accept-Encoding: gzip, br, dcb, dcz` over [HTTP/2 & HTTP/3](/concepts/http2-http3-multiplexing).
+3. The CDN or build pipeline compresses `app.v2.js` against `v1` and returns `Content-Encoding: dcb` with `Vary: Available-Dictionary`.
+
+```http
+# Response 1: register cached bundle as a dictionary
+Use-As-Dictionary: match="/assets/app.*.js", id="app-v1"
+Cache-Control: public, max-age=31536000, immutable
+
+# Response 2: delta-compressed update
+Content-Encoding: dcb
+Vary: Available-Dictionary, Accept-Encoding
+```
+
+## Problem Genealogy
+
+- **1996 (RFC 1952 Gzip)**: DEFLATE over HTTP cut text sizes dramatically, but lacked a pre-trained web vocabulary.
+- **2015 (RFC 7932 Brotli)**: Embedded a 120 KB static dictionary of HTML/CSS/JS tokens, becoming the default for static assets, at the cost of slow level-11 encoding.
+- **2024+ (RFC 9842 Compression Dictionaries)**: Standardized `Use-As-Dictionary`, ending the curse of 1-line bugfixes invalidating 400 KB bundles.
+
+## Production Pitfalls
+
+- **Brotli quality 11 on dynamic SSR**: Running max-quality Brotli on uncached HTML stalls TTFB on the origin CPU; pre-compress static files at level 11 and cap dynamic responses at level 4–5.
+- **Missing `Vary: Available-Dictionary`**: Without `Vary`, a CDN caches a `dcb` binary diff and serves it to first-time visitors who lack the base dictionary.
+- **When not to use compression**: Already-compressed binary formats (`woff2`, `avif`, `webp`, `mp4`) only waste CPU cycles and can actually grow slightly when re-compressed.

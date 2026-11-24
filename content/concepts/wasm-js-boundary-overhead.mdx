@@ -1,0 +1,63 @@
+---
+id: wasm-js-boundary-overhead
+title: WebAssembly Linear Memory & JS Boundary Crossing Cost
+domain: web-apis
+maturity_status: baseline-widely
+summary_tldr: "Calling a Wasm function per pixel or per DOM node burns more CPU marshaling strings across the JS boundary than running pure JS. Batch workloads into shared Linear Memory ArrayBuffers to amortize trampoline and UTF-8 copy costs."
+relations:
+  - target_id: typed-arrays-zero-copy
+    type: requires
+    note: "TypedArrays view WebAssembly.Memory.buffer directly so JS and Wasm exchange binary batches without copying."
+  - target_id: js-garbage-collection
+    type: requires
+    note: "String marshaling and Wasm memory.grow() detaching views trigger JS heap allocations and GC pressure."
+sources:
+  - "https://webassembly.github.io/spec/js-api/"
+  - "https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Memory"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "webassembly"
+  - "linear-memory"
+  - "ffi-overhead"
+  - "typed-arrays"
+web_feature_id: wasm
+---
+
+## TL;DR
+
+Every JS-to-Wasm call pays a trampoline context switch, and strings must be UTF-8 encoded into Wasm linear memory. Batch thousands of items into a [`TypedArray`](/concepts/typed-arrays-zero-copy) view over `WebAssembly.Memory.buffer` so one boundary crossing processes the whole workload without [GC churn](/concepts/js-garbage-collection).
+
+## Interactive Lab
+
+Trace JS-to-Wasm trampoline overhead, `Linear Memory` batching, and `memory.grow()` view detachment in `StepMachineLab`.
+
+## Under the Hood
+
+V8 compiles Wasm functions ahead-of-time via Liftoff and TurboFan, but JS and Wasm use different calling conventions and value representations. Crossing the boundary requires a JIT trampoline to unbox JS numbers or validate `externref` handles.
+
+1. **Trampoline Cost**: A single scalar call costs ~10-30ns; calling Wasm inside a 1,000,000-iteration loop spends 20ms+ just crossing the boundary.
+2. **UTF-8 Marshaling Tax**: Wasm linear memory stores raw bytes, whereas V8 strings are UTF-16/Latin1, forcing `TextEncoder.encodeInto()` copies on every string argument.
+3. **View Detachment on Grow**: Calling `memory.grow()` reallocates the underlying `ArrayBuffer` and detaches every existing `Uint8Array` view in JS.
+
+```js
+// Bad: 100k boundary crossings; Good: 1 batched TypedArray pass
+const heap = new Uint8Array(wasm.exports.memory.buffer);
+const ptr = wasm.exports.alloc(pixels.length);
+heap.set(pixels, ptr);
+wasm.exports.blurBatch(ptr, pixels.length);
+// Refresh view in case blurBatch called memory.grow()
+const out = new Uint8Array(wasm.exports.memory.buffer, ptr, pixels.length);
+```
+
+## Problem Genealogy
+
+- **2015 (asm.js)**: Pre-allocated a single `ArrayBuffer` heap in JS, proving typed linear memory could run C++ engines at near-native speed without GC pauses.
+- **2017 (Wasm MVP)**: Standardized binary modules and `WebAssembly.Memory`, yet naive per-call `wasm-bindgen` bindings still regressed below pure JS on chatty DOM APIs.
+- **2024 (WasmGC & Memory64)**: Added engine-managed structs to cut manual linear-memory boilerplate for high-level languages.
+
+## Production Pitfalls
+
+- **Stale Detached TypedArray Views**: Caching `const u8 = new Uint8Array(memory.buffer)` at startup throws `TypeError` or reads empty buffers as soon as Wasm executes `memory.grow()`. Always re-wrap `memory.buffer` after allocating calls.
+- **Chatty DOM-Mutation Loops**: Invoking JS DOM setters from inside Wasm bounces across the trampoline twice per node, running slower than plain JS.
+- **When not to use WebAssembly**: Do not port string-heavy JSON parsing, form validation, or small (< 10 KB) array transforms to Wasm; UTF-8 encoding and trampoline overhead exceed V8 TurboFan's native JS speed.

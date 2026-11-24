@@ -1,0 +1,65 @@
+---
+id: resumability-vs-hydration
+title: "Resumability vs Hydration"
+domain: state-architecture
+maturity_status: interop-experimental
+summary_tldr: "Contrasts eager SSR hydration—which replays component trees on the client to attach listeners—with resumability, which serializes state in HTML and loads handlers lazily."
+relations:
+  - target_id: streaming-ssr-flushing
+    type: requires
+    note: "Both hydration and resumability boot on top of server-rendered HTML streamed to the browser."
+  - target_id: dom-event-propagation
+    type: under_the_hood
+    note: "Resumability relies on a single root event-delegation listener to intercept clicks before component JS loads."
+  - target_id: core-web-vitals-mechanics
+    type: under_the_hood
+    note: "Heavy eager hydration directly degrades Total Blocking Time and early INP."
+sources:
+  - "https://web.dev/articles/rendering-on-the-web"
+  - "https://qwik.dev/docs/concepts/resumable/"
+  - "https://developer.mozilla.org/en-US/docs/Glossary/Hydration"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "hydration"
+  - "resumability"
+  - "islands"
+  - "inp"
+  - "ssr"
+---
+
+## TL;DR
+
+Hydration makes server-rendered HTML interactive by downloading and re-executing the entire component tree on the client just to attach event listeners. Resumability skips that replay: it serializes state into the HTML and uses a tiny root listener to fetch handler chunks only when clicked.
+
+## Interactive Lab
+
+Compare eager $O(N)$ hydration against $O(1)$ resumable execution using `PatternComparatorLab`.
+
+## Under the Hood
+
+Hydration is like shipping a pre-assembled bicycle, then disassembling and reassembling every bolt in the driveway just to test the brakes. While that replay runs after [Streaming SSR](/concepts/streaming-ssr-flushing), users hit the "uncanny valley", stalling [Core Web Vitals](/concepts/core-web-vitals-mechanics) INP.
+
+1. **Hydration**: Downloads component JS, reconstructs the VDOM tree in memory, diffs it against existing DOM nodes, and binds `addEventListener` per node.
+2. **Partial / Islands Hydration**: Hydrates only interactive islands (`<CartWidget />`), leaving static prose as zero-JS HTML.
+3. **Resumability**: Serializes state (`<script type="qwik/json">`) and handler URLs (`on:click="./chunk.js#fn"`) into HTML, relying on [DOM Event Propagation](/concepts/dom-event-propagation) at `document` to lazy-load code on demand.
+
+```html
+<!-- Resumable boundary: zero JS executed until the user clicks -->
+<button on:click="./cart-chunk.js#increment" data-state-id="4">
+  Qty: <span>1</span>
+</button>
+<script type="application/json" id="state-4">{"qty":1}</script>
+```
+
+## Problem Genealogy
+
+- **2013–2018 (Universal Hydration)**: Single-page frameworks bolted SSR onto client bundles, forcing every byte of HTML to be rendered twice.
+- **2020 (Islands Architecture & Selective Hydration)**: Astro and React 18 scoped hydration to interactive subtrees and yielded between Suspense boundaries.
+- **2022+ (Resumability & Zero-Bundle Server Components)**: Eliminated client-side replay for static and deferred interactive trees altogether.
+
+## Production Pitfalls
+
+- **Hydration mismatch cascades**: Rendering `Date.now()` or `window.matchMedia` during SSR causes client hydration to throw away the server DOM and repaint from scratch.
+- **Uncached lazy chunks on slow 3G**: Resumability trades boot JS for interaction-time chunk fetches; prefetch probable handlers via a Service Worker or `<link rel="modulepreload">` so clicks stay under 200 ms INP.
+- **When not to use Resumability**: In dense, always-interactive single-page tools (Figma-like canvases, IDE editors) where 95% of UI handlers are needed within the first second anyway.

@@ -1,0 +1,43 @@
+{
+  "concept_id": "http-caching-directives",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://www.rfc-editor.org/rfc/rfc9111#section-5.2",
+      "spec_section": "RFC 9111 Section 5.2: Cache-Control",
+      "quote": "The Cache-Control header field is used to specify directives for caches along the request/response chain."
+    },
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control",
+      "spec_section": "MDN HTTP Caching Directives",
+      "quote": "no-cache allows a response to be stored in a cache, but requires validation with the origin server before each reuse."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "66+",
+    "firefox": "49+",
+    "safari": "11+"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Cache Key Lookup", "Freshness Lifetime Check", "Conditional Revalidation (ETag/304)", "Disk/Memory Entry Store"],
+    "mechanism_summary": "Evaluates Cache-Control freshness lifetimes and ETag validators before issuing network bytes, controlling disk cache reuse and bfcache eligibility."
+  },
+  "production_failures": [
+    {
+      "symptom": "HTML shell serves stale hashed JS chunk URLs after a deployment, causing 404s",
+      "root_cause": "index.html was served with max-age=3600 without no-cache, so browsers reused the old HTML pointing to deleted chunk hashes.",
+      "mitigation": "Serve HTML with Cache-Control: no-cache (or max-age=0, must-revalidate) and hashed assets with max-age=31536000, immutable."
+    },
+    {
+      "symptom": "bfcache hit rate drops to 0% across authenticated or marketing routes",
+      "root_cause": "Global middleware emitted Cache-Control: no-store on all document responses, which disqualifies pages from bfcache.",
+      "mitigation": "Use Cache-Control: private, no-cache for personalized HTML and reserve no-store strictly for sensitive post-logout views."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching",
+    "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control",
+    "https://www.rfc-editor.org/rfc/rfc9111"
+  ]
+}

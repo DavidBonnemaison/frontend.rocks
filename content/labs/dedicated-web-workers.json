@@ -1,0 +1,50 @@
+{
+  "type": "step-machine",
+  "id": "dedicated-web-workers",
+  "title": "Structured Clone vs Transferable Ownership",
+  "description": "Trace how ArrayBuffer ownership moves across thread boundaries without copying bytes.",
+  "steps": [
+    {
+      "label": "1. Main Thread Allocates Buffer",
+      "description": "The main thread allocates a 16 MB Uint8Array backed by an ArrayBuffer on its own V8 heap.",
+      "codeHighlight": "const buf = new Uint8Array(16 * 1024 * 1024).buffer;",
+      "state": {
+        "mainBufferBytes": 16777216,
+        "workerBufferBytes": 0,
+        "cloneCostMs": 0
+      },
+      "visualNodes": [
+        { "id": "main", "label": "Main Thread (16 MB)", "status": "active" },
+        { "id": "worker", "label": "Worker Isolate (0 B)", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. postMessage(buf, [buf]) Transfer",
+      "description": "The engine detaches the ArrayBuffer from the main thread and hands the pointer to the worker's MessagePort.",
+      "codeHighlight": "worker.postMessage(buf, [buf]);",
+      "state": {
+        "mainBufferBytes": 0,
+        "workerBufferBytes": 16777216,
+        "cloneCostMs": 0.05
+      },
+      "visualNodes": [
+        { "id": "main", "label": "Main Thread (Detached)", "status": "done" },
+        { "id": "worker", "label": "Worker Isolate (16 MB)", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Worker Processes Off-Thread",
+      "description": "The worker runs heavy parsing on its own event loop while main-thread frames stay under 16.6ms.",
+      "codeHighlight": "self.onmessage = ({ data }) => parseChunk(data);",
+      "state": {
+        "mainBufferBytes": 0,
+        "workerBufferBytes": 16777216,
+        "mainThreadBlocked": false
+      },
+      "visualNodes": [
+        { "id": "main", "label": "Main Thread (60 fps)", "status": "done" },
+        { "id": "worker", "label": "Worker Isolate (Parsing)", "status": "active" }
+      ]
+    }
+  ]
+}

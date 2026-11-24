@@ -1,0 +1,24 @@
+{
+  "type": "constraint-simulator",
+  "id": "layout-thrashing",
+  "title": "Forced Synchronous Layout Simulator",
+  "description": "Vary element count and toggle read-before-write batching.",
+  "presetMode": "layout-thrashing",
+  "controls": [
+    {
+      "key": "items",
+      "label": "Elements in loop",
+      "kind": "range",
+      "min": 10,
+      "max": 120,
+      "step": 10,
+      "defaultValue": 50
+    },
+    {
+      "key": "batched",
+      "label": "Batch reads before writes",
+      "kind": "toggle",
+      "defaultValue": false
+    }
+  ]
+}

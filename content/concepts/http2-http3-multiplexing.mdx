@@ -1,0 +1,63 @@
+---
+id: http2-http3-multiplexing
+title: "HTTP/2 & HTTP/3 Multiplexing"
+domain: network-perf
+maturity_status: baseline-widely
+summary_tldr: "Interleaves concurrent request frames over one connection; HTTP/3 moves multiplexing to QUIC so packet loss on one stream never stalls sibling assets."
+relations:
+  - target_id: preload-scanner-hints
+    type: requires
+    note: "The preload scanner queues concurrent asset fetches that rely on multiplexed streams."
+  - target_id: browser-rendering-pipeline
+    type: under_the_hood
+    note: "Stream prioritization determines whether CSS and fonts arrive before render-blocking frames."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Glossary/HTTP_2"
+  - "https://developer.mozilla.org/en-US/docs/Glossary/HTTP_3"
+  - "https://www.rfc-editor.org/rfc/rfc9114"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "http2"
+  - "http3"
+  - "quic"
+  - "multiplexing"
+  - "head-of-line-blocking"
+---
+
+## TL;DR
+
+HTTP/2 interleaves binary frames from dozens of requests over a single TCP connection, eliminating application-level head-of-line blocking. HTTP/3 replaces TCP with QUIC over UDP so a single dropped packet stalls only its own stream rather than freezing every asset in flight.
+
+## Interactive Lab
+
+Compare legacy HTTP/1.1 domain sharding against single-origin HTTP/3 QUIC streams using `PatternComparatorLab`.
+
+## Under the Hood
+
+HTTP/1.1 behaves like a single-lane tollbooth: six parallel TCP connections per origin, each waiting for one response to finish before starting the next. HTTP/2 turns that tollbooth into a multi-lane highway where the network stack interleaves numbered binary frames from CSS, JS, and images discovered by the [Preload Scanner](/concepts/preload-scanner-hints).
+
+1. On connection setup, the client and server negotiate `h2` via ALPN over TLS or `h3` via `Alt-Svc` over QUIC.
+2. Each HTTP request allocates a unique numeric stream ID and encodes headers through HPACK (HTTP/2) or QPACK (HTTP/3).
+3. Under HTTP/2, the OS kernel still delivers one ordered TCP byte stream, so a single lost packet blocks all streams until retransmission completes.
+4. Under HTTP/3, QUIC manages stream reassembly in user space per stream, keeping the [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline) fed with unblocked CSS and script chunks.
+
+```http
+HTTP/2 200
+alt-svc: h3=":443"; ma=86400
+priority: u=1, i
+content-type: text/css; charset=utf-8
+cache-control: public, max-age=31536000, immutable
+```
+
+## Problem Genealogy
+
+- **1999 (HTTP/1.1 Pipelining)**: Allowed queued requests on one socket, but responses still arrived strictly in FIFO order; proxies routinely broke it.
+- **2015 (RFC 7540 HTTP/2)**: Introduced binary framing and HPACK compression, killing domain sharding, though TCP still stalled every stream on 1% packet loss.
+- **2022 (RFC 9114 HTTP/3)**: Moved transport to QUIC over UDP, finally burying the "just open six sockets to `static4.example.com`" era.
+
+## Production Pitfalls
+
+- **Legacy domain sharding**: Splitting bundles across `cdn1` and `cdn2` forces extra TLS handshakes and breaks stream prioritization across assets.
+- **Corporate UDP blocks**: Roughly 3–5% of enterprise firewalls drop UDP port 443; servers must keep HTTP/2 over TCP active as an automatic fallback.
+- **When not to use HTTP/3**: On internal microservice meshes or low-loss fiber links where kernel TCP offload outperforms user-space QUIC CPU overhead.

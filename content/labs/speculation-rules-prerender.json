@@ -1,0 +1,38 @@
+{
+  "type": "step-machine",
+  "id": "speculation-rules-prerender",
+  "title": "Speculation Rules: Hidden Prerender to Activation",
+  "description": "Trace how moderate eagerness prerenders a target route in a hidden context and swaps it on click.",
+  "steps": [
+    {
+      "label": "1. Pointer Hover (moderate eagerness)",
+      "description": "User hovers over /checkout for 200ms. Speculation Rules queues a background prerender.",
+      "codeHighlight": "<script type=\"speculationrules\">{\"prerender\":[{\"eagerness\":\"moderate\"}]}</script>",
+      "state": {
+        "documentPrerendering": true,
+        "hiddenTabAllocated": true,
+        "visibleToUser": false
+      }
+    },
+    {
+      "label": "2. Background Render & Restricted APIs",
+      "description": "Engine parses HTML, fetches CSS/JS, and paints in memory. Permissions, audio, and modals are deferred.",
+      "codeHighlight": "if (document.prerendering) { /* defer analytics */ }",
+      "state": {
+        "domParsed": true,
+        "lcpPrepared": true,
+        "analyticsFired": false
+      }
+    },
+    {
+      "label": "3. Click & Atomic Activation",
+      "description": "User clicks the link. The hidden context swaps in at 0ms network wait and fires prerenderingchange.",
+      "codeHighlight": "document.addEventListener('prerenderingchange', sendPageview);",
+      "state": {
+        "documentPrerendering": false,
+        "activationLcpMs": 8,
+        "analyticsFired": true
+      }
+    }
+  ]
+}

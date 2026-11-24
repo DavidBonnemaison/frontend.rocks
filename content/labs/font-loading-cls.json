@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "font-loading-cls",
+  "title": "Font Fallback: Unadjusted Swap vs Metric-Matched Swap",
+  "description": "Compare raw font-display: swap reflow against size-adjust + ascent-override metric alignment.",
+  "before": {
+    "label": "Unadjusted Fallback (Causes CLS on Swap)",
+    "code": "@font-face {\n  font-family: 'BrandSans';\n  src: url('/fonts/brand.woff2') format('woff2');\n  font-display: swap;\n}",
+    "metrics": {
+      "lines": 5,
+      "reflows": "CLS 0.18 on glyph swap",
+      "dependencies": "System Arial fallback mismatch"
+    },
+    "previewNote": "Fallback Arial wraps differently, shifting every paragraph below the heading."
+  },
+  "after": {
+    "label": "Metric-Matched Fallback (Near-Zero CLS)",
+    "code": "@font-face {\n  font-family: 'BrandSansFallback';\n  src: local('Arial');\n  size-adjust: 104.2%;\n  ascent-override: 92%;\n}",
+    "metrics": {
+      "lines": 6,
+      "reflows": "CLS 0.002 on glyph swap",
+      "dependencies": "CSS Fonts Level 5 descriptors"
+    },
+    "previewNote": "Fallback glyphs occupy the exact bounding box of the incoming webfont."
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "concept_id": "css-scroll-snap",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-scroll-snap-1/",
+      "spec_section": "4. Scroll Snap Model",
+      "quote": "Scroll snap positions are offsets within the scroll container’s scrollable overflow area where scrolling is encouraged or required to come to rest."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "69+",
+    "firefox": "68+",
+    "safari": "11+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Layout Snap-Point Collection",
+      "Compositor Fling Prediction",
+      "Snap Alignment"
+    ],
+    "mechanism_summary": "Layout collects child snap rects; the Compositor Thread predicts fling velocity and lands cleanly on the nearest snap point."
+  },
+  "production_failures": [
+    {
+      "symptom": "Users cannot scroll past tall content inside a mandatory scroll-snap section",
+      "root_cause": "scroll-snap-type: y mandatory forces the viewport to snap back to the section’s single alignment edge.",
+      "mitigation": "Use scroll-snap-type: y proximity for variable-height sections, reserving mandatory for uniform carousels."
+    },
+    {
+      "symptom": "Anchor links (#section-2) land tucked underneath a sticky header",
+      "root_cause": "Scroll container lacks scroll-padding-top matching the sticky header height.",
+      "mitigation": "Set scroll-padding-top: 4rem on the scroll container (works for both #anchor jumps and scroll-snap)."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-scroll-snap-1/",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_scroll_snap"
+  ]
+}

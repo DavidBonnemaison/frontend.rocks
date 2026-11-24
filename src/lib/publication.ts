@@ -1,0 +1,70 @@
+import type { PageProofStatus } from './schemas';
+import type { LoadedConcept, LoadedAutopsy } from './content-loader';
+import type { ProductionSymptomConfig } from '../config/symptoms';
+import type { VsPair } from './vs-pairs';
+
+/**
+ * Single place that decides whether a page is published.
+ * `pageId` is ignored for now: a later epic replaces the body with the effective
+ * page status, which needs the id.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function isPublished(status: PageProofStatus, pageId?: string): boolean {
+  return status === 'proven';
+}
+
+export function publishedConcepts(all: LoadedConcept[]): LoadedConcept[] {
+  return all.filter((c) => isPublished(c.frontmatter.proof_status, c.frontmatter.id));
+}
+
+export function publishedAutopsies(all: LoadedAutopsy[]): LoadedAutopsy[] {
+  return all.filter((a) => isPublished(a.frontmatter.proof_status, a.frontmatter.id));
+}
+
+export function publishedSymptoms(all: ProductionSymptomConfig[]): ProductionSymptomConfig[] {
+  return all.filter((s) => isPublished(s.proof_status, s.slug));
+}
+
+export function publishedVsPairs(all: VsPair[]): VsPair[] {
+  return all.filter((p) => isPublished(p.proof_status, p.slug));
+}
+
+/** A listing page is indexable when it shows at least one published item. */
+export function isListingIndexable(publishedCount: number): boolean {
+  return publishedCount > 0;
+}
+
+/** Next.js `robots` metadata for a detail page. */
+export function robotsForStatus(
+  status: PageProofStatus,
+  pageId?: string
+): { index: boolean; follow: boolean } {
+  return { index: isPublished(status, pageId), follow: true };
+}
+
+/** Status of a /vs/ pair: published only when both concepts are published. */
+export function vsPairStatus(
+  primary: LoadedConcept,
+  secondary: LoadedConcept
+): PageProofStatus {
+  return isPublished(primary.frontmatter.proof_status, primary.frontmatter.id) &&
+    isPublished(secondary.frontmatter.proof_status, secondary.frontmatter.id)
+    ? 'proven'
+    : 'unverified';
+}
+
+/**
+ * Guard: until the proof engine exists, a page can be `proven` only if its
+ * `content/claims/<page-id>.claims.json` file exists. Returns error messages.
+ */
+export function checkProvenGuard(
+  pages: Array<{ id: string; proof_status: PageProofStatus }>,
+  claimsFileExists: (pageId: string) => boolean
+): string[] {
+  return pages
+    .filter((p) => isPublished(p.proof_status, p.id) && !claimsFileExists(p.id))
+    .map(
+      (p) =>
+        `[proof] ${p.id} is marked proven but has no content/claims/${p.id}.claims.json`
+    );
+}

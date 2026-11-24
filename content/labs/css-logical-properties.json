@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "css-logical-properties",
+  "title": "Physical left/right vs Logical inline-start/end",
+  "description": "Compare how physical vs logical properties behave under dir=\"rtl\".",
+  "before": {
+    "label": "Physical Properties (Breaks RTL)",
+    "code": ".callout {\n  border-left: 4px solid #3b82f6;\n  padding-left: 1rem;\n  text-align: left;\n}",
+    "metrics": {
+      "lines": 5,
+      "reflows": "0 (requires [dir=\"rtl\"] overrides)",
+      "dependencies": "Duplicate RTL CSS"
+    },
+    "previewNote": "Border and padding stay stuck on the left in Arabic/Hebrew."
+  },
+  "after": {
+    "label": "Logical Properties (Auto-Flips)",
+    "code": ".callout {\n  border-inline-start: 4px solid #3b82f6;\n  padding-inline-start: 1rem;\n  text-align: start;\n}",
+    "metrics": {
+      "lines": 5,
+      "reflows": "0 (native Style mapping)",
+      "dependencies": "0 extra CSS"
+    },
+    "previewNote": "Automatically mirrors to the right when dir=\"rtl\" is set."
+  }
+}

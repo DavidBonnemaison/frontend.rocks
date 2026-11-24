@@ -1,0 +1,61 @@
+---
+id: bfcache-navigation
+title: Back/Forward Cache (bfcache)
+domain: network-perf
+maturity_status: baseline-widely
+summary_tldr: "In-memory cache snapshotting the full JS heap and DOM tree on outbound navigation to restore the page instantaneously on Back/Forward."
+relations:
+  - target_id: event-loop-tasks-microtasks
+    type: under_the_hood
+    note: "While cached in bfcache, JS tasks and timers are frozen and resumed upon restoration."
+  - target_id: browser-rendering-pipeline
+    type: under_the_hood
+    note: "Freezes the full DOM, layout tree, and compositor state in RAM to restore frames without re-parsing."
+sources:
+  - "https://web.dev/articles/bfcache"
+  - "https://developer.mozilla.org/en-US/docs/Glossary/bfcache"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "pageshow"
+  - "unload"
+  - "pagehide"
+  - "persisted"
+---
+
+## TL;DR
+
+*bfcache* freezes a page's entire state in RAM (DOM, V8 heap, scroll position) when the user navigates away. Pressing Back/Forward restores the page in milliseconds without network requests or re-running JS.
+
+## Interactive Lab
+
+Step through the freeze and restoration lifecycle of a page in bfcache using `StepMachineLab`.
+
+## Under the Hood
+
+Unlike the HTTP disk cache (which only saves raw response bytes and forces a full rebuild), bfcache acts like a laptop's hibernate-to-RAM: the entire DOM, [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline) state, and V8 heap are snapshotted intact and thawed on return.
+
+1. On outbound navigation, the engine checks for blockers (`unload` listeners, open WebSockets/IndexedDB transactions, `Cache-Control: no-store`).
+2. If eligible, the engine fires `pagehide` with `event.persisted === true` and freezes all [Event Loop](/concepts/event-loop-tasks-microtasks) task queues and timers.
+3. On Back/Forward navigation, the memory snapshot is thawed and `pageshow` (`event.persisted === true`) fires without re-firing `DOMContentLoaded` or `load`.
+
+```js
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    // Page was thawed from bfcache: refresh volatile auth or cart state
+    refreshSessionBanner();
+  }
+});
+```
+
+## Problem Genealogy
+
+- **2005 (HTTP Cache only)**: Back navigation re-parsed HTML and re-executed JS from disk cache.
+- **2019 (Multi-process bfcache)**: Re-architected in Chrome/Firefox/Safari to isolate and freeze each origin in memory.
+- **2024+ (`unload` Deprecation)**: Mandatory migration from `unload` to `pagehide` / `visibilitychange`, because nothing says "legacy enterprise telemetry" quite like a 3-line `unload` script nuking instant back-navigation site-wide.
+
+## Production Pitfalls
+
+- **`unload` listener in a third-party script**: A single `window.addEventListener('unload', ...)` disables bfcache across the entire site.
+- **Stale state on return**: A shopping cart or CSRF token restored from bfcache remains frozen; listen to `pageshow` (`if (e.persisted)`) to refresh volatile data.
+- **When not to use bfcache**: On banking or authenticated views displaying sensitive data after logout, enforce `Cache-Control: no-store` or clear sensitive DOM on `pagehide`.

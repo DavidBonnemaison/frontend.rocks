@@ -1,0 +1,43 @@
+{
+  "concept_id": "optimistic-ui-rollback",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://react.dev/reference/react/useOptimistic",
+      "spec_section": "React useOptimistic: Speculative Mutation Overlay",
+      "quote": "useOptimistic lets you show a different state while an async action is underway, automatically reverting to the authoritative base state when the action settles."
+    },
+    {
+      "source_url": "https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates",
+      "spec_section": "TanStack Query: Snapshot & Rollback",
+      "quote": "Cancel outgoing refetches, snapshot the previous cache value, apply the optimistic update, and roll back to the snapshot on error."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+ (Client State Pattern)",
+    "firefox": "1+ (Client State Pattern)",
+    "safari": "1+ (Client State Pattern)"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Cancel In-Flight Refetches", "Snapshot Confirmed State", "Apply Speculative Overlay", "Commit or Rollback on Settlement"],
+    "mechanism_summary": "Separates confirmed server state from an ephemeral speculative overlay, using mutation sequence IDs and rollback snapshots to preserve consistency under out-of-order network responses."
+  },
+  "production_failures": [
+    {
+      "symptom": "User toggles Like ON then OFF quickly, and the UI flickers back to ON 400ms later",
+      "root_cause": "An earlier in-flight refetch or slower first POST resolved after the second mutation and overwrote newer optimistic state.",
+      "mitigation": "Cancel pending queries before mutating, tag mutations with monotonic sequence IDs, and only reconcile on the latest settled mutation."
+    },
+    {
+      "symptom": "Clicking an optimistically created item opens a 404 page",
+      "root_cause": "Optimistic list insertion assigned a temporary client UUID before the server returned the real database ID, and navigation used the temporary ID.",
+      "mitigation": "Disable deep-link navigation on pending items or route via stable client-generated idempotency keys accepted by the server."
+    }
+  ],
+  "sources": [
+    "https://react.dev/reference/react/useOptimistic",
+    "https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates",
+    "https://web.dev/articles/inp"
+  ]
+}

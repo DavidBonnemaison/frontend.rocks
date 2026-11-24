@@ -1,0 +1,38 @@
+{
+  "type": "step-machine",
+  "id": "service-worker-lifecycle",
+  "title": "Service Worker: Install, Waiting & Activation",
+  "description": "Step through how a new sw.js version installs in parallel, waits for open tabs, and claims control.",
+  "steps": [
+    {
+      "label": "1. Installing (Precache)",
+      "description": "Browser detects a byte-different sw.js. install event runs and waits for event.waitUntil(caches.open...).",
+      "codeHighlight": "self.addEventListener('install', (e) => e.waitUntil(precache()));",
+      "state": {
+        "workerV1": "activated (controlling Tab 1)",
+        "workerV2": "installing",
+        "tab1ServedBy": "v1"
+      }
+    },
+    {
+      "label": "2. Waiting (Tab Ownership Lock)",
+      "description": "v2 finishes installing, but pauses in 'waiting' because Tab 1 is still open under v1.",
+      "codeHighlight": "// v2 waits until all v1-controlled tabs close or skipWaiting() runs",
+      "state": {
+        "workerV1": "activated",
+        "workerV2": "installed (waiting)",
+        "tab1ServedBy": "v1"
+      }
+    },
+    {
+      "label": "3. Activating & Fetch Intercept",
+      "description": "Old tabs close (or user clicks Reload). v2 activates, purges old caches, and intercepts fetch.",
+      "codeHighlight": "self.addEventListener('activate', (e) => e.waitUntil(pruneOldCaches()));",
+      "state": {
+        "workerV1": "redundant",
+        "workerV2": "activated",
+        "tab1ServedBy": "v2"
+      }
+    }
+  ]
+}

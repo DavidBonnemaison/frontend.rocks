@@ -1,0 +1,63 @@
+---
+id: js-memory-leaks-retainers
+title: Memory Leaks, Retainers, and Detached DOM Trees
+domain: js-runtime
+maturity_status: baseline-widely
+summary_tldr: "Unintended strong reference paths from GC roots—often via global listeners, timers, or shared closure Contexts—that pin dead objects and detached DOM trees."
+relations:
+  - target_id: js-garbage-collection
+    type: requires
+    note: "Garbage collection reclaims only unreachable subgraphs; any remaining retainer path pins the entire cluster."
+  - target_id: execution-context-call-stack
+    type: requires
+    note: "Shared heap Context objects created by lexical closures bind sibling variables together."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Memory_management"
+  - "https://developer.chrome.com/docs/devtools/memory-problems/heap-snapshots"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "memory leak"
+  - "detached dom"
+  - "closure context"
+  - "weakmap"
+---
+
+## TL;DR
+
+A memory leak in JavaScript is a forgotten retainer path from a GC root, not missing `free()` calls. Forgotten `window` listeners, unbounded caches, and V8's shared closure `Context` objects routinely pin megabytes of detached DOM trees beyond [Garbage Collection](/concepts/js-garbage-collection).
+
+## Interactive Lab
+
+Adjust uncleaned listeners, shared closure contexts, and `WeakMap` usage in `ConstraintSimulatorLab`.
+
+## Under the Hood
+
+Think of a retainer path like a single stray carabiner clipping a retired climbing rope to the anchor bolt: the entire coil stays suspended off the ground until someone unclips that last link.
+
+1. **Detached DOM Subtrees**: Removing a node with `el.remove()` detaches it from the document, yet a single JS reference to any child node pins the entire parent-child subtree.
+2. **Shared Closure Contexts**: V8 allocates one `Context` object per lexical scope; if Closure A is stored globally while Closure B captures a 10 MB buffer, Closure A keeps the buffer alive.
+3. **WeakMap Escape Hatch**: `WeakMap` keys hold weak references that do not block [Garbage Collection](/concepts/js-garbage-collection) and avoid breaking [bfcache Navigation](/concepts/bfcache-navigation).
+
+```js
+function attachTooltip(target) {
+  const controller = new AbortController();
+  const onMove = () => target.classList.add('active');
+  window.addEventListener('pointermove', onMove, {
+    signal: controller.signal,
+  });
+  return () => controller.abort();
+}
+```
+
+## Problem Genealogy
+
+- **2006 (IE6 Circular DOM-COM Leaks)**: Native COM wrappers and JS objects formed uncollectable reference cycles.
+- **2015 (ES6 `WeakMap` & `WeakSet`)**: Keyed metadata stores that release entries automatically when DOM nodes disappear.
+- **2021 (`AbortController` for `addEventListener`)**: Single-token teardown for multiple listeners without storing callback references.
+
+## Production Pitfalls
+
+- **Console Logging Objects**: `console.log(largeObj)` in production retains a reference in the DevTools console buffer for the lifetime of the tab.
+- **Unbounded LRU-less Caches**: Module-level `Map` caches keyed by request URL grow monotonically in long-lived SPAs.
+- **When not to use `WeakMap`**: Never store primitive keys (strings, numbers) or entries you need to iterate over, `WeakMap` only accepts objects/symbols and has no `.keys()`.

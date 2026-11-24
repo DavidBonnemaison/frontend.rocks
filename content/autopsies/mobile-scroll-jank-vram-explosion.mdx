@@ -1,0 +1,105 @@
+---
+id: mobile-scroll-jank-vram-explosion
+case_number: 9
+title: "Autopsy #09: Smooth on the MacBook, Dead on the Bus"
+symptom: "A card grid scrolls at 60 FPS on MacBook Pro but stutters at 11 FPS and OOM-kills the browser tab on mid-range Android."
+failure_mode: memory-exhaustion
+format: narrative
+case_type: composite
+cast:
+  - karim
+  - ines
+  - julie
+traversed_concepts:
+  - concept_id: paint-rasterization
+    step_order: 1
+    role_in_chain: "Shadow and border-radius invalidations force CPU software rasterization across hundreds of card tiles per scroll frame."
+  - concept_id: gpu-compositor-layers
+    step_order: 2
+    role_in_chain: "Blanket will-change: transform promotes 80 cards into permanent GPU textures, exhausting mobile tile memory."
+  - concept_id: css-containment
+    step_order: 3
+    role_in_chain: "Without layout and paint containment, expanding one card badge invalidates the entire document tree."
+  - concept_id: content-visibility
+    step_order: 4
+    role_in_chain: "Offscreen cards remain in the active style, layout, and paint pipeline despite sitting 4,000px below the fold."
+  - concept_id: scroll-driven-animations
+    step_order: 5
+    role_in_chain: "A main-thread scroll listener mutates inline styles per frame instead of running compositor-bound scroll timelines."
+case_file:
+  trigger: "Shipped an 80-card grid redesign with multi-stop shadows, `backdrop-filter: blur(12px)`, and a JS parallax banner"
+  symptom: "Android scroll dropped to 11 FPS and 14% of mobile tabs crashed with `RESULT_CODE_HUNG` or GPU OOM within 30 s"
+  root_cause: "80 promoted GPU layers allocated >380 MB of VRAM upfront while JS scroll listeners forced per-frame rasterization"
+  bad_fixes:
+    - label: "`will-change: transform` on all 80 cards"
+      outcome: "Stayed 60 FPS on Karim's 16 GB MacBook; doubled the OOM crash rate on Inès's Moto G"
+  fix: "Remove `will-change`, isolate cards with `contain: layout paint` and `content-visibility: auto`, and use `animation-timeline: scroll()`"
+  how_to_spot: "DevTools → Layers shows 80+ individual compositor layers eating >350 MB on initial load"
+  deleted: "Blanket `will-change: transform; transform: translateZ(0)`, main-thread JS parallax `scroll` listener"
+reading_time_min: 7
+sources:
+  - "https://developer.chrome.com/docs/css-ui/content-visibility"
+  - "https://drafts.csswg.org/css-contain-2/"
+  - "https://drafts.csswg.org/scroll-animations-1/"
+last_verified_at: "2026-11-17"
+proof_status: unverified
+---
+
+## Sixty frames per second on ProMotion
+
+Design shipped a refresh of our 80-card catalog grid: layered drop shadows, `backdrop-filter: blur(12px)` on status badges, rounded corners, and a parallax hero banner driven by a `scroll` listener. During design review on Karim's M3 MacBook Pro with a 120 Hz ProMotion display, scrolling was silk at 60 FPS and nobody opened Chrome's Layers panel.
+
+Four minutes after mobile rollout, Android telemetry fell off a cliff. Frame rates dropped to 11 FPS on Moto G and Pixel 6a phones, main-thread frame times jumped past 88 milliseconds, and 14% of mobile tabs died with `RESULT_CODE_HUNG` or a GPU process OOM crash within thirty seconds of scrolling. Inès plugged the Moto G into her laptop over USB, opened `chrome://inspect`, and watched the renderer memory graph climb past 380 MB before the tab turned into a gray sad-face icon.
+
+## Doubling the crash rate with hardware acceleration
+
+Karim figured the phone was falling back to software [paint rasterization](/concepts/paint-rasterization) because the cards lacked GPU promotion. He added two lines to `.product-card` so every card would get its own hardware layer:
+
+```css
+.product-card {
+  will-change: transform;
+  transform: translateZ(0);
+}
+```
+
+On his 16 GB unified-memory MacBook, it stayed at 60 FPS. On Inès's Moto G, the tab crash rate doubled.
+
+Promoting all 80 cards at once forced Blink to allocate 80 separate [GPU compositor layers](/concepts/gpu-compositor-layers) in VRAM on initial load. Each card's backing store, multi-stop shadow buffer, and `backdrop-filter` readback surface consumed roughly 4.5 MB of GPU memory. On a desktop with 16 GB of unified memory, 380 MB of card textures is a rounding error. On a mid-range Android phone sharing memory between the OS, the renderer, and the GPU, allocating 80 permanent textures before the user's thumb even touches the glass pushes the GPU process straight into an OOM kill. Making every card its own layer also meant the compositor had to upload 80 textures across the bus before the first scroll could even settle.
+
+## Why the main thread was still sweating
+
+Even before `will-change`, our parallax hero banner was running a `window.addEventListener('scroll', ...)` handler that read `window.scrollY` and mutated inline `transform` styles on every scroll tick. Combined with `backdrop-filter: blur(12px)` sitting over scrolling cards, Blink had to re-rasterize blurred badges and multi-stop shadows on the CPU every frame, keeping the main thread pinned above 88 ms per frame.
+
+<CausalChainStepper />
+
+Julie stripped `will-change: transform` off `.product-card`, replaced `backdrop-filter: blur(12px)` on the 80 repeating badges with a crisp semi-opaque background, and replaced the JS parallax listener with a CSS [scroll-driven animation](/concepts/scroll-driven-animations) (`animation-timeline: scroll()`), moving the parallax transform onto the compositor thread with zero JavaScript per frame.
+
+## Containment and skipping offscreen cards
+
+Next, we isolated each card with [CSS containment](/concepts/css-containment) (`contain: layout paint`) so a badge hover, image load, or stock-count update inside one card could not invalidate layout or paint across the entire grid. Without explicit containment, Blink assumes any style change inside card 12 could alter the geometry or paint bounds of its siblings, forcing a broad layout walk down the list.
+
+Then we added [`content-visibility: auto`](/concepts/content-visibility) on `.product-card` so Blink skipped style, layout, and paint work for the 65 cards sitting 4,000 px below the fold until the user actually scrolled near them. Initial load memory on the Moto G dropped from 380 MB to 64 MB, and scroll jumped from 11 FPS back to 58 FPS. Even on rapid flings, the compositor stayed responsive because offscreen cards were no longer competing for tile rasterization budget.
+
+<FailureSimulator />
+
+## The postage-stamp scrollbar trap
+
+First try with `content-visibility: auto`: the scrollbar thumb shrank to the size of a postage stamp, and every time Inès scrolled down a screen, the scrollbar jumped backward and the page height bounced.
+
+```css
+.product-card {
+  contain: layout paint;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
+}
+```
+
+Without `contain-intrinsic-size`, Blink treats every skipped offscreen card as `0px` tall. The document initially thinks it is only as tall as the first visible row, then inflates by 320 px per card as you scroll down, pulling the scroll position out from under your thumb. Adding `contain-intrinsic-size: auto 320px` gave Blink a stable placeholder height and remembered each card's real measured height once rendered.
+
+## What stayed in the codebase
+
+<CaseFile />
+
+A modern laptop GPU forgives sins that kill a 200-euro phone in four seconds.
+
+Our team rule is simple now: nobody is allowed to say `will-change` out loud without scrolling the page on the phone from Inès's drawer first. Tab crashes dropped from 14% to `0.02%` within an hour of the fix going live, and the Moto G went back to sleeping peacefully in her drawer until the next CSS experiment.

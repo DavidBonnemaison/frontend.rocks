@@ -1,0 +1,59 @@
+---
+id: fine-grained-signals
+title: Signals and Fine-Grained Reactivity (Reactive Graph)
+domain: state-architecture
+maturity_status: interop-experimental
+summary_tldr: "Reactive model built on a directed acyclic dependency graph (Signal, Computed, Effect) updating only subscribed DOM nodes without virtual tree diffing."
+relations:
+  - target_id: event-loop-tasks-microtasks
+    type: requires
+    note: "Reactive effect batching commonly relies on a microtask flush."
+  - target_id: finite-state-machines-ui
+    type: contrasts_with
+    note: "Signals propagate arbitrary reactive value changes, whereas finite state machines enforce explicit transition guards."
+sources:
+  - "https://github.com/tc39/proposal-signals"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "signals"
+  - "TC39"
+  - "virtual dom"
+  - "fine-grained"
+---
+
+## TL;DR
+
+A *Signal* wraps an observable value that automatically tracks reads inside a `computed` or `effect`. Writes propagate updates only to the exact nodes reading that value, in O(1) relative to DOM size.
+
+## Interactive Lab
+
+Compare state update propagation between Virtual DOM (subtree re-render) and Signals in `PatternComparatorLab`.
+
+## Under the Hood
+
+1. **Automatic Tracking**: When a `computed` or `effect` runs, it pushes its context onto a global tracking stack; each `signal.get()` adds a `signal -> observer` edge.
+2. **Push-Pull Propagation**: Calling `signal.set(v)` marks descendants `Dirty` (Push) without eagerly recomputing lazy derived values, avoiding wasted [V8 Hidden Classes](/concepts/v8-hidden-classes-ic) allocations on unused branches.
+3. **Lazy Evaluation (Pull)**: A `computed` only recomputes when read, and short-circuits downstream effects (often flushed on the [Event Loop](/concepts/event-loop-tasks-microtasks) microtask checkpoint) if its new value equals the previous one.
+
+```js
+const count = signal(1);
+const doubled = computed(() => count.get() * 2);
+
+effect(() => {
+  // Re-runs ONLY when `doubled` actually changes
+  badgeEl.textContent = String(doubled.get());
+});
+```
+
+## Problem Genealogy
+
+- **2010 (KnockoutJS Observables)**: Early reactive graph with auto-tracking, but without glitch-free guarantees.
+- **2013 (React Virtual DOM)**: Full subtree re-rendering plus diff reconciliation to simplify the mental model, trading CPU cycles for a `useEffect` dependency array that everyone eventually misconfigures.
+- **2024+ (TC39 Signals Proposal)**: Standardizing a glitch-free reactive primitive shared across frameworks.
+
+## Production Pitfalls
+
+- **Effects writing to tracked signals (infinite loop)**: An `effect` mutating a signal it reads re-triggers the graph indefinitely until stack overflow.
+- **Losing reactivity via destructuring**: Extracting `const v = signal.get()` outside the tracked execution scope breaks dynamic subscription.
+- **When not to use Signals**: For simple forms or mostly static pages, native DOM primitives avoid unnecessary abstraction overhead; for multi-step workflows with illegal state combinations, pair or replace raw signals with [Finite State Machines](/concepts/finite-state-machines-ui).

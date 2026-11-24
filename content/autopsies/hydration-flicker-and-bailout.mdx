@@ -1,0 +1,109 @@
+---
+id: hydration-flicker-and-bailout
+case_number: 6
+title: "Autopsy #06: The Search Bar That Ate the First Three Letters"
+symptom: "SSR page paints instantly, flickers violently when JS boots, and wipes user input in form fields."
+failure_mode: hydration-desync
+format: narrative
+case_type: composite
+cast:
+  - thomas
+  - julie
+  - nadia
+traversed_concepts:
+  - concept_id: streaming-ssr-flushing
+    step_order: 1
+    role_in_chain: "Server streams HTML chunks early with server-computed timestamps and default filter state before JS loads."
+  - concept_id: resumability-vs-hydration
+    step_order: 2
+    role_in_chain: "Traditional hydration must re-execute the entire component tree on the client to attach event listeners."
+  - concept_id: hydration-mismatch-mechanics
+    step_order: 3
+    role_in_chain: "A text or attribute mismatch forces the framework to discard the SSR DOM subtree and re-render from scratch."
+  - concept_id: url-as-state-store
+    step_order: 4
+    role_in_chain: "Uncontrolled query-param parsing on the client diverges from server-rendered defaults during initial boot."
+  - concept_id: client-side-router-internals
+    step_order: 5
+    role_in_chain: "Router reconciliation replaces the bailed-out DOM nodes, destroying focus and typed input in form fields."
+case_file:
+  trigger: "Added a `Updated today at ...` timestamp via `new Date().toLocaleTimeString()` right above `<input name=\"q\">`"
+  symptom: "Page painted at 320 ms, let users type `cha`, then wiped the input and jumped 0.28 CLS at 1.4 s"
+  root_cause: "Timezone text mismatch and client-only `window.location.search` branching forced React to bail out and replace the `<input>`"
+  bad_fixes:
+    - label: "`suppressHydrationWarning` + `if (!mounted) return null`"
+      outcome: "Silenced console warnings; CLS jumped to 0.28 because the search bar vanished from SSR HTML"
+  fix: "Pass raw ISO timestamp and URL search params from the server, format local time post-hydration, and use `defaultValue`"
+  how_to_spot: "Throttle network to Slow 4G, type into `<input>` before bundle loads, and watch the DOM node ID change on hydration"
+  deleted: "`if (!mounted) return null` wrapper, client-only `window.location.search` branch"
+reading_time_min: 7
+sources:
+  - https://react.dev/reference/react-dom/client/hydrateRoot
+  - https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams
+  - https://qwik.dev/docs/concepts/resumable/
+  - https://web.dev/articles/rendering-on-the-web
+last_verified_at: "2026-11-17"
+proof_status: unverified
+---
+
+## One small timestamp above the search bar
+
+Thomas asked for a small "Updated today at 14:02" note in the catalog header, sitting right above `<input name="q">`, so buyers could tell the inventory feed was fresh. Julie wrote `new Date().toLocaleTimeString()` directly in the header component and centered it above the search input.
+
+Our production servers run in UTC. Julie's laptop in London during winter also runs in UTC. Zero warnings in local dev, zero warnings in staging, and every Playwright check passed on the CI runner, which also runs in UTC. We merged the PR before lunch.
+
+Thirty minutes after deploy, Nadia posted a screen recording from a customer in New York. The page appeared at 320 milliseconds, the customer clicked the search bar and typed `cha`, and at 1.4 seconds the search bar blinked, lost focus, and came back completely empty. It had eaten the first three letters and left the cursor sitting nowhere.
+
+## Hiding the warning, breaking the layout
+
+Julie spotted the hydration mismatch warning the moment she switched her browser timezone to `America/New_York` in DevTools Sensors. Her first fix was two edits: `suppressHydrationWarning` on the timestamp `<span>`, and a `mounted` guard around the search bar so the client would not fight the server.
+
+```tsx
+const [mounted, setMounted] = useState(false);
+useEffect(() => setMounted(true), []);
+if (!mounted) return null;
+```
+
+The console was spotless. Not a single warning remained.
+
+In production, CLS jumped to 0.28 and mobile search abandonment climbed 9%. Because `!mounted` returned `null` during SSR, the search bar was no longer in the initial HTML at all. At 1.4 seconds, when the JavaScript bundle finished booting, the search bar popped into existence above the catalog and shoved the entire page downward just as people were reaching for the first product card.
+
+## What happened between 320 ms and 1.4 s
+
+Our [streaming SSR](/concepts/streaming-ssr-flushing) pipeline flushed the header HTML chunk at 320 milliseconds. That HTML contained a real, working browser `<input>` element, so the user could focus it and type `cha` long before the JavaScript bundle finished downloading over a mobile connection.
+
+Unlike [resumable architectures](/concepts/resumability-vs-hydration) that serialize event listeners into HTML attributes and resume from where the server left off, React's [hydration](/concepts/hydration-mismatch-mechanics) has to re-execute the component tree on the client at 1.4 seconds and compare the virtual tree against the existing DOM node by node.
+
+Two things diverged on that first client pass. First, the timestamp string differed between `14:02:00` in UTC on the server and `9:02:00 AM` in New York or `15:02:00` in Paris on the client. Second, the parent header component also read `window.location.search` directly instead of reading [URL state](/concepts/url-as-state-store) passed from the server, which sent the client down a different conditional branch whenever query parameters were present.
+
+When React hit the mismatch during hydration reconciliation, the [client-side router](/concepts/client-side-router-internals) wrapper and hydration boundary bailed out of reusing the subtree, tore down the existing DOM nodes (including the `<input>` holding `cha` and the user's focus), and mounted fresh empty nodes from scratch.
+
+<CausalChainStepper />
+
+<FailureSimulator />
+
+## Aligning the server and client trees
+
+The real fix removed the divergence at the root. We passed both the raw ISO timestamp and the parsed URL search params from the server as initial props so the first client render produced the exact same DOM tree as SSR, then formatted the local time inside `useEffect` into a fixed-width placeholder so the header never shifted.
+
+That eliminated the subtree bailout. React matched the existing `<input>` node by reference, kept it in the DOM, and preserved focus across the hydration boundary. We also added a Playwright check that throttles the bundle response, types `cha` into the search bar before JavaScript boots, and asserts that all three characters and focus survive once hydration completes. We thought we were done.
+
+## Why controlled inputs still wiped the text
+
+First try after removing the mismatch: when we tested on Slow 4G and typed `cha` at 500 ms before the bundle loaded, the letters still vanished at 1.4 seconds.
+
+```tsx
+// First try: controlled input initialized to "" overwrites pre-hydration typing
+const [query, setQuery] = useState(initialQuery ?? '');
+return <input name="q" value={query} onChange={(e) => setQuery(e.target.value)} />;
+```
+
+Because `value={query}` was controlled and `initialQuery` was `''`, React's hydration pass synced the DOM `.value` property to `''` and erased everything typed during the 1-second gap. Switching to `defaultValue={initialQuery}` (and reading `inputRef.current.value` on mount to seed client state if the user had already typed before hydration) left the user's early keystrokes untouched.
+
+## What stayed in the codebase
+
+<CaseFile />
+
+Fast SSR gives the user a one-second head start on your JavaScript; hydration should not confiscate what they typed during that second.
+
+Thomas still has his "Updated today" badge in the header, and in Paris it even shows Paris time. More importantly, CLS dropped back to `0.01` and buyers on mobile connections no longer lose their search query mid-word.

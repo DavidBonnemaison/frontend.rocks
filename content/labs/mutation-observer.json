@@ -1,0 +1,51 @@
+{
+  "type": "step-machine",
+  "id": "mutation-observer",
+  "title": "Batched MutationRecord Queue & Microtask Flush",
+  "description": "Trace how synchronous DOM edits batch into one MutationObserver microtask before Paint.",
+  "steps": [
+    {
+      "label": "1. Synchronous DOM Mutations",
+      "description": "Script appends 3 nodes and toggles data-state in a loop; no callback fires mid-loop.",
+      "codeHighlight": "list.append(a, b, c); list.dataset.state = 'ready';",
+      "state": {
+        "callStack": ["renderList()"],
+        "recordQueue": ["childList(+3)", "attributes(data-state)"],
+        "callbackFired": false
+      },
+      "visualNodes": [
+        { "id": "dom", "label": "DOM Writes (4)", "status": "active" },
+        { "id": "queue", "label": "Record Queue (2)", "status": "idle" },
+        { "id": "micro", "label": "Microtask Flush", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Microtask Checkpoint Delivery",
+      "description": "Call Stack empties; engine delivers both batched MutationRecords in one microtask before Paint.",
+      "codeHighlight": "const mo = new MutationObserver((records) => ...);",
+      "state": {
+        "callStack": ["moCallback(records[2])"],
+        "recordQueue": [],
+        "callbackFired": true
+      },
+      "visualNodes": [
+        { "id": "dom", "label": "DOM Writes (4)", "status": "done" },
+        { "id": "queue", "label": "Record Queue (0)", "status": "done" },
+        { "id": "micro", "label": "Microtask Flush", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Render Proceeds",
+      "description": "Observer finishes without re-mutating the target, allowing Paint to run cleanly.",
+      "codeHighlight": "// mo.disconnect() on teardown",
+      "state": {
+        "framePainted": true
+      },
+      "visualNodes": [
+        { "id": "dom", "label": "DOM Writes (4)", "status": "done" },
+        { "id": "queue", "label": "Record Queue (0)", "status": "done" },
+        { "id": "micro", "label": "Render Ready", "status": "done" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+---
+id: font-loading-cls
+title: "Font Loading & CLS Mechanics"
+domain: network-perf
+maturity_status: baseline-widely
+summary_tldr: "Balances Flash of Invisible Text (FOIT) against Cumulative Layout Shift (CLS) using font-display timers, WOFF2 subsetting, and CSS metric overrides."
+relations:
+  - target_id: preload-scanner-hints
+    type: requires
+    note: "Preloading critical WOFF2 subsets starts font downloads before CSSOM parsing finishes."
+  - target_id: layout-thrashing
+    type: under_the_hood
+    note: "Swapping mismatched font metrics forces a synchronous layout recalculation across text nodes."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/size-adjust"
+  - "https://web.dev/articles/reduce-web-font-shift"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "font-display"
+  - "size-adjust"
+  - "woff2"
+  - "cls"
+  - "foit"
+---
+
+## TL;DR
+
+Webfonts are not discovered until the engine builds both the DOM and CSSOM, leaving text either invisible (FOIT) or jumping when the font arrives (FOUT/CLS). Combine `font-display: swap` or `optional` with `size-adjust` and `ascent-override` on a local fallback `@font-face` to lock glyph dimensions.
+
+## Interactive Lab
+
+Compare an unadjusted `font-display: swap` fallback against metric-matched `@font-face` overrides using `PatternComparatorLab`.
+
+## Under the Hood
+
+Font loading behaves like swapping a theater understudy mid-monologue: if the understudy is three inches shorter than the lead actor, the entire stage lighting rig has to be re-measured on the spot, triggering a full [Layout](/concepts/layout-thrashing) pass.
+
+1. The browser discovers font URLs only after parsing CSS and matching `@font-face` rules to visible text nodes, unless hinted via the [Preload Scanner](/concepts/preload-scanner-hints).
+2. `font-display` sets two timers: a **block** period (invisible text) and a **swap** period (`swap`: 100 ms block, infinite swap; `optional`: 100 ms block, 0 ms swap).
+3. When the WOFF2 arrives during the swap window, `size-adjust`, `ascent-override`, and `descent-override` ensure the fallback system font occupied the exact same line height and width.
+
+```css
+@font-face {
+  font-family: "InterFallback";
+  src: local("Arial");
+  size-adjust: 107%;
+  ascent-override: 90%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+}
+```
+
+## Problem Genealogy
+
+- **2010 (`@font-face` FOIT)**: Browsers hid text for up to 30 seconds on slow networks, turning articles into blank white rectangles.
+- **2017 (`font-display: swap`)**: Eliminated invisible text, but traded FOIT for violent layout shifts whenever custom fonts were wider than Arial.
+- **2021+ (Metric Overrides & `font-display: optional`)**: Added `size-adjust` and `ascent-override`, letting fallback fonts impersonate webfont geometry down to the pixel.
+
+## Production Pitfalls
+
+- **Preloading 6 font weights**: Preloading every weight and italic variant starves hero images and CSS on the initial connection; preload at most 1–2 primary WOFF2 files.
+- **Missing `unicode-range` subsetting**: Shipping a 400 KB full-Unicode font when visitors only read Latin characters wastes bandwidth; split subsets via `unicode-range`.
+- **When not to use `font-display: swap`**: For body copy where zero visual flash matters more than brand typography on first visit, use `font-display: optional` so slow connections stick with the fallback cleanly.

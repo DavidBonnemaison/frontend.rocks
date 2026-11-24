@@ -1,0 +1,54 @@
+{
+  "type": "step-machine",
+  "id": "prototype-chain-lookup",
+  "title": "[[Prototype]] Chain Lookup & IC Fast-Path",
+  "description": "Trace how V8 resolves obj.method() across own properties, prototype hops, and null termination.",
+  "steps": [
+    {
+      "label": "1. Own Property Check",
+      "description": "Engine inspects instance Hidden Class for key 'render'. Not found on own descriptor table.",
+      "codeHighlight": "widget.render();",
+      "state": {
+        "target": "widget",
+        "ownKeys": ["id", "label"],
+        "found": false
+      },
+      "visualNodes": [
+        { "id": "instance", "label": "widget (own)", "status": "active" },
+        { "id": "proto1", "label": "Widget.prototype", "status": "idle" },
+        { "id": "proto2", "label": "Object.prototype", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Follow [[Prototype]] Link",
+      "description": "Engine dereferences [[Prototype]] to Widget.prototype, locates 'render', and caches the prototype shape.",
+      "codeHighlight": "Widget.prototype.render.call(widget)",
+      "state": {
+        "target": "Widget.prototype",
+        "found": true,
+        "receiver": "widget",
+        "icState": "MONOMORPHIC"
+      },
+      "visualNodes": [
+        { "id": "instance", "label": "widget (own)", "status": "done" },
+        { "id": "proto1", "label": "Widget.prototype", "status": "active" },
+        { "id": "proto2", "label": "Object.prototype", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Missing Key Reaches null",
+      "description": "Reading widget.missing walks Widget.prototype -> Object.prototype -> null and returns undefined.",
+      "codeHighlight": "widget.missing; // undefined",
+      "state": {
+        "target": "null",
+        "found": false,
+        "result": "undefined"
+      },
+      "visualNodes": [
+        { "id": "instance", "label": "widget (own)", "status": "done" },
+        { "id": "proto1", "label": "Widget.prototype", "status": "done" },
+        { "id": "proto2", "label": "Object.prototype -> null", "status": "error" }
+      ]
+    }
+  ]
+}

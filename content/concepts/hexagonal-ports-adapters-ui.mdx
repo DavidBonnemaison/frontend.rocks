@@ -1,0 +1,81 @@
+---
+id: "hexagonal-ports-adapters-ui"
+title: "Hexagonal Architecture (Ports & Adapters) in Frontend Applications"
+domain: "software-architecture"
+maturity_status: "baseline-widely"
+summary_tldr: "Stop rewriting business rules every time an API SDK, storage engine, or UI framework churns. Hexagonal Architecture isolates pure domain logic behind typed ports so React, fetch, and IndexedDB stay swappable adapters."
+relations:
+  - target_id: "runtime-boundary-validation"
+    type: "requires"
+    note: "Driven adapters must validate untrusted wire payloads at the boundary before constructing domain entities."
+  - target_id: "state-topology-boundaries"
+    type: "under_the_hood"
+    note: "Defines where pure domain state ends and server-cache or ephemeral UI state begins across application layers."
+  - target_id: "es-modules-live-bindings"
+    type: "under_the_hood"
+    note: "Static module imports make the dependency graph analyzable at build time so lint and package boundaries can keep domain modules free of UI or SDK imports."
+  - target_id: "test-fidelity-spectrum"
+    type: "contrasts_with"
+    note: "Swapping driven adapters with in-memory fakes shifts domain tests from slow E2E runs to millisecond unit checks."
+sources:
+  - "https://alistair.cockburn.us/hexagonal-architecture/"
+  - "https://tc39.es/ecma262/#sec-modules"
+  - "https://www.typescriptlang.org/docs/handbook/2/objects.html"
+last_verified_at: "2026-11-21"
+proof_status: unverified
+keywords:
+  - "hexagonal-architecture"
+  - "ports-and-adapters"
+  - "dependency-inversion"
+  - "domain-isolation"
+  - "frontend-architecture"
+---
+
+## TL;DR
+
+Stop rewriting business rules whenever an API SDK, storage engine, or UI framework churns. Hexagonal Architecture isolates pure domain logic behind typed ports and moves React, `fetch`, and `IndexedDB` to replaceable adapters, cutting domain test runs from seconds to milliseconds.
+
+## Interactive Lab
+
+Step through a checkout command as it crosses a UI driving adapter into pure domain logic and dispatches through a typed outbound port. Observe how domain execution stays identical whether the composition root wires a live `fetch` adapter or an in-memory test fake.
+
+## Under the Hood
+
+Hexagonal Architecture enforces an inward-only dependency rule over [ES Modules Live Bindings](/concepts/es-modules-live-bindings). Lint or package boundaries ensure the domain core never imports a UI framework, `window`, or network SDK.
+
+1. **Module Graph Linking**: Because ES Module imports are statically analyzable, build-time linters or package boundaries can enforce an acyclic, inward-only graph where UI components and infrastructure adapters import port interfaces from `domain/`, never the reverse. TypeScript interfaces erase to zero bytes at emit time.
+2. **Composition Root Wiring**: At application boot (or route entry), a single composition root instantiates concrete driven adapters (`HttpCartAdapter`, `IndexedDbDraftAdapter`) and injects them via closures or factory parameters into domain use cases.
+3. **Driving Adapter Invocation**: A DOM listener or framework event handler translates UI events into plain command arguments and invokes an inbound port on the main thread.
+4. **Domain Evaluation & IC Dispatch**: The domain function runs pure JavaScript on the V8 heap with zero DOM retainers. Calling `gateway.charge(total, key)` hits a monomorphic inline cache in [V8 Hidden Classes & IC](/concepts/v8-hidden-classes-ic) when production wires one stable adapter shape.
+5. **Boundary Translation**: The driven adapter serializes the domain object to wire format, executes I/O (`fetch`, `IndexedDB`), and runs [Runtime Boundary Validation](/concepts/runtime-boundary-validation) on the response before returning a clean domain result.
+
+```ts
+// domain/ports.ts & domain/submitOrder.ts (zero UI or fetch imports)
+export interface OrderGateway {
+  charge(totalCents: number, idempotencyKey: string): Promise<{ receiptId: string }>;
+}
+
+export function createSubmitOrder(gateway: OrderGateway) {
+  return async (items: readonly { priceCents: number }[], key: string) => {
+    const total = items.reduce((sum, item) => sum + item.priceCents, 0);
+    if (total <= 0) throw new Error("EMPTY_ORDER");
+    return gateway.charge(total, key);
+  };
+}
+```
+
+Like a wall socket, the domain defines the port geometry so any adapter plugs in without rewiring internal logic. Explicit [State Topology Boundaries](/concepts/state-topology-boundaries) keep framework stores out of domain closures.
+
+## Problem Genealogy
+
+- **2005**: Alistair Cockburn formalizes Hexagonal Architecture (Ports & Adapters) for backend systems to stop UI and database drivers from entangling core business rules.
+- **2014-2017**: Flux, Redux Thunk, and Redux-Saga ship 30-50 KB of middleware that still couples action creators directly to `axios`, `localStorage`, and global store shapes.
+- **2019-2022**: Business invariants migrate into React custom hooks (`useCheckout`), forcing teams to boot JSDOM (200-600 ms per suite) and intercept HTTP just to test discount math.
+- **2023-2026**: Structural TypeScript ports, zero-dependency domain packages, and boundary parsers decouple core logic from framework churn while keeping [Test Fidelity Spectrum](/concepts/test-fidelity-spectrum) trade-offs explicit.
+
+## Production Pitfalls
+
+- **Leaky infrastructure types in port signatures**: *Symptom*: domain unit tests fail in Node.js with `ReferenceError: window is not defined` (or `IDBDatabase is not defined`), or replacing `axios` with `fetch` breaks 30 domain files. *Root cause*: outbound ports return SDK error classes, HTTP `Response` objects, browser DOM/IndexedDB handles, or React `Dispatch` callbacks instead of plain domain structures. *Fix*: map SDK errors and wire payloads inside the driven adapter before crossing back into the domain.
+- **GC churn and megamorphic dispatch on 60 Hz streams**: *Symptom*: dropped frames (> 16.6 ms) and elevated minor GC time during live WebSocket order-book updates or pointer drags. *Root cause*: driven adapters allocate fresh validated domain objects on every tick, and passing more than four distinct adapter shapes into the same port call site pushes V8 inline caches megamorphic. *Fix*: keep high-frequency telemetry outside object-mapping layers and maintain monomorphic production adapter shapes.
+- **Monolithic composition root bundle bloat**: *Symptom*: landing-page JavaScript payloads inflate by 80-200 KB with unused payment, IndexedDB, and analytics adapters. *Root cause*: one top-level composition root statically imports every concrete adapter at module evaluation time. *Fix*: split composition roots per route and lazy-load heavy driven adapters via dynamic `import()`.
+- **When not to use**: Pure CRUD forms, static marketing pages, or thin read-only views with no client-side business invariants or multi-step workflows. Wrapping a single `GET /profile` call in port interfaces, mappers, and factories adds boilerplate and indirection with zero architectural payoff; use direct [Server State Cache Machines](/concepts/server-state-cache-machines) with boundary validation instead.

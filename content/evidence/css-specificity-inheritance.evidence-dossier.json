@@ -1,0 +1,42 @@
+{
+  "concept_id": "css-specificity-inheritance",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/selectors-4/#specificity-rules",
+      "spec_section": "17. Calculating a selector’s specificity",
+      "quote": "A selector’s specificity is calculated as a three-component tuple (A, B, C) counting ID selectors, class/attribute/pseudo-class selectors, and type/pseudo-element selectors."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "88+",
+    "firefox": "78+",
+    "safari": "14+",
+    "notes": "Core specificity is CSS1; zero-specificity :where() and forgiving :is() are Baseline Widely Available."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Selector Matching",
+      "Cascade Sorting",
+      "Inheritance & Initial Fallback"
+    ],
+    "mechanism_summary": "Style engine sorts matched declarations by Origin/Importance -> @layer -> (A,B,C) -> Order, then copies inherited properties from parent ComputedStyle."
+  },
+  "production_failures": [
+    {
+      "symptom": "Utility class .mt-4 fails to override a component rule .card p",
+      "root_cause": ".card p has specificity (0, 1, 1) which beats .mt-4 at (0, 1, 0), regardless of source order.",
+      "mitigation": "Wrap component defaults in :where(.card p) for (0, 0, 0) specificity or place them in a lower @layer."
+    },
+    {
+      "symptom": "Color set on <body> does not apply to <button> or <input>",
+      "root_cause": "User-agent stylesheets explicitly set color and font on form controls, blocking inheritance from <body>.",
+      "mitigation": "Explicitly declare color: inherit; font: inherit; on form controls in your reset layer."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/selectors-4/#specificity-rules",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity"
+  ]
+}

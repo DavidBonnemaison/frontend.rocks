@@ -1,0 +1,65 @@
+---
+id: test-fidelity-spectrum
+title: "Test Fidelity Spectrum: Unit, Component, Browser & E2E"
+domain: testing-verification
+maturity_status: baseline-widely
+summary_tldr: "Inverting the test suite into 80% E2E balloons CI past 40 minutes, while 95% mocked JSDOM suites ship broken layouts and CORS failures; match each assertion to the lowest layer that executes the real mechanism."
+relations:
+  - target_id: simulated-dom-vs-real-engines
+    type: requires
+    note: "Choosing between Node unit tests and browser component tests depends on whether layout or hit-testing is under test."
+  - target_id: async-determinism-fake-timers
+    type: requires
+    note: "Lower-fidelity unit and component layers rely on deterministic fake timers rather than wall-clock waits."
+sources:
+  - "https://vitest.dev/guide/browser/"
+  - "https://playwright.dev/docs/best-practices"
+  - "https://martinfowler.com/articles/practical-test-pyramid.html"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "test-pyramid"
+  - "test-trophy"
+  - "fidelity"
+  - "e2e"
+  - "component-testing"
+---
+
+## TL;DR
+
+Every test layer trades execution speed for engine fidelity. Pure Node.js unit tests validate state machines in microseconds with [fake timers](/concepts/async-determinism-fake-timers), [browser component tests](/concepts/simulated-dom-vs-real-engines) verify CSS layout and ARIA semantics in ~50ms, and narrow E2E suites guard full-stack routing and persistence.
+
+## Interactive Lab
+
+Compare execution latency, isolation boundaries, and caught bug classes across the four test layers in `StepMachineLab`.
+
+## Under the Hood
+
+Test runners allocate different OS processes and browser subsystems at each tier, which dictates both runtime cost and which production failures each tier can detect.
+
+1. **Unit Layer (V8 Isolate, 0.1ms-2ms/test)**: Executes pure reducers, parsers, and state machines with zero DOM overhead; blind to CSS, events, and network serialization.
+2. **Simulated Component Layer (JSDOM, 5ms-30ms/test)**: Mounts framework trees in Node.js; verifies state transitions and ARIA attributes, yet misses box layout and hit-testing.
+3. **Browser Component Layer (Headless Frame, 30ms-150ms/test)**: Renders isolated components inside real Chromium/WebKit without backend servers, catching `z-index` occlusion, focus traps, and media queries.
+4. **End-to-End Layer (Full Stack, 1s-10s/test)**: Boots real HTTP servers, cookies, and storage across multi-page navigations to verify auth redirects and database writes.
+
+```ts
+// Route each invariant to the lowest layer that executes the real mechanism
+const testMatrix = {
+  priceCalculation: 'unit-v8',          // Pure JS math, 0.2ms
+  debouncedFilter: 'unit-fake-timers',  // Virtual clock + microtasks, 2ms
+  modalFocusTrap: 'browser-component',  // Real Blink layout & inert, 60ms
+  stripeCheckout: 'e2e-full-stack',     // Real redirects & cookies, 3500ms
+};
+```
+
+## Problem Genealogy
+
+- **2015 (Ice-Cream Cone Anti-Pattern)**: Teams wrote 70% Selenium E2E suites that took 45+ minutes per PR and flaked on 10% of runs due to network and selector races.
+- **2018 (Testing Trophy & JSDOM Dominance)**: Shifted suites to JSDOM integration tests, dropping CI time to 2 minutes but letting CSS stacking, scroll, and CORS bugs slip into production.
+- **2024 (Hybrid Browser Component + Thin E2E)**: Kept pure logic in V8 unit tests, moved UI/layout components to headless browser runners, and capped E2E to critical revenue paths.
+
+## Production Pitfalls
+
+- **Duplicating Unit Combinatorics in E2E**: Testing 40 form-validation edge cases through full-stack browser logins burns 15 minutes of CI compute to exercise a pure regex function.
+- **Mocking Everything in E2E**: Stubbing auth, routing, and API serialization inside E2E tests collapses E2E fidelity down to a slow component test while keeping the 3-second boot penalty.
+- **When not to use Full-Stack E2E**: Never use full-stack E2E tests to verify component styling permutations, pure business math, or exhaustive validation matrices; push those down to unit or browser-component suites where failure feedback takes milliseconds.

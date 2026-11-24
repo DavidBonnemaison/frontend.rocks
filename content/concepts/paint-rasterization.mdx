@@ -1,0 +1,63 @@
+---
+id: paint-rasterization
+title: "Paint & Rasterization"
+domain: rendering-pipeline
+maturity_status: baseline-widely
+summary_tldr: "Paint records drawing commands into DisplayLists; Rasterization turns those vector commands into GPU-ready bitmap tiles."
+relations:
+  - target_id: render-tree-layout
+    type: requires
+    note: "Paint requires resolved box coordinates from Layout to record drawing bounds."
+  - target_id: gpu-compositor-layers
+    type: under_the_hood
+    note: "Rasterized tiles are uploaded as GPU textures for the Compositor Thread."
+sources:
+  - "https://developer.chrome.com/docs/chromium/renderingng-architecture"
+  - "https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/Rendering_performance"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "paint"
+  - "rasterization"
+  - "DisplayItem"
+  - "tiles"
+  - "Skia"
+---
+
+## TL;DR
+
+Paint does not draw pixels directly; it records ordered vector instructions (`DisplayItem` lists) on the main thread. Rasterization then splits layers into bitmap tiles and fills those pixels on worker threads or the GPU before compositing.
+
+## Interactive Lab
+
+Watch vector paint commands split into prioritized tiles and upload to VRAM in `StepMachineLab`.
+
+## Under the Hood
+
+Paint is an architect drafting blueprints; Rasterization is the print shop turning those blueprints into tiled posters.
+
+1. **DisplayList Recording**: The engine traverses boxes by [CSS Stacking Context](/concepts/css-stacking-context) order and appends draw calls (backgrounds, borders, text glyphs).
+2. **Tile Splitting**: Layers are divided into square tiles so the engine only rasterizes regions near the viewport.
+3. **Raster & Upload**: Skia or GPU shaders fill tile bitmaps and upload them as textures for [GPU Compositor Layers](/concepts/gpu-compositor-layers).
+
+```css
+/* Triggers Paint only (skips Layout) when color changes */
+.status-badge {
+  background-color: #16a34a;
+  contain: paint; /* Clips descendants and isolates invalidation */
+}
+
+/* Heavy blur multiplies rasterization time per tile */
+.expensive-frost { backdrop-filter: blur(24px); }
+```
+
+## Problem Genealogy
+
+- **2008–2013**: Single-threaded software painting forced the main thread to rasterize every pixel synchronously, stalling input during scrolls.
+- **2014+ (Impl-side Painting)**: Browsers decoupled DisplayList recording on the main thread from multi-threaded / GPU tile rasterization.
+
+## Production Pitfalls
+
+- **Giant `box-shadow` and `filter: blur()`**: Large blur radii expand paint invalidation rects and force multi-pass shader sampling per tile.
+- **Animating `background-color` on huge containers**: Even without Layout, repaints re-rasterize every covered tile on each frame.
+- **When not to use heavy paint effects**: Avoid animating `box-shadow`, `border-radius`, or `backdrop-filter` at 60fps; animate `opacity` on a pre-rendered pseudo-element instead.

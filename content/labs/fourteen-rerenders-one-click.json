@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "fourteen-rerenders-one-click",
+  "title": "Filter Click: Cascade + Thrashing (180 ms INP) vs Concurrent Lanes + Scoped Vars",
+  "description": "Compare a synchronous root-variable + read/write layout loop against startTransition and isolated CSS custom properties.",
+  "before": {
+    "label": "Root CSS Var + Sync Render + Layout Thrash",
+    "code": "function onFilterChange(next) {\n  document.documentElement.style.setProperty('--row-density', next.density);\n  setFilter(next); // synchronous high-priority lane\n  rowsRef.current.forEach((el) => {\n    const h = el.getBoundingClientRect().height; // forces 14x sync reflow\n    el.style.minHeight = `${h + 4}px`;\n  });\n}",
+    "metrics": {
+      "lines": 8,
+      "reflows": "14 re-renders + 14 forced layouts (180 ms INP)",
+      "dependencies": "Root style invalidation + sync commit"
+    },
+    "previewNote": "Single click invalidates 2,400 CSS nodes, blocks main thread for 180 ms, and shifts the sticky header."
+  },
+  "after": {
+    "label": "Scoped CSS Var + startTransition + Batched Reads",
+    "code": "function onFilterChange(next) {\n  gridRef.current?.style.setProperty('--row-density', next.density);\n  startTransition(() => setFilter(next)); // yieldable transition lane\n  requestAnimationFrame(() => {\n    const heights = rowsRef.current.map((el) => el.getBoundingClientRect().height);\n    rowsRef.current.forEach((el, i) => (el.style.minHeight = `${heights[i] + 4}px`));\n  });\n}",
+    "metrics": {
+      "lines": 8,
+      "reflows": "1 batched commit + 1 layout pass (22 ms INP)",
+      "dependencies": "Native React 18+ startTransition & CSS containment"
+    },
+    "previewNote": "Filter chip paints in 22 ms; heavy grid reconciliation yields to input and avoids layout shift."
+  }
+}

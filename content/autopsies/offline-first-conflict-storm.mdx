@@ -1,0 +1,98 @@
+---
+id: offline-first-conflict-storm
+case_number: 8
+title: "Autopsy #08: Four Hours on a Train, Three Hours of Work Erased"
+symptom: "A user edits a document offline on a train and silently overwrites a teammate's merged changes upon reconnection."
+failure_mode: silent-data-corruption
+format: narrative
+case_type: composite
+cast:
+  - thomas
+  - marc
+  - julie
+traversed_concepts:
+  - concept_id: indexeddb-transactions-quotas
+    step_order: 1
+    role_in_chain: "Offline edits persist in IndexedDB, where unawaited transaction aborts or quota limits drop local deltas."
+  - concept_id: local-first-sync-crdt
+    step_order: 2
+    role_in_chain: "Naive full-document PUT with wall-clock timestamps replaces CRDT delta merging, causing Last-Write-Wins clobbering."
+  - concept_id: broadcast-channel-web-locks
+    step_order: 3
+    role_in_chain: "Two open tabs wake up simultaneously on reconnect and race to read and mutate the same IndexedDB outbox."
+  - concept_id: idempotency-optimistic-queues
+    step_order: 4
+    role_in_chain: "Flaky cellular 4G retries replay outbox mutations without idempotency keys, duplicating or reordering operations."
+  - concept_id: cross-tab-leader-election
+    step_order: 5
+    role_in_chain: "Without a single elected sync leader, competing tabs open duplicate WebSockets and apply out-of-order server snapshots."
+case_file:
+  trigger: "Replaced patch sync with a full-document `PUT /api/docs/:id` fired on `window` `online` events"
+  symptom: "Two train tabs reconnected after 4 hours and silently overwrote 24 merged office revisions (`rev: 95 → 118`)"
+  root_cause: "Last-Write-Wins full-document `PUT` with no leader election let stale `rev: 94` tabs clobber newer server state"
+  bad_fixes:
+    - label: "ETag `If-Match` returning `412`"
+      outcome: "Client `catch` treated `412` like any 4xx error, wiped the IndexedDB outbox, and erased Thomas's 4 hours of train edits"
+  fix: "Store CRDT operation deltas in IndexedDB, elect one sync leader via `navigator.locks`, and broadcast merged state via `BroadcastChannel`"
+  how_to_spot: "Open two tabs offline, edit one, merge on server, reconnect, and watch `PUT` payloads clobber `rev` numbers"
+  deleted: "Full-document `PUT` on `online`, blind 4xx outbox-clearing `catch` block"
+reading_time_min: 8
+sources:
+  - "https://w3c.github.io/IndexedDB/"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API"
+  - "https://docs.yjs.dev/"
+last_verified_at: "2026-11-17"
+proof_status: unverified
+---
+
+## Three hours of office work, gone at tunnel exit
+
+To simplify document saving, Julie merged a PR that replaced the incremental patch sync with a clean `PUT /api/docs/:id` sending the full document JSON whenever `window` fired an `online` event. We tested it at the office by toggling Wi-Fi off and on for three seconds, typing a sentence, and watching the network request succeed. Everything synced cleanly in 40 milliseconds.
+
+Then Thomas boarded a four-hour TGV with the product spec open in two browser tabs. He edited section three on and off between stations. Meanwhile, back at the office, three people spent the afternoon reviewing and merging 24 revisions (`rev: 95` through `rev: 118`). When Thomas's train cleared the final tunnel and his laptop found 4G, both tabs fired `online` at the exact same instant, sent `PUT /api/docs/42` from `rev: 94` with a fresh `updatedAt` timestamp, and silently overwrote three hours of the team's work. The gateway returned `200 OK` to both requests.
+
+## How 412 inverted the data loss
+
+Marc added an `If-Match` ETag check on the backend so stale `PUT` requests returned `412 Precondition Failed` instead of overwriting newer revisions. Unit tests proved the server rejected outdated revisions cleanly, and we shipped it before Thomas's return trip.
+
+Two days later, Thomas got back on the train. When his laptop reconnected outside Lyon, the server dutifully returned `412`. Unfortunately, the client's `catch` block did what it had always done for 4xx responses: it cleared the local IndexedDB outbox and reloaded the server document so the UI would not stay stuck in an error state.
+
+This time, the office kept its 24 revisions and Thomas lost four hours of train edits, including three tables he had rewritten from scratch. We had not fixed data loss; we had just flipped who got to be angry.
+
+## Five ways two tabs can race
+
+<CausalChainStepper />
+
+First, replacing [CRDT delta merging](/concepts/local-first-sync-crdt) with a full-document `PUT` turns every reconnect into Last-Write-Wins, where whichever tab gets 4G last decides reality for everyone else. Second, without [cross-tab leader election](/concepts/cross-tab-leader-election), two open tabs wake up on `online` and race to drain the same [IndexedDB](/concepts/indexeddb-transactions-quotas) outbox, reading the same pending queue before either tab deletes it. Third, flaky 4G tunnels retry those requests without [idempotency keys](/concepts/idempotency-optimistic-queues), duplicating or reordering mutations on the wire when a packet drops after reaching the server.
+
+When Marc pulled the gateway logs from Thomas's first train trip, he could see both tabs' `PUT` requests landing 14 milliseconds apart, followed by three automatic cellular retries from tab two. Neither tab knew the other existed, and the server had no way to tell whether `rev: 94` was an intentional revert or a stale snapshot arriving four hours late.
+
+<FailureSimulator />
+
+## Electing one leader across tabs
+
+We rebuilt sync around an append-only operation log in IndexedDB so local edits never overwrite remote edits at the document level. Each keystroke or table edit appends a small CRDT delta tagged with a client ID, a Lamport clock, and a unique idempotency key. Instead of letting every tab talk to the server, we elected a single leader tab with [Web Locks and BroadcastChannel](/concepts/broadcast-channel-web-locks) (`navigator.locks.request('doc-sync-42', ...)`). Only the tab holding the lock pushes idempotent CRDT deltas to the server, and once the server merges and returns the new state, the leader fans it out to all other tabs over `BroadcastChannel`.
+
+If the leader tab closes, the browser automatically releases the Web Lock and another open tab picks up the queue without duplicating a single operation. Even if Thomas's laptop hops between three tunnels in twenty minutes, the server deduplicates retries by idempotency key and merges his train edits cleanly alongside the 24 office revisions.
+
+## The IndexedDB transaction trap
+
+First try in the leader loop: we opened one `readwrite` IndexedDB transaction, read the pending ops, called `await fetch('/api/docs/42/ops', ...)`, and then tried to delete the acked ops inside the same transaction.
+
+```ts
+// First try: auto-commits during await fetch(), throws TransactionInactiveError
+const tx = db.transaction('outbox', 'readwrite');
+const ops = await reqToPromise(tx.objectStore('outbox').getAll());
+await fetch('/api/docs/42/ops', { method: 'POST', body: JSON.stringify(ops) });
+tx.objectStore('outbox').clear(); // TransactionInactiveError
+```
+
+Under the IndexedDB specification, a transaction auto-commits the moment the event loop finishes a microtask with no pending IDB requests. By the time `fetch()` resolved 200 ms later, `tx` was already dead and `clear()` threw `TransactionInactiveError`, leaving the same ops in the outbox to be replayed forever. Reading the outbox in a short `readonly` transaction, running `fetch()` outside any transaction, and acknowledging the synced IDs in a second `readwrite` transaction solved it cleanly.
+
+## What stayed in the codebase
+
+<CaseFile />
+
+"Whoever gets network last wins" is not a synchronization strategy.
+
+Thomas still rides the train with two tabs open, except now only one of them is allowed to talk to the server. When he arrived in Paris on Friday, all three tables he had rewritten on the TGV merged cleanly into `rev: 119` without touching a single line from the office.

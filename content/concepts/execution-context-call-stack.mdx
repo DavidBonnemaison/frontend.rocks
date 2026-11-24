@@ -1,0 +1,65 @@
+---
+id: execution-context-call-stack
+title: Execution Context, Lexical Environment, and Call Stack
+domain: js-runtime
+maturity_status: baseline-widely
+summary_tldr: "Understand stack overflows, Temporal Dead Zone errors, and closure heap promotion—every call pushes an Execution Context frame onto V8's single-threaded Call Stack."
+relations:
+  - target_id: event-loop-tasks-microtasks
+    type: under_the_hood
+    note: "The Event Loop dequeues a new task only after the Call Stack completely unwinds to empty."
+  - target_id: v8-hidden-classes-ic
+    type: under_the_hood
+    note: "V8 compiles stack frame slots and closure context layouts using hidden-class shapes."
+  - target_id: es-modules-live-bindings
+    type: contrasts_with
+    note: "Function lexical environments allocate per-call bindings, whereas ES Modules expose read-only live bindings across module records."
+sources:
+  - "https://tc39.es/ecma262/#sec-execution-contexts"
+  - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Too_much_recursion"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "call stack"
+  - "lexical environment"
+  - "hoisting"
+  - "temporal dead zone"
+---
+
+## TL;DR
+
+Every function call pushes a fresh Execution Context onto the Call Stack. Each frame pairs a local LexicalEnvironment with an outer scope pointer, initializes `let`/`const` bindings in a Temporal Dead Zone before evaluation, and blocks the [Event Loop](/concepts/event-loop-tasks-microtasks) until the stack unwinds.
+
+## Interactive Lab
+
+Step through frame creation, Temporal Dead Zone initialization, and scope-chain resolution in `StepMachineLab`.
+
+## Under the Hood
+
+V8 executes JavaScript on a single Call Stack where each invocation pushes a fresh Execution Context frame containing a `LexicalEnvironment`, `this` binding, and `[[OuterEnv]]` pointer. Only the top frame is active, and the [Event Loop](/concepts/event-loop-tasks-microtasks) cannot dequeue the next task until the entire stack unwinds.
+
+1. **Creation Phase**: The engine allocates a `LexicalEnvironment`, registers `function` declarations with full values, and marks `let`/`const` bindings as `<uninitialized>` (TDZ).
+2. **Stack Push**: Invoking a function pushes a new frame with its own `this` binding and an `[[OuterEnv]]` reference pointing to the defining scope.
+3. **Closure Promotion**: Variables captured by inner functions move off the native stack into heap-allocated Context objects, shaped by [V8 Hidden Classes](/concepts/v8-hidden-classes-ic).
+4. **Unwind**: Returning or throwing pops the frame; an uncaught exception walks down the stack until a `try/catch` handler intercepts it.
+
+```js
+const multiplier = 2;
+function makeScaler(factor) {
+  return (value) => value * factor * multiplier;
+}
+const doubleScale = makeScaler(3);
+console.log(doubleScale(4)); // 24
+```
+
+## Problem Genealogy
+
+- **1995 (ES1 Activation Objects)**: Function-only `var` hoisting with no block scope and silent `undefined` reads before assignment.
+- **2015 (ES6 Lexical Environments)**: Block-scoped `let`/`const` and Temporal Dead Zone checks catch premature reads with `ReferenceError`.
+- **2020+ (V8 Sparkplug & Maglev)**: Baseline compilers keep hot stack frames in registers and inline shallow lexical lookups.
+
+## Production Pitfalls
+
+- **Stack Overflow on Deep Trees**: Recursive DOM or JSON traversals blow past V8's ~10,000-frame limit because browsers do not ship general tail-call optimization.
+- **TDZ ReferenceError in Circular Imports**: Reading a `const` export before its module finishes evaluating throws `ReferenceError` instead of returning `undefined` (see [ES Modules Live Bindings](/concepts/es-modules-live-bindings)).
+- **When not to use recursion**: Never recurse over user-supplied nested payloads; convert the traversal to an explicit array-backed `while` loop on the heap.

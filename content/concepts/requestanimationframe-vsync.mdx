@@ -1,0 +1,67 @@
+---
+id: requestanimationframe-vsync
+title: "requestAnimationFrame & VSync"
+domain: rendering-pipeline
+maturity_status: baseline-widely
+summary_tldr: "requestAnimationFrame schedules callbacks right before the browser paints the next VSync frame, matching display refresh rates."
+relations:
+  - target_id: event-loop-tasks-microtasks
+    type: requires
+    note: "rAF runs in the rendering step of the HTML event loop after tasks and microtasks."
+  - target_id: browser-rendering-pipeline
+    type: requires
+    note: "Mutations inside rAF are batched directly into the upcoming Style/Layout/Paint cycle."
+  - target_id: scroll-driven-animations
+    type: contrasts_with
+    note: "rAF scroll loops sample scrollTop on the main thread, while Scroll-Driven Animations bind timelines to scroll on the compositor."
+sources:
+  - "https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html#animation-frames"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "requestAnimationFrame"
+  - "VSync"
+  - "60fps"
+  - "120Hz"
+  - "frame budget"
+web_feature_id: request-animation-frame
+---
+
+## TL;DR
+
+`requestAnimationFrame` (rAF) aligns JavaScript visual updates with the display's VSync cadence. Callbacks execute once per frame right before Style, Layout, and Paint, eliminating wasted intermediate renders and automatically pausing in background tabs.
+
+## Interactive Lab
+
+Trace how VSync triggers rAF execution and frame commit inside `StepMachineLab`.
+
+## Under the Hood
+
+Using `setInterval(fn, 16)` for animation is like mailing letters without checking when the postal truck leaves, some frames get two deliveries, others get zero. `requestAnimationFrame` hands your update directly to the driver as the truck pulls out.
+
+1. **VSync Alignment**: The compositor signals `BeginMainFrame` in sync with the monitor's refresh rate (60Hz, 120Hz, or 144Hz).
+2. **Queue Snapshotting**: The [Event Loop](/concepts/event-loop-tasks-microtasks) drains tasks, then runs every queued rAF callback for the current frame. Calls to `requestAnimationFrame` made inside a callback defer to the next VSync.
+3. **Single Render Pass**: All DOM mutations inside rAF coalesce into one pass of the [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline).
+
+```js
+let last = 0;
+function tick(timestamp) {
+  const dt = last ? (timestamp - last) / 1000 : 0;
+  last = timestamp;
+  box.style.transform = `translateX(${(timestamp * 0.08) % 300}px)`;
+  if (dt < 1) requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+```
+
+## Problem Genealogy
+
+- **2000–2010**: `setTimeout(fn, 16)` drifted out of phase with display refreshes, causing frame tearing and battery drain in hidden tabs.
+- **2011+**: Browser vendors standardized `requestAnimationFrame`, throttling background tabs to 0–1Hz and syncing foreground tabs to VSync.
+
+## Production Pitfalls
+
+- **Frame-rate-dependent speed**: Incrementing `x += 2` per rAF callback runs twice as fast on a 120Hz screen as on a 60Hz screen; always use `timestamp` deltas.
+- **Multiple rAF loops**: Spawning independent rAF loops per component fragments main-thread timing and invites [Layout Thrashing](/concepts/layout-thrashing).
+- **When not to use `requestAnimationFrame`**: Do not use rAF for simple `transform` or `opacity` transitions; use CSS transitions, the Web Animations API, or [Scroll-Driven Animations](/concepts/scroll-driven-animations) so they run off the main thread.

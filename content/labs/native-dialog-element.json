@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "native-dialog-element",
+  "title": "Modal: Portal + Focus-Trap vs <dialog>",
+  "before": {
+    "label": "Div + React Portal + focus-trap",
+    "code": "<Portal>\n  <div role=\"dialog\" aria-modal=\"true\"\n       style={{ zIndex: 9999 }}>\n    {/* + Escape listener + focus trap */}\n  </div>\n</Portal>",
+    "metrics": {
+      "lines": 45,
+      "reflows": "Body mutation",
+      "dependencies": "focus-trap (~8 kB)"
+    },
+    "previewNote": "Remains vulnerable to z-index conflicts across portals."
+  },
+  "after": {
+    "label": "Native <dialog>.showModal()",
+    "code": "<dialog ref={ref}>\n  <form method=\"dialog\">\n    <button>Close</button>\n  </form>\n</dialog>\n// ref.current.showModal()",
+    "metrics": {
+      "lines": 6,
+      "reflows": "Isolated Top Layer",
+      "dependencies": "0 kB"
+    },
+    "previewNote": "Inertness, Escape, and ::backdrop handled by the engine."
+  }
+}

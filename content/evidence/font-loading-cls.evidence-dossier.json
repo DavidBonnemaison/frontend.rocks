@@ -1,0 +1,43 @@
+{
+  "concept_id": "font-loading-cls",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-fonts-4/#font-display-desc",
+      "spec_section": "CSS Fonts Module Level 4: font-display",
+      "quote": "The font-display descriptor determines how a font face is displayed based on whether and when it is downloaded and ready to use."
+    },
+    {
+      "source_url": "https://drafts.csswg.org/css-fonts-5/#font-size-adjust-desc",
+      "spec_section": "CSS Fonts Module Level 5: Metric Overrides",
+      "quote": "size-adjust, ascent-override, descent-override, and line-gap-override align fallback system font metrics with the webfont."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "91+",
+    "firefox": "89+",
+    "safari": "16.4+"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["CSSOM @font-face Parse", "Block/Swap Timer", "Fallback Glyph Shaping", "Metric-Adjusted Swap"],
+    "mechanism_summary": "Controls text visibility during font download via font-display block/swap/optional timers and eliminates layout shift on swap using CSS metric overrides."
+  },
+  "production_failures": [
+    {
+      "symptom": "High CLS (> 0.15) when hero heading swaps from Arial to custom webfont",
+      "root_cause": "Fallback system font had different x-height and advance width, causing lines to reflow from 2 lines to 3 lines when the webfont loaded.",
+      "mitigation": "Define a @font-face fallback with size-adjust, ascent-override, and descent-override matching the webfont's metrics."
+    },
+    {
+      "symptom": "3-second invisible text (FOIT) on 3G connections",
+      "root_cause": "Default font-display: auto behaves like block (hiding glyphs for up to 3s) while waiting on an un-preloaded WOFF2 file.",
+      "mitigation": "Use font-display: swap (with metric overrides) or font-display: optional, and preload only the primary Latin WOFF2 subset."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/size-adjust",
+    "https://web.dev/articles/reduce-web-font-shift"
+  ]
+}

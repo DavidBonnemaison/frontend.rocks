@@ -1,0 +1,43 @@
+{
+  "concept_id": "virtualized-lists-windowing",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/CSS/content-visibility",
+      "spec_section": "CSS Containment Level 2: content-visibility",
+      "quote": "The content-visibility property controls whether or not an element renders its contents at all, skipping layout and painting for offscreen subtrees."
+    },
+    {
+      "source_url": "https://web.dev/articles/virtualize-long-lists-react-window",
+      "spec_section": "web.dev: List Virtualization (Windowing)",
+      "quote": "Windowing renders only the small subset of rows visible within the scroll viewport plus a small overscan buffer, keeping DOM node count O(viewport)."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+ (JS Windowing) / 85+ (content-visibility)",
+    "firefox": "1+ (JS Windowing) / 125+ (content-visibility)",
+    "safari": "1+ (JS Windowing) / 18+ (content-visibility)"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Scroll Offset Read", "Visible Index Range [start..end]", "Overscan Buffer Slice", "Absolute Transform Positioning"],
+    "mechanism_summary": "Caps live DOM nodes to O(viewport_height / row_height) by recycling or mounting only visible rows + overscan inside a full-height spacer container."
+  },
+  "production_failures": [
+    {
+      "symptom": "White blank flashes appear when user flings scrollbar rapidly on mobile",
+      "root_cause": "Zero overscan rows were rendered outside the viewport, and compositor scrolling outran main-thread JS scroll listeners.",
+      "mitigation": "Render a 3-5 row overscan buffer above and below the viewport and position rows with GPU-composited transform: translateY()."
+    },
+    {
+      "symptom": "Ctrl+F (Cmd+F) browser find and screen readers cannot locate offscreen items",
+      "root_cause": "Virtualization unmounted offscreen DOM nodes completely, making them invisible to native page search and ARIA table navigation.",
+      "mitigation": "Set aria-rowcount / aria-rowindex for assistive tech, or use CSS content-visibility: auto with contain-intrinsic-size for moderate lists (< 2,000 items)."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/content-visibility",
+    "https://web.dev/articles/virtualize-long-lists-react-window",
+    "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-rowcount"
+  ]
+}

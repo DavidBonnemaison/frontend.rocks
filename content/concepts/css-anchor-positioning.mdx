@@ -1,0 +1,69 @@
+---
+id: css-anchor-positioning
+title: "CSS Anchor Positioning"
+domain: css-layout
+maturity_status: interop-experimental
+summary_tldr: "anchor-name and anchor() tether popovers and tooltips to trigger elements natively in Layout, including viewport-collision flips."
+relations:
+  - target_id: render-tree-layout
+    type: requires
+    note: "Anchor positioning resolves inset coordinates during Layout without JS getBoundingClientRect() reads."
+  - target_id: popover-api-light-dismiss
+    type: under_the_hood
+    note: "Combines with Top Layer popovers to replace JS floating positioning libraries."
+  - target_id: js-floating-positioning-engines
+    type: replaces
+    note: "Declarative anchor() and position-try-fallbacks replace JS getBoundingClientRect() measurement and repositioning loops."
+sources:
+  - "https://drafts.csswg.org/css-anchor-position-1/"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_anchor_positioning"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "anchor-name"
+  - "position-anchor"
+  - "anchor()"
+  - "position-try-fallbacks"
+  - "tooltip"
+web_feature_id: anchor-positioning
+---
+
+## TL;DR
+
+CSS Anchor Positioning lets `position: fixed` or `absolute` elements tether directly to any named anchor in [Render Tree & Layout](/concepts/render-tree-layout). Combined with `position-try-fallbacks`, tooltips and menus flip away from viewport edges with zero JavaScript geometry reads.
+
+## Interactive Lab
+
+Step through anchor registration, `position-area`, and `flip-block` collision fallback in `StepMachineLab`.
+
+## Under the Hood
+
+Instead of JavaScript calling `getBoundingClientRect()` after paint and patching `top`/`left` on the next frame, the layout engine solves the tether in one pass.
+
+1. **Anchor Registration**: `anchor-name: --trigger` exposes a box's geometry to later or Top Layer elements.
+2. **Tethering**: `position-anchor: --trigger` with `position-area: bottom span-right` (or `top: anchor(bottom)`) locks the overlay to the anchor's edges.
+3. **Collision Flip**: `position-try-fallbacks: flip-block, flip-inline` tests alternative placements during Layout when the overlay overflows the viewport.
+
+```css
+.menu-btn { anchor-name: --menu-btn; }
+
+.menu-popover {
+  position: fixed;
+  position-anchor: --menu-btn;
+  position-area: bottom span-right;
+  position-try-fallbacks: flip-block, flip-inline;
+}
+```
+
+Pairs cleanly with [Popover API](/concepts/popover-api-light-dismiss) and contrasts with [JS Floating Positioning Engines](/concepts/js-floating-positioning-engines).
+
+## Problem Genealogy
+
+- **2010–2023**: Popper.js and Floating UI had to measure rects in JS, listen to scroll/resize, and fight `overflow: hidden` clipping.
+- **2024–2026**: CSS Anchor Positioning shipped in Chromium and Safari, with Firefox implementation underway.
+
+## Production Pitfalls
+
+- **Browser coverage gap**: Firefox support is still in progress; fall back to Floating UI or feature-detect with `@supports (anchor-name: --a)`.
+- **Same-name collisions in lists**: Reusing `anchor-name: --row` on every table row breaks lookup; use `anchor-scope: --row` on each row wrapper or inline unique names.
+- **When not to use CSS Anchor Positioning**: If you require 100% cross-browser parity today without a polyfill, use a lightweight JS positioning engine.

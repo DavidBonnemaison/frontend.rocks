@@ -1,0 +1,60 @@
+---
+id: mutation-observer
+title: MutationObserver and Batched Microtask Delivery
+domain: dom-events
+maturity_status: baseline-widely
+summary_tldr: "Replace main-thread-freezing Mutation Events with batched microtask delivery—MutationObserver queues DOM edits silently and flushes MutationRecord[] once after the Call Stack unwinds."
+relations:
+  - target_id: event-loop-tasks-microtasks
+    type: requires
+    note: "MutationObserver callbacks execute during the Microtask Checkpoint before Update the Rendering."
+  - target_id: intersection-observer
+    type: contrasts_with
+    note: "MutationObserver tracks DOM tree/attribute edits as microtasks; IntersectionObserver tracks post-layout geometry."
+sources:
+  - "https://dom.spec.whatwg.org/#mutation-observers"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "mutation observer"
+  - "mutationrecord"
+  - "microtask"
+  - "dom"
+---
+
+## TL;DR
+
+`MutationObserver` records DOM insertions, removals, and attribute changes synchronously, then flushes the entire batch as a `MutationRecord[]` array in a single [Microtask](/concepts/event-loop-tasks-microtasks) before the next paint, eliminating the per-node synchronous thrashing of deprecated Mutation Events.
+
+## Interactive Lab
+
+Trace synchronous DOM batching and microtask delivery in `StepMachineLab`.
+
+## Under the Hood
+
+Blink appends DOM insertions, removals, and attribute writes to an observer's `MutationRecord` queue synchronously without invoking JS, then schedules one [Microtask](/concepts/event-loop-tasks-microtasks) to flush the batch once the Call Stack empties. This prevents per-node callback thrashing.
+
+1. **Silent Recording**: Each DOM write appends a `MutationRecord` to the observer's internal queue without pausing JS.
+2. **Microtask Checkpoint**: When the Call Stack empties, the engine schedules one microtask carrying all queued records.
+3. **Targeted Filtering**: Passing `attributeFilter: ['aria-expanded']` avoids waking JS for unrelated `style` or `class` churn.
+
+```js
+const mo = new MutationObserver((records) => {
+  for (const r of records) {
+    if (r.type === 'attributes') syncPanelState(r.target);
+  }
+});
+mo.observe(panel, { attributes: true, attributeFilter: ['data-open'] });
+```
+
+## Problem Genealogy
+
+- **2000 (DOM2 Mutation Events)**: `DOMNodeInserted` fired synchronously on every single node, crippling editor performance and causing browser crashes.
+- **2012 (`MutationObserver`)**: Batched records asynchronously on the Microtask Queue; Mutation Events were formally removed from browsers in 2024.
+
+## Production Pitfalls
+
+- **Self-Mutation Microtask Loops**: Writing an attribute inside a `MutationObserver` callback watching that same attribute starves the render loop forever.
+- **`subtree: true` on `document.body`**: Watching the whole document floods your callback during framework hydration; pair with [IntersectionObserver](/concepts/intersection-observer) for visibility instead.
+- **When not to use `MutationObserver`**: Never use `MutationObserver` to detect element size or viewport visibility, use `ResizeObserver` or `IntersectionObserver`.

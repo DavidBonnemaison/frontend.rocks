@@ -1,0 +1,65 @@
+---
+id: rpc-server-actions-closures
+title: "Server Actions & Serialized Closure Boundaries"
+domain: framework-internals
+maturity_status: baseline-newly
+summary_tldr: "Server Actions look like local async functions, yet every invocation crosses an unauthenticated HTTP boundary. Treating closures as free local scope leaks server secrets or crashes with non-serializable payload errors."
+relations:
+  - target_id: structured-clone-algorithm
+    type: requires
+    note: "Arguments and return values crossing the server-client boundary must be acyclic and serializable."
+  - target_id: optimistic-ui-rollback
+    type: requires
+    note: "UI mutations wrap Server Action invocations in optimistic state that rolls back if the RPC rejects."
+sources:
+  - "https://react.dev/reference/rsc/server-actions"
+  - "https://html.spec.whatwg.org/multipage/structured-data.html"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "server actions"
+  - "rpc"
+  - "closure serialization"
+  - "rsc"
+---
+
+## TL;DR
+
+A Server Action compiles into an HTTP POST endpoint identified by an opaque build-time action ID. Captured closure variables are serialized into hidden form inputs or JSON payloads constrained by [Structured Clone](/concepts/structured-clone-algorithm) rules, while UI updates pair with [Optimistic Rollback](/concepts/optimistic-ui-rollback).
+
+## Interactive Lab
+
+Trace build-time action ID compilation, closure encryption, and server-side validation in `StepMachineLab`.
+
+## Under the Hood
+
+The bundler splits a `"use server"` module into a server-only handler map and a thin client RPC stub.
+
+1. **Action ID & Closure Capture**: At build time, the compiler replaces the server function with `createServerReference(actionId)`. Any lexical variable captured from an enclosing Server Component is encrypted and bound via `.bind(null, encryptedClosure)`.
+2. **Wire Transport**: Calling the stub serializes arguments (and bound closure tokens) into a `POST` request with a `Next-Action` (or framework RPC) header.
+3. **Server Dispatch & Revalidation**: The server runtime looks up `actionId`, decrypts bound closure arguments, executes the handler, and streams updated UI fragments back in the same HTTP response.
+
+```tsx
+// Server Component captures `orgId` into a hidden encrypted closure
+export default function InviteForm({ orgId }: { orgId: string }) {
+  async function inviteMember(formData: FormData) {
+    'use server';
+    // Must re-verify session & orgId authorization here!
+    const user = await requireSession();
+    await db.invites.create({ orgId, email: String(formData.get('email')), by: user.id });
+  }
+  return <form action={inviteMember}><input name="email" /><button>Invite</button></form>;
+}
+```
+
+## Problem Genealogy
+
+- **2016 (Manual REST/GraphQL Glue)**: Teams maintained separate API route files, request DTO schemas, and client `fetch` wrappers—often 150+ lines of boilerplate per form.
+- **2021 (tRPC / End-to-End Type Inference)**: Shared TypeScript router types across client and server, eliminating manual fetch typing while keeping explicit endpoints.
+- **2023 (`"use server"` Compiler RPC)**: Bundlers automated endpoint generation and closure binding directly inside component trees.
+
+## Production Pitfalls
+
+- **Missing Authorization Checks Inside Actions**: Because every `"use server"` function is a public HTTP `POST` endpoint, attackers can replay `actionId` with forged payloads if the handler skips session/RBAC verification.
+- **Non-Serializable Arguments**: Passing class instances, `Map` callbacks, or DOM events to a Server Action throws runtime serialization errors across the wire boundary.
+- **When not to use Server Actions**: Never use Server Actions for cacheable `GET` data reads or public webhook ingestion; `POST`-only RPC endpoints bypass CDN edge caching and serialize sequentially in some frameworks.

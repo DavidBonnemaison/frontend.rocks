@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "react-portal-zindex-legacy",
+  "title": "createPortal + z-index Hack vs Native Top Layer",
+  "before": {
+    "label": "Legacy Portal + Manual Focus/z-index",
+    "code": "createPortal(\n  <div className=\"fixed inset-0 z-[9999]\">\n    <FocusTrap><Modal /></FocusTrap>\n  </div>,\n  document.body\n);",
+    "metrics": {
+      "lines": 6,
+      "reflows": "DOM reparent + z-index wars",
+      "dependencies": "FocusTrap + ScrollLock libs"
+    },
+    "previewNote": "Requires manual Escape key, focus trap, inert siblings, and z-index coordination."
+  },
+  "after": {
+    "label": "Native <dialog>.showModal() / [popover]",
+    "code": "<dialog ref={ref} onCancel={onClose}>\n  <ModalContent />\n</dialog>\n// ref.current.showModal() promotes to Top Layer",
+    "metrics": {
+      "lines": 4,
+      "reflows": "Native Top Layer",
+      "dependencies": "0 JS overlay libs"
+    },
+    "previewNote": "Automatic Top Layer, ::backdrop, Escape dismiss, and background inertness."
+  }
+}

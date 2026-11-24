@@ -1,0 +1,41 @@
+{
+  "concept_id": "preload-scanner-hints",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/urls-and-fetching.html#fetch-priority-attributes",
+      "spec_section": "2.6.8 Fetch priority attributes",
+      "quote": "The fetchpriority attribute provides a hint to the user agent about the relative priority of the fetch."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-newly",
+    "chrome": "101+",
+    "firefox": "132+",
+    "safari": "17.2+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "HTML Preload Scanner",
+      "ResourceFetcher Queue",
+      "HTTP/2-3 Stream Priority"
+    ],
+    "mechanism_summary": "fetchpriority adjusts resource priority before the first Layout pass."
+  },
+  "production_failures": [
+    {
+      "symptom": "Degraded LCP despite <link rel='preload'>",
+      "root_cause": "Bandwidth contention from too many simultaneous High-priority preloads.",
+      "mitigation": "Restrict fetchpriority='high' to the single LCP element."
+    },
+    {
+      "symptom": "Preload Scanner ineffective on client-rendered SPA",
+      "root_cause": "<img> tag rendered only after client-side JS hydration.",
+      "mitigation": "Render the LCP <img> tag in the initial SSR HTML."
+    }
+  ],
+  "sources": [
+    "https://web.dev/articles/fetch-priority",
+    "https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/fetchPriority"
+  ]
+}

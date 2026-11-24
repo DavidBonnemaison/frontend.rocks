@@ -1,0 +1,66 @@
+---
+id: block-formatting-context
+title: "Block Formatting Context (BFC)"
+domain: css-layout
+maturity_status: baseline-widely
+summary_tldr: "Stop parent-child vertical margin collapse and zero-height float wrappers without clipping shadows—display: flow-root isolates a box's layout region."
+relations:
+  - target_id: render-tree-layout
+    type: requires
+    note: "BFCs partition the Layout box tree into independent block-flow regions."
+  - target_id: css-logical-properties
+    type: contrasts_with
+    note: "BFCs isolate vertical margin collapse and floats, whereas logical properties orient box edges to writing mode."
+sources:
+  - "https://drafts.csswg.org/css-display-3/#block-formatting-context"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_display/Block_formatting_context"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "BFC"
+  - "display: flow-root"
+  - "margin collapse"
+  - "float clearing"
+  - "overflow"
+---
+
+## TL;DR
+
+A Block Formatting Context (BFC) is an isolated layout compartment. Boxes inside a BFC never collapse vertical margins with the outside world, never overlap external floats, and expand their parent's `auto` height to enclose floated children.
+
+## Interactive Lab
+
+Toggle `display: flow-root` to trap floated children and isolate vertical margins in `ConstraintSimulatorLab`.
+
+## Under the Hood
+
+In the layout engine, a Block Formatting Context (BFC) partitions the `LayoutTree` into a self-contained block-flow region with its own float exclusion space and margin-collapsing boundary. Inside that sealed compartment, floats and vertical margins cannot leak outward, and external floats cannot intrude.
+
+1. **Margin Isolation**: Normally, adjacent vertical margins between a parent and its first child collapse into a single margin. Establishing a BFC stops that collapse at the container edge.
+2. **Float Enclosure**: During [Render Tree & Layout](/concepts/render-tree-layout), each BFC tracks its own float exclusion space, forcing `height: auto` to wrap floated descendants.
+3. **Clean Creation**: `display: flow-root` creates a BFC with zero clipping or scrollbar side effects, unlike `overflow: hidden`.
+
+```css
+/* Clean BFC without clipping shadows or tooltips */
+.media-card {
+  display: flow-root;
+}
+
+.media-card > img {
+  float: inline-start;
+  margin-inline-end: 1rem;
+}
+```
+
+Compare this with [CSS Containment](/concepts/css-containment) (`contain: layout`), which also establishes a BFC while additionally blocking layout invalidation walks, and [CSS Logical Properties](/concepts/css-logical-properties), which map block and inline axes to the document writing mode.
+
+## Problem Genealogy
+
+- **1998–2015**: Developers relied on `.clearfix::after` pseudo-elements or `overflow: hidden` to contain floats, accidentally clipping shadows and dropdowns.
+- **2017+**: `display: flow-root` shipped specifically to create a side-effect-free BFC.
+
+## Production Pitfalls
+
+- **Accidental clipping with `overflow: hidden`**: Using `overflow: hidden` solely for a BFC slices off `box-shadow`, focus outlines, and `position: sticky` descendants.
+- **Unexpected margin collapse**: A `margin-top` on the first heading inside a `<section>` escapes above the section's background unless a BFC or padding intervenes.
+- **When not to use `display: flow-root`**: If the container already uses `display: flex` or `display: grid`, its children already live inside flex/grid formatting contexts, `flow-root` is redundant.

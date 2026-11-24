@@ -1,0 +1,42 @@
+{
+  "concept_id": "opfs-origin-private-fs",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://fs.spec.whatwg.org/#origin-private-file-system",
+      "spec_section": "File System Living Standard §5 Origin Private File System",
+      "quote": "The origin private file system is a storage endpoint private to the origin of the page, optimized for performance, with synchronous access handles available inside dedicated workers."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "86+ (SyncAccessHandle 102+)",
+    "firefox": "111+",
+    "safari": "15.2+",
+    "notes": "FileSystemSyncAccessHandle is Baseline Widely Available in Dedicated Workers."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "navigator.storage.getDirectory()",
+      "FileSystemFileHandle Resolution",
+      "createSyncAccessHandle() Exclusive Lock"
+    ],
+    "mechanism_summary": "OPFS maps directly to sandboxed OS file descriptors, allowing Dedicated Workers to perform synchronous in-place read/write syscalls via FileSystemSyncAccessHandle."
+  },
+  "production_failures": [
+    {
+      "symptom": "NoModificationAllowedError when two tabs open the same SQLite-over-OPFS database",
+      "root_cause": "createSyncAccessHandle() acquires an exclusive OS-level lock on the file; a second worker calling it on the same file fails.",
+      "mitigation": "Coordinate file ownership across tabs with Web Locks (navigator.locks.request) before calling createSyncAccessHandle()."
+    },
+    {
+      "symptom": "Data loss on tab close after writing via FileSystemSyncAccessHandle",
+      "root_cause": "OS page cache buffers writes until flush() and close() are called.",
+      "mitigation": "Call accessHandle.flush() after critical transactions and accessHandle.close() on shutdown."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system",
+    "https://fs.spec.whatwg.org/"
+  ]
+}

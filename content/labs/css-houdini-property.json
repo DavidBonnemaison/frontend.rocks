@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "css-houdini-property",
+  "title": "Untyped --angle vs @property <angle>",
+  "description": "Compare discrete snapping against continuous gradient angle interpolation.",
+  "before": {
+    "label": "Untyped Custom Property",
+    "code": ".ring {\n  --angle: 0deg;\n  background: conic-gradient(#3b82f6 var(--angle), #111 0);\n  transition: --angle 400ms;\n}\n.ring:hover { --angle: 360deg; } /* Snaps! */",
+    "metrics": {
+      "lines": 6,
+      "reflows": "0 (discrete 50% flip)",
+      "dependencies": "Token string only"
+    },
+    "previewNote": "Engine cannot interpolate raw tokens, so --angle jumps at 50%."
+  },
+  "after": {
+    "label": "Typed @property <angle>",
+    "code": "@property --angle {\n  syntax: '<angle>'; inherits: false; initial-value: 0deg;\n}\n.ring {\n  background: conic-gradient(#3b82f6 var(--angle), #111 0);\n  transition: --angle 400ms;\n}\n.ring:hover { --angle: 360deg; }",
+    "metrics": {
+      "lines": 8,
+      "reflows": "0 (Paint per frame)",
+      "dependencies": "Native CSSOM type"
+    },
+    "previewNote": "Engine parses --angle as an angle and interpolates smoothly."
+  }
+}

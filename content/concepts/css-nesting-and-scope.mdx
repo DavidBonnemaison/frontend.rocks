@@ -1,0 +1,60 @@
+---
+id: css-nesting-and-scope
+title: "CSS Nesting & @scope"
+domain: css-layout
+maturity_status: baseline-newly
+summary_tldr: "Native & nesting desugars to :is() specificity rules, while @scope bounds selector matching between an upper root and lower donut holes."
+relations:
+  - target_id: css-specificity-inheritance
+    type: requires
+    note: "Native nesting wraps parent selectors in :is(), inheriting their highest specificity."
+  - target_id: css-cascade-layers
+    type: requires
+    note: "@scope adds proximity-based cascade resolution below specificity."
+sources:
+  - "https://drafts.csswg.org/css-nesting-1/"
+  - "https://drafts.csswg.org/css-cascade-6/#scoped-styles"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "CSS nesting"
+  - "@scope"
+  - "donut scope"
+  - "proximity"
+  - ":is()"
+web_feature_id: nesting
+---
+
+## TL;DR
+
+Native CSS Nesting lets rules nest with `&` (desugaring under the hood to `:is()`) without Sass. `@scope` adds true DOM boundaries ("donut scope") with upper roots and lower `to (...)` exclusions, plus proximity-based tie-breaking in the cascade.
+
+## Interactive Lab
+
+Compare flat BEM selectors against native nesting and `@scope` donut boundaries in `PatternComparatorLab`.
+
+## Under the Hood
+
+Sass nesting is just string concatenation at build time; native CSS Nesting and `@scope` are live structural rules inside [Specificity & Inheritance](/concepts/css-specificity-inheritance).
+
+1. **`:is()` Desugaring**: `.a, #b { & .c {} }` evaluates as `:is(.a, #b) .c`, giving every match `#b`'s specificity.
+2. **Donut Scope**: `@scope (.card) to (.slot)` matches elements inside `.card` and stops before entering `.slot`, preventing parent styles from bleeding into slotted children.
+3. **Proximity Tie-Breaker**: Between two equally specific `@scope` rules, the one whose scope root is fewer DOM hops away wins, sitting right below [Cascade Layers](/concepts/css-cascade-layers) in precedence.
+
+```css
+@scope (.theme-dark) to (.theme-light) {
+  a { color: #93c5fd; }
+  & .badge { background: #1e293b; }
+}
+```
+
+## Problem Genealogy
+
+- **2006–2022**: Sass/PostCSS provided nesting, while BEM and CSS Modules simulated scoping via mangled class names.
+- **2023–2026**: Native CSS Nesting and `@scope` moved nesting and DOM-bounded scoping directly into the browser's CSS parser.
+
+## Production Pitfalls
+
+- **BEM concatenation trap**: Unlike Sass, native `&__item` does **not** concatenate class names into `.card__item`; write `& .item` or separate classes.
+- **`:is()` specificity inflation**: Nesting under a comma-separated list containing an ID or class inflates specificity for all branches.
+- **When not to use `@scope`**: Avoid `@scope` when you want strict shadow-boundary encapsulation of every inherited property; use Shadow DOM instead.

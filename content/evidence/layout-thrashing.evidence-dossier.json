@@ -1,0 +1,37 @@
+{
+  "concept_id": "layout-thrashing",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://web.dev/articles/avoid-large-complex-layouts-and-layout-thrashing",
+      "spec_section": "Forced synchronous layouts",
+      "quote": "Reading geometric properties after invalidating styles forces the browser to run layout synchronously."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+",
+    "firefox": "1+",
+    "safari": "1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["JS Mutation", "Forced Style & Layout", "Next JS Read"],
+    "mechanism_summary": "NeedsLayout flag triggers synchronous UpdateStyleAndLayoutTree on every interleaved geometric read."
+  },
+  "production_failures": [
+    {
+      "symptom": "Long Task > 150ms when rendering a list of cards",
+      "root_cause": "Loop reading offsetHeight and immediately mutating style.height across 80 cards.",
+      "mitigation": "Read all heights into an array first, then apply all style writes together."
+    },
+    {
+      "symptom": "Scroll jank with JS-computed sticky headers",
+      "root_cause": "Reading scrollY and getBoundingClientRect() inside an unthrottled scroll listener.",
+      "mitigation": "Use CSS position: sticky or IntersectionObserver."
+    }
+  ],
+  "sources": [
+    "https://web.dev/articles/avoid-large-complex-layouts-and-layout-thrashing",
+    "https://gist.github.com/paulirish/5d52fb081b3570c81e3a"
+  ]
+}

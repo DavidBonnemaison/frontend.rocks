@@ -1,0 +1,64 @@
+---
+id: pointer-events-touch-action
+title: Pointer Events, touch-action, and Pointer Capture
+domain: dom-events
+maturity_status: baseline-widely
+summary_tldr: "Stop mobile browser scroll from hijacking custom drags and sliders—CSS touch-action negotiates gesture ownership on the compositor while setPointerCapture() locks fast pointer streams."
+relations:
+  - target_id: dom-event-propagation
+    type: requires
+    note: "Pointer events follow standard capture/target/bubble propagation unless redirected by setPointerCapture()."
+  - target_id: passive-event-listeners
+    type: requires
+    note: "CSS touch-action negotiates scroll ownership on the compositor without blocking passive listeners."
+sources:
+  - "https://w3c.github.io/pointerevents/#the-touch-action-css-property"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "pointer events"
+  - "touch-action"
+  - "setPointerCapture"
+  - "pointercancel"
+web_feature_id: pointer-events
+---
+
+## TL;DR
+
+Pointer Events unify mouse, touch, and stylus input into one stream (`pointerdown`, `pointermove`, `pointerup`). Declaring CSS `touch-action` tells the compositor which gestures belong to the browser (preventing `pointercancel` mid-drag without sacrificing [Passive Event Listeners](/concepts/passive-event-listeners)) while `setPointerCapture()` locks fast drags to the handle.
+
+## Interactive Lab
+
+Trace compositor `touch-action` negotiation and `setPointerCapture()` routing in `StepMachineLab`.
+
+## Under the Hood
+
+At `touchstart`, the compositor thread reads CSS `touch-action` off the hit-tested layer to decide whether native pan/zoom owns the gesture without waiting for main-thread JS. Like painting dedicated bike lanes before rush hour, `touch-action: none` reserves the stream for your drag handler so the browser never fires `pointercancel` mid-drag.
+
+1. **Compositor Pre-Check**: At `touchstart`, the compositor reads `touch-action` (`none`, `pan-x`, `pan-y`, `manipulation`) without waiting for JS.
+2. **No `pointercancel`**: On `touch-action: none`, the browser suppresses native pan/zoom so `pointermove` streams cleanly.
+3. **Pointer Capture**: Calling `el.setPointerCapture(e.pointerId)` redirects all subsequent [DOM Event Propagation](/concepts/dom-event-propagation) for that pointer straight to `el` until `pointerup`.
+
+```js
+knob.addEventListener('pointerdown', (e) => {
+  knob.setPointerCapture(e.pointerId);
+  knob.dataset.dragging = 'true';
+});
+knob.addEventListener('pointermove', (e) => {
+  if (knob.dataset.dragging === 'true') moveKnob(e.clientX);
+});
+knob.addEventListener('pointerup', () => delete knob.dataset.dragging);
+```
+
+## Problem Genealogy
+
+- **2008 (Split Mouse & Touch Events)**: Developers duplicated `mousedown`/`mousemove` and `touchstart`/`touchmove` handlers with 300 ms tap delays.
+- **2015 (W3C Pointer Events)**: Unified input coordinates, pressure, tilt, and `pointerId` across all devices.
+- **2019 (Universal `touch-action: manipulation`)**: Eliminated the 300 ms double-tap zoom delay on interactive controls.
+
+## Production Pitfalls
+
+- **Missing `touch-action` on Sliders**: Forgetting `touch-action: pan-y` on a horizontal carousel causes mobile browsers to abort drags with `pointercancel`.
+- **Orphaned Drag State**: Relying on `pointerup` on the knob without `setPointerCapture()` drops the release event when the cursor leaves the element.
+- **When not to use `touch-action: none`**: Never apply `touch-action: none` to large scrollable sections, it traps mobile users who try to scroll past the widget.

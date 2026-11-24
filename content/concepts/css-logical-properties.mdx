@@ -1,0 +1,64 @@
+---
+id: css-logical-properties
+title: "CSS Logical Properties"
+domain: css-layout
+maturity_status: baseline-widely
+summary_tldr: "Logical properties (inline-start, block-end) map margins, padding, and borders to writing-mode and direction automatically."
+relations:
+  - target_id: block-formatting-context
+    type: requires
+    note: "Logical axes map block and inline directions onto the document’s writing mode."
+  - target_id: render-tree-layout
+    type: under_the_hood
+    note: "Resolves inline and block properties to physical box edges during layout box generation."
+sources:
+  - "https://drafts.csswg.org/css-logical-1/"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_logical_properties_and_values"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "logical properties"
+  - "margin-inline"
+  - "padding-block"
+  - "inset"
+  - "RTL"
+  - "writing-mode"
+web_feature_id: logical-properties
+---
+
+## TL;DR
+
+CSS Logical Properties replace physical `top/right/bottom/left` with flow-relative `block-start/inline-end/block-end/inline-start`. The style engine resolves them to physical sides based on `dir="rtl"` and `writing-mode`, eliminating duplicate RTL stylesheets.
+
+## Interactive Lab
+
+Compare physical `border-left` against `border-inline-start` under `dir="rtl"` in `PatternComparatorLab`.
+
+## Under the Hood
+
+Physical directions assume every reader scans left-to-right from top-to-bottom; logical properties orient themselves to the text stream's inline and block axes during [Render Tree & Layout](/concepts/render-tree-layout).
+
+1. **Axis Mapping**: In horizontal `ltr`, `inline-start` maps to `left` and `block-start` maps to `top`. Flipping `dir="rtl"` remaps `inline-start` to `right` automatically.
+2. **Shorthands**: `margin-inline: 1rem` sets both start and end; `inset: 0` sets all four `top/right/bottom/left` offsets at once.
+3. **Radius & Overflow**: `border-start-start-radius` and `inline-size`/`block-size` complete the model alongside [Block Formatting Context](/concepts/block-formatting-context) layout.
+
+```css
+.drawer {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-end: 0;
+  inline-size: min(360px, 90vw);
+  border-inline-start: 1px solid #27272a;
+}
+```
+
+## Problem Genealogy
+
+- **2005–2018**: Internationalized apps ran PostCSS RTLCSS build plugins or maintained brittle `[dir="rtl"]` override sheets.
+- **2020+**: CSS Logical Properties Level 1 achieved universal support, making single-bundle LTR/RTL/CJK layouts native.
+
+## Production Pitfalls
+
+- **Mixing physical and logical**: Writing `margin-inline: 0` above `margin-left: 1rem` maps to the same underlying box-model slot, causing confusing cascade overrides.
+- **Logical `overflow-x` gotcha**: `overflow-inline` is newer than `margin-inline`; verify support before replacing `overflow-x` if targeting older browsers.
+- **When not to use logical properties**: Do not use logical directions for inherently physical geometry (like a compass rose or video scrubber bar that always runs left-to-right).

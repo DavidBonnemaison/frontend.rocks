@@ -1,0 +1,53 @@
+{
+  "type": "step-machine",
+  "id": "wasm-js-boundary-overhead",
+  "title": "Wasm Linear Memory Batching & View Detachment",
+  "description": "Trace how batching into Linear Memory avoids trampoline overhead and how memory.grow() detaches TypedArray views.",
+  "steps": [
+    {
+      "label": "1. Write Batch to Linear Memory",
+      "description": "JS copies input bytes once into WebAssembly.Memory.buffer via a Uint8Array view instead of looping over FFI calls.",
+      "codeHighlight": "heap.set(pixels, ptr); wasm.exports.blurBatch(ptr, pixels.length);",
+      "state": {
+        "boundaryCrossings": 1,
+        "bufferBytes": 65536,
+        "viewDetached": false
+      },
+      "visualNodes": [
+        { "id": "js", "label": "V8 JS Heap", "status": "active" },
+        { "id": "trampoline", "label": "FFI Trampoline (1x)", "status": "active" },
+        { "id": "mem", "label": "Linear Memory (64KB)", "status": "active" }
+      ]
+    },
+    {
+      "label": "2. Wasm Calls memory.grow()",
+      "description": "Allocation exceeds current 64KB page; engine grows Linear Memory to 128KB and detaches the old JS ArrayBuffer.",
+      "codeHighlight": "// inside Wasm: (memory.grow (i32.const 1))",
+      "state": {
+        "bufferBytes": 131072,
+        "oldViewByteLength": 0,
+        "viewDetached": true
+      },
+      "visualNodes": [
+        { "id": "js", "label": "Old Uint8Array (Detached)", "status": "error" },
+        { "id": "trampoline", "label": "Wasm Execution", "status": "active" },
+        { "id": "mem", "label": "Linear Memory (128KB)", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Re-wrap Fresh TypedArray View",
+      "description": "JS constructs a fresh Uint8Array over memory.buffer at ptr to read the processed batch safely.",
+      "codeHighlight": "const out = new Uint8Array(wasm.exports.memory.buffer, ptr, len);",
+      "state": {
+        "bufferBytes": 131072,
+        "viewDetached": false,
+        "readbackReady": true
+      },
+      "visualNodes": [
+        { "id": "js", "label": "Fresh Uint8Array View", "status": "done" },
+        { "id": "trampoline", "label": "FFI Trampoline", "status": "done" },
+        { "id": "mem", "label": "Linear Memory (128KB)", "status": "done" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "type": "step-machine",
+  "id": "hydration-flicker-and-bailout",
+  "title": "Hydration Mismatch & Full Subtree Bailout",
+  "description": "Step through how streaming SSR, non-deterministic client state, and hydration bailout wipe active form inputs.",
+  "steps": [
+    {
+      "label": "1. Streaming SSR Flush",
+      "description": "Server flushes HTML chunks immediately with UTC locale formatting and default query state. User sees the search input and starts typing.",
+      "codeHighlight": "res.write('<span>Updated 14:02 UTC</span><input name=\"q\" value=\"\" />');",
+      "state": {
+        "ssrHtml": "<span>14:02 UTC</span>",
+        "userInput": "typing 'keyboard'",
+        "hydrated": false
+      },
+      "visualNodes": [
+        { "id": "ssr", "label": "Streaming SSR", "status": "done" },
+        { "id": "dom", "label": "Live DOM Input", "status": "active" },
+        { "id": "router", "label": "Client Router", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Full-Tree Hydration Boot",
+      "description": "JS bundle finishes downloading. Framework must walk and re-execute the component tree to bind event listeners.",
+      "codeHighlight": "hydrateRoot(document.getElementById('root'), <App />);",
+      "state": {
+        "ssrHtml": "<span>14:02 UTC</span>",
+        "userInput": "'keyboard'",
+        "hydrated": "in-progress"
+      },
+      "visualNodes": [
+        { "id": "ssr", "label": "VNode Walk", "status": "active" },
+        { "id": "dom", "label": "Live DOM Input", "status": "active" },
+        { "id": "router", "label": "Client Router", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Mismatch & Subtree Bailout",
+      "description": "Client evaluates new Date().toLocaleTimeString() or window.location.search. Text node differs from SSR HTML; framework bails out of hydration.",
+      "codeHighlight": "// Error #418: SSR '14:02 UTC' !== Client '6:02 AM PST'",
+      "state": {
+        "ssrHtml": "14:02 UTC",
+        "clientVNode": "6:02 AM PST",
+        "bailout": "Suspense boundary discarded"
+      },
+      "visualNodes": [
+        { "id": "ssr", "label": "Hydration Mismatch", "status": "error" },
+        { "id": "dom", "label": "Subtree Discarded", "status": "error" },
+        { "id": "router", "label": "Client Router", "status": "idle" }
+      ]
+    },
+    {
+      "label": "4. URL State Divergence",
+      "description": "Uncontrolled client URL parsing (hash or default params) diverges from server-rendered route props, widening the bailout to the layout shell.",
+      "codeHighlight": "const filter = new URLSearchParams(location.search).get('sort') ?? 'price';",
+      "state": {
+        "serverSort": "relevance",
+        "clientSort": "price",
+        "bailoutScope": "Root Layout"
+      },
+      "visualNodes": [
+        { "id": "ssr", "label": "URL State Skew", "status": "error" },
+        { "id": "dom", "label": "Root Replaced", "status": "error" },
+        { "id": "router", "label": "Router Desync", "status": "active" }
+      ]
+    },
+    {
+      "label": "5. Router Re-Mount & Input Wipe",
+      "description": "Client router mounts fresh DOM nodes for the bailed-out subtree. Focus drops and the user's typed text in the search input is wiped.",
+      "codeHighlight": "root.innerHTML = ''; // New <input> mounted with value=''",
+      "state": {
+        "userInput": "'' (wiped)",
+        "focus": "lost (document.body)",
+        "cls": "0.28 (flicker)"
+      },
+      "visualNodes": [
+        { "id": "ssr", "label": "Fresh CSR Tree", "status": "done" },
+        { "id": "dom", "label": "Input Wiped", "status": "error" },
+        { "id": "router", "label": "Focus Lost", "status": "error" }
+      ]
+    }
+  ]
+}

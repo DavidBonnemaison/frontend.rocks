@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "scroll-driven-animations",
+  "title": "JS scroll Listener vs animation-timeline: scroll()",
+  "description": "Compare main-thread scroll progress bars against native CSS scroll timelines.",
+  "before": {
+    "label": "JS scroll Event + style.width",
+    "code": "window.addEventListener('scroll', () => {\n  const max = document.body.scrollHeight - innerHeight;\n  bar.style.width = `${(scrollY / max) * 100}%`;\n}, { passive: true });",
+    "metrics": {
+      "lines": 4,
+      "reflows": "1 Layout+Paint per scroll tick",
+      "dependencies": "Main-thread listener"
+    },
+    "previewNote": "Janks during main-thread work and lags behind async touch scrolling."
+  },
+  "after": {
+    "label": "CSS animation-timeline: scroll()",
+    "code": "@keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }\n.progress-bar {\n  transform-origin: left;\n  animation: grow linear both;\n  animation-timeline: scroll(root block);\n}",
+    "metrics": {
+      "lines": 6,
+      "reflows": "0 (Compositor Thread)",
+      "dependencies": "0 JS"
+    },
+    "previewNote": "Locked to compositor scroll offset with zero main-thread involvement."
+  }
+}

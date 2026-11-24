@@ -1,0 +1,66 @@
+---
+id: dom-cssom-construction
+title: "DOM & CSSOM Construction"
+domain: rendering-pipeline
+maturity_status: baseline-widely
+summary_tldr: "Byte streams tokenize into DOM and CSSOM trees. Synchronous scripts stall DOM parsing until CSSOM finishes."
+relations:
+  - target_id: preload-scanner-hints
+    type: requires
+    note: "Preload scanner discovers blocked CSS and JS assets before the main parser stalls."
+  - target_id: browser-rendering-pipeline
+    type: under_the_hood
+    note: "DOM and CSSOM trees are the two mandatory inputs to Render Tree construction."
+sources:
+  - "https://html.spec.whatwg.org/multipage/parsing.html"
+  - "https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/Critical_rendering_path"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "DOM"
+  - "CSSOM"
+  - "parser blocking"
+  - "render blocking"
+  - "HTML tokenizer"
+---
+
+## TL;DR
+
+The HTML parser incrementally builds the DOM tree while the CSS parser builds the CSSOM tree. Because JavaScript can query styles via `getComputedStyle()`, any synchronous `<script>` pauses DOM construction until every preceding stylesheet finishes building the CSSOM.
+
+## Interactive Lab
+
+Step through how a single synchronous `<script>` creates a serial dependency between CSSOM and DOM in `StepMachineLab`.
+
+## Under the Hood
+
+Like a dual-track railway converging at a single switchyard, HTML and CSS arrive as raw byte streams that must become structured trees before layout begins.
+
+1. **Tokenization**: The engine decodes bytes into characters, then emits tokens (`StartTag`, `Text`, `EndTag` for HTML; selectors and declarations for CSS).
+2. **Tree Construction**: HTML tokens append `Element` nodes to the DOM incrementally; CSS rules form a cascade-indexed CSSOM tree.
+3. **The Serialization Trap**: When the HTML parser hits a non-`async`, non-`defer` `<script>`, it halts DOM construction until CSSOM completes, preventing scripts from reading stale styles.
+
+```html
+<head>
+  <!-- Render-blocking: CSSOM must finish before first paint -->
+  <link rel="stylesheet" href="/styles.css" />
+  <!-- Parser-blocking: waits for CSSOM, then halts DOM -->
+  <script src="/analytics.js"></script>
+  <!-- Non-blocking: downloads in parallel, runs after DOM -->
+  <script defer src="/app.js"></script>
+</head>
+```
+
+Use [Preload Scanner Hints](/concepts/preload-scanner-hints) to fetch subresources early while the main [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline) waits on CSSOM.
+
+## Problem Genealogy
+
+- **1995–2008**: Blocking `<script>` tags at the top of `<head>` froze page rendering until every script downloaded and executed.
+- **2009 (HTML5)**: `async` and `defer` attributes decoupled script downloading from HTML tokenization.
+- **2015+**: HTTP/2 multiplexing and `preload` hints reduced round-trip stalls, yet render-blocking CSSOM remains mandatory to avoid unstyled flashes.
+
+## Production Pitfalls
+
+- **CSS-before-script deadlock**: Placing a small inline `<script>` after a slow external `<link rel="stylesheet">` turns a render-blocking stylesheet into a full parser blocker.
+- **CSSOM `@import` chains**: Nesting `@import` inside stylesheets hides secondary CSS files from the preload scanner, adding serial network round-trips.
+- **When not to use synchronous scripts**: Never place synchronous `<script>` tags in `<head>` unless the script mutates critical above-the-fold state before first paint (such as theme class hydration).

@@ -1,0 +1,65 @@
+---
+id: css-cascade-layers
+title: CSS Cascade Layers (@layer)
+domain: css-layout
+maturity_status: baseline-widely
+summary_tldr: "Native CSS cascade mechanism allowing explicit stylesheet priority ordering before selector specificity is even evaluated."
+relations:
+  - target_id: browser-rendering-pipeline
+    type: under_the_hood
+    note: "Evaluated during the Recalc Style phase when sorting CSSOM declarations."
+  - target_id: css-nesting-and-scope
+    type: contrasts_with
+    note: "@layer orders global stylesheet precedence, whereas @scope bounds selector reach and proximity within a subtree."
+sources:
+  - "https://drafts.csswg.org/css-cascade-5/#layering"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/@layer"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "@layer"
+  - "specificity"
+  - "!important"
+  - "design system"
+web_feature_id: cascade-layers
+---
+
+## TL;DR
+
+`@layer` places layer priority above selector specificity in the CSS cascade algorithm. An `#id` selector inside a lower layer loses to a plain `.btn` class inside a higher layer.
+
+## Interactive Lab
+
+Step through CSS cascade resolution with `@layer` in `StepMachineLab`.
+
+## Under the Hood
+
+1. During the `Recalc Style` phase of the [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline), the engine sorts declarations by **Origin** (User-Agent, User, Author) and then by **Layer** in declaration order.
+2. Unlayered styles form an implicit anonymous layer with **higher** priority than all named layers.
+3. Selector specificity (`#id`, `.class`, `[attr]`) is only compared between rules within the same layer.
+
+```css
+@layer reset, components, utilities;
+
+@layer components {
+  /* Higher specificity (1, 1, 0), lower layer -> LOSES */
+  #checkout .btn-primary { background: #1e293b; }
+}
+
+@layer utilities {
+  /* Lower specificity (0, 1, 0), higher layer -> WINS */
+  .bg-sky { background: #0284c7; }
+}
+```
+
+## Problem Genealogy
+
+- **2013 (BEM & ITCSS)**: Manual naming conventions to keep all selectors at flat `(0,1,0)` specificity, which worked until a single third-party widget arrived with `#widget .btn`.
+- **2019 (Escalating `!important`)**: Specificity wars between resets, CSS frameworks, and local overrides.
+- **2022+ (`@layer` Baseline)**: Explicit, deterministic layer hierarchy built into CSS Cascade Level 5.
+
+## Production Pitfalls
+
+- **Inversion of `!important`**: Inside `@layer`, an `!important` rule in a **lower** layer beats an `!important` rule in a **higher** layer (reversed by the spec to protect base invariants).
+- **Unlayered third-party styles**: Importing a library without `layer(...)` places it in the final anonymous layer, overriding your named layers, just like an unlayered global CSS rule leaking past [CSS Container Queries](/concepts/css-container-queries) overrides.
+- **When not to use `@layer`**: Inside a strictly isolated Shadow DOM or [CSS Nesting & @scope](/concepts/css-nesting-and-scope) component without competing global stylesheets, `@layer` adds unnecessary indirection.

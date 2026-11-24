@@ -1,0 +1,43 @@
+{
+  "concept_id": "custom-elements-lifecycle",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/custom-elements.html#custom-element-reactions",
+      "spec_section": "4.13.4 Custom element reactions",
+      "quote": "Each custom element has an associated reaction queue processed synchronously before returning to user script or during microtask checkpoints."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "67+",
+    "firefox": "63+",
+    "safari": "10.1+",
+    "notes": "Autonomous custom elements (customElements.define) are Baseline Widely; Safari does not support customized built-in elements (is=...)."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "HTMLElement Constructor (Pre-Upgrade / Upgrade)",
+      "connectedCallback (Document Insertion)",
+      "attributeChangedCallback (observedAttributes)",
+      "disconnectedCallback / adoptedCallback"
+    ],
+    "mechanism_summary": "Custom Elements upgrade DOM nodes via CustomElementRegistry, queuing constructor, connectedCallback, and attributeChangedCallback reactions deterministically."
+  },
+  "production_failures": [
+    {
+      "symptom": "DOMException: NotSupportedError when setting attributes or appending children in constructor()",
+      "root_cause": "The HTML spec forbids modifying attributes or adding children inside a custom element's constructor during parser creation.",
+      "mitigation": "Keep constructor() strictly to super(), attachShadow(), and internal state; defer DOM work to connectedCallback()."
+    },
+    {
+      "symptom": "attributeChangedCallback never fires when element attribute mutates",
+      "root_cause": "The static get observedAttributes() getter was omitted or returned a lowercase mismatch.",
+      "mitigation": "Declare static observedAttributes = ['open', 'variant'] matching exact lowercase HTML attribute names."
+    }
+  ],
+  "sources": [
+    "https://html.spec.whatwg.org/multipage/custom-elements.html#custom-element-reactions",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_custom_elements"
+  ]
+}

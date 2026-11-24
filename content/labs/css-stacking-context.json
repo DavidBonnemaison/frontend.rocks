@@ -1,0 +1,33 @@
+{
+  "type": "constraint-simulator",
+  "id": "css-stacking-context",
+  "title": "Stacking Context Trap on z-index: 9999",
+  "description": "Toggle opacity or transform on the parent container to observe child isolation.",
+  "presetMode": "stacking-context",
+  "controls": [
+    {
+      "key": "opacity",
+      "label": "Parent opacity",
+      "kind": "range",
+      "min": 0.5,
+      "max": 1,
+      "step": 0.1,
+      "defaultValue": 1
+    },
+    {
+      "key": "transform",
+      "label": "transform: translateX(0) on parent",
+      "kind": "toggle",
+      "defaultValue": false
+    },
+    {
+      "key": "zIndex",
+      "label": "Parent sibling z-index",
+      "kind": "range",
+      "min": 1,
+      "max": 20,
+      "step": 1,
+      "defaultValue": 10
+    }
+  ]
+}

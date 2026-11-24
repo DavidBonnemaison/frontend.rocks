@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "accessibility-tree-aria",
+  "title": "Accessible Controls: Div Soup + ARIA vs Native HTML",
+  "before": {
+    "label": "Div + Manual ARIA + Key Handlers",
+    "code": "<div role=\"button\" tabIndex={0}\n     aria-pressed={active}\n     onClick={toggle}\n     onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggle()}>\n  Mute\n</div>",
+    "metrics": {
+      "lines": 6,
+      "reflows": "Manual keyboard + focus",
+      "dependencies": "Error-prone"
+    },
+    "previewNote": "Misses Space keyup scroll prevention, disabled semantics, and form integration."
+  },
+  "after": {
+    "label": "Native <button> + aria-pressed",
+    "code": "<button type=\"button\"\n        aria-pressed={active}\n        onClick={toggle}>\n  Mute\n</button>",
+    "metrics": {
+      "lines": 5,
+      "reflows": "Built-in AOM",
+      "dependencies": "0 kB"
+    },
+    "previewNote": "Native role, focusability, Enter/Space activation, and disabled state."
+  }
+}

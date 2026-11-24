@@ -1,0 +1,42 @@
+{
+  "concept_id": "js-garbage-collection",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://v8.dev/blog/trash-talk",
+      "spec_section": "V8 Orinoco Generational GC",
+      "quote": "The Young Generation is divided into two semi-spaces, and surviving objects are evacuated to the To-space or promoted to the Old Generation."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "66+",
+    "firefox": "69+",
+    "safari": "12.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Root Enumeration (Stack, Globals, Handles)",
+      "Parallel Scavenge (Young Generation)",
+      "Incremental & Concurrent Marking (Old Generation)",
+      "Lazy Sweeping & Compaction"
+    ],
+    "mechanism_summary": "V8 Orinoco combines Cheney-style semi-space scavenging for short-lived objects with concurrent tri-color marking and compaction for the Old Generation."
+  },
+  "production_failures": [
+    {
+      "symptom": "Periodic 40ms-120ms frame drops during smooth animations",
+      "root_cause": "Allocating thousands of temporary objects or closures per frame triggers frequent Young Generation scavenges and Old Generation mark-compact pauses.",
+      "mitigation": "Pre-allocate object pools or TypedArrays outside the animation loop to eliminate per-frame allocations."
+    },
+    {
+      "symptom": "Tab crash (OOM) despite WeakRef/FinalizationRegistry usage",
+      "root_cause": "FinalizationRegistry callbacks run asynchronously and are not guaranteed to execute promptly under tight allocation pressure.",
+      "mitigation": "Release large buffers and external resources explicitly with close() or dispose() rather than relying on finalizers."
+    }
+  ],
+  "sources": [
+    "https://v8.dev/blog/trash-talk",
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Memory_management"
+  ]
+}

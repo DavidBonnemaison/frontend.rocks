@@ -1,0 +1,51 @@
+{
+  "type": "step-machine",
+  "id": "import-maps-runtime-graphs",
+  "title": "Import Map Specifier Resolution & Scopes",
+  "description": "Trace how the browser registers an import map, resolves scoped bare specifiers, and avoids waterfalls.",
+  "steps": [
+    {
+      "label": "1. Parse Import Map Before Modules",
+      "description": "HTML parser ingests <script type='importmap'> into the document's module resolution table.",
+      "codeHighlight": "\"imports\": { \"lit\": \"/cdn/lit.3.2.1.js\" }",
+      "state": {
+        "mapRegistered": true,
+        "globalEntries": 2,
+        "scopedEntries": 1
+      },
+      "visualNodes": [
+        { "id": "html", "label": "HTML Parser", "status": "done" },
+        { "id": "map", "label": "Module Map", "status": "active" },
+        { "id": "net", "label": "Preload Scanner", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Longest-Prefix Scope Lookup",
+      "description": "Module /legacy/app.js imports 'lit'; engine checks scopes['/legacy/'] before falling back to top-level imports.",
+      "codeHighlight": "import { html } from 'lit'; // -> /cdn/lit.2.8.0.js",
+      "state": {
+        "caller": "/legacy/app.js",
+        "resolvedUrl": "/cdn/lit.2.8.0.js"
+      },
+      "visualNodes": [
+        { "id": "html", "label": "HTML Parser", "status": "done" },
+        { "id": "map", "label": "Scope Match (/legacy/)", "status": "active" },
+        { "id": "net", "label": "HTTP/2 Cache", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Preloaded Graph Instantiation",
+      "description": "Because modulepreload fetched /cdn/lit.3.2.1.js in parallel with HTML, main app instantiates with zero waterfall.",
+      "codeHighlight": "<link rel=\"modulepreload\" href=\"/cdn/lit.3.2.1.js\" />",
+      "state": {
+        "waterfallRtts": 0,
+        "cacheHit": true
+      },
+      "visualNodes": [
+        { "id": "html", "label": "HTML Parser", "status": "done" },
+        { "id": "map", "label": "Module Map", "status": "done" },
+        { "id": "net", "label": "ES Module Graph", "status": "done" }
+      ]
+    }
+  ]
+}

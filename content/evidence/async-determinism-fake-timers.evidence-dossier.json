@@ -1,0 +1,48 @@
+{
+  "concept_id": "async-determinism-fake-timers",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html",
+      "spec_section": "8.6 Timers — Timer Initialization Steps",
+      "quote": "Each task in the task queue runs to completion, followed immediately by performing a microtask checkpoint before the next timer task executes."
+    },
+    {
+      "source_url": "https://vitest.dev/api/vi.html#vi-usefaketimers",
+      "spec_section": "Vitest Fake Timers — advanceTimersByTimeAsync",
+      "quote": "Works like advanceTimersByTime, but will await queued microtasks after each timer callback runs."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "All (Test Harness)",
+    "firefox": "All (Test Harness)",
+    "safari": "All (Test Harness)"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Global Timer & Clock Monkey-Patching",
+      "Min-Heap Timer Insertion (runAt = now + delay)",
+      "Virtual Cursor Advancement & Macrotask Pop",
+      "Microtask Checkpoint Drain Between Ticks"
+    ],
+    "mechanism_summary": "Fake timers intercept Date, setTimeout, and requestAnimationFrame into a deterministic min-heap; async advancement interleaves macrotask execution with microtask draining to preserve Promise resolution order."
+  },
+  "production_failures": [
+    {
+      "symptom": "Debounced search test fails intermittently in CI despite passing locally",
+      "root_cause": "Test used real setTimeout(300) and asserted after 310ms, which failed whenever CI CPU load delayed the timer callback beyond 310ms.",
+      "mitigation": "Enable fake timers and advance virtual time with advanceTimersByTimeAsync(300)."
+    },
+    {
+      "symptom": "Test hangs until 5000ms timeout when combining fake timers with waitFor()",
+      "root_cause": "waitFor() schedules retry polls with setTimeout, which never fires when fake timers freeze the clock.",
+      "mitigation": "Pass advanceTimers to Testing Library or use advanceTimersByTimeAsync instead of waitFor polling."
+    }
+  ],
+  "sources": [
+    "https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html",
+    "https://vitest.dev/api/vi.html#vi-usefaketimers",
+    "https://github.com/sinonjs/fake-timers"
+  ]
+}

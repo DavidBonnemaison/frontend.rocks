@@ -1,0 +1,90 @@
+{
+  "paths": [
+    {
+      "id": "why-ui-drops-below-60-fps",
+      "title": "Why Your UI Drops Below 60 FPS",
+      "subtitle": "Trace the 16.6 ms frame budget from DOM writes to GPU textures.",
+      "description": "Trace jank from forced layouts and microtask starvation to VRAM and preloads.",
+      "estimatedMinutes": 22,
+      "concepts": [
+        "browser-rendering-pipeline",
+        "layout-thrashing",
+        "gpu-compositor-layers",
+        "event-loop-tasks-microtasks",
+        "preload-scanner-hints"
+      ]
+    },
+    {
+      "id": "modern-css-without-js-hacks",
+      "title": "Modern CSS Without JS Hacks",
+      "subtitle": "Replace specificity wars, ResizeObserver loops, and modal portals with native primitives.",
+      "description": "Replace JS layout hacks with Cascade Layers, Container Queries, and Popover.",
+      "estimatedMinutes": 20,
+      "concepts": [
+        "css-cascade-layers",
+        "css-stacking-context",
+        "css-container-queries",
+        "native-dialog-element",
+        "popover-api-light-dismiss"
+      ]
+    },
+    {
+      "id": "event-loop-memory-instant-navigation",
+      "title": "Event Loop, Memory & Instant Navigation",
+      "subtitle": "Understand V8 shapes, event dispatch, bfcache snapshots, and fine-grained reactivity.",
+      "description": "Connect task queues, V8 shapes, event dispatch, and signals to instant bfcache.",
+      "estimatedMinutes": 21,
+      "concepts": [
+        "event-loop-tasks-microtasks",
+        "v8-hidden-classes-ic",
+        "dom-event-propagation",
+        "bfcache-navigation",
+        "fine-grained-signals"
+      ]
+    },
+    {
+      "id": "testing-verification-real-engines",
+      "title": "Testing & Verification in Real Engines",
+      "subtitle": "Match assertions to real layout engines, ARIA trees, fake timers, and deterministic HTTP replay.",
+      "description": "Eliminate false-positive JSDOM suites with real browser engines, ARIA queries, and HAR replay.",
+      "estimatedMinutes": 26,
+      "concepts": [
+        "test-fidelity-spectrum",
+        "simulated-dom-vs-real-engines",
+        "a11y-tree-queries-vs-dom-selectors",
+        "async-determinism-fake-timers",
+        "network-interception-har-replay",
+        "visual-regression-subpixel-rendering"
+      ]
+    },
+    {
+      "id": "frontend-architecture-resilience",
+      "title": "Frontend Architecture & Resilience",
+      "subtitle": "Own state boundaries, parse I/O, model transitions explicitly, and survive flaky networks.",
+      "description": "Prevent stale state and duplicate mutations with state topology, FSMs, and idempotent outboxes.",
+      "estimatedMinutes": 24,
+      "concepts": [
+        "state-topology-boundaries",
+        "runtime-boundary-validation",
+        "finite-state-machines-ui",
+        "optimistic-ui-rollback",
+        "idempotency-optimistic-queues"
+      ]
+    },
+    {
+      "id": "browser-security-isolation",
+      "title": "Browser Security & Isolation",
+      "subtitle": "Enforce origin boundaries, CSP nonces, Trusted Types sinks, COOP/COEP isolation, and SubtleCrypto.",
+      "description": "Enforce cross-origin boundaries, Trusted Types, and COOP/COEP isolation.",
+      "estimatedMinutes": 23,
+      "concepts": [
+        "cors-preflight-samesite",
+        "csp-nonces-strict-dynamic",
+        "dom-xss-trusted-types",
+        "cross-origin-isolation-coop-coep",
+        "web-crypto-subtle"
+      ]
+    }
+  ]
+}
+

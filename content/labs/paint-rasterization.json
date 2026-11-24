@@ -1,0 +1,102 @@
+{
+  "type": "step-machine",
+  "id": "paint-rasterization",
+  "title": "From DisplayItems to GPU Bitmap Tiles",
+  "description": "Follow how vector paint commands become tiled GPU textures.",
+  "steps": [
+    {
+      "label": "1. Paint Record Emission",
+      "description": "Main thread walks the box tree in stacking order and emits DisplayItems (fillRect, drawText, clip).",
+      "codeHighlight": ".card { background: #111; box-shadow: 0 8px 24px #0006; }",
+      "state": {
+        "displayItems": 24,
+        "mainThreadMs": 1.8,
+        "pixelsDrawnYet": 0
+      },
+      "visualNodes": [
+        {
+          "id": "paint",
+          "label": "DisplayList",
+          "status": "active"
+        },
+        {
+          "id": "tile",
+          "label": "Tiling",
+          "status": "idle"
+        },
+        {
+          "id": "raster",
+          "label": "Raster",
+          "status": "idle"
+        },
+        {
+          "id": "gpu",
+          "label": "GPU Upload",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "2. Tile Partitioning",
+      "description": "Each composited layer is sliced into fixed-size tiles (typically 256x256 or 512x512) prioritized by viewport proximity.",
+      "state": {
+        "totalTiles": 16,
+        "visibleTiles": 6,
+        "offscreenTiles": 10
+      },
+      "visualNodes": [
+        {
+          "id": "paint",
+          "label": "DisplayList",
+          "status": "done"
+        },
+        {
+          "id": "tile",
+          "label": "Tiling",
+          "status": "active"
+        },
+        {
+          "id": "raster",
+          "label": "Raster",
+          "status": "idle"
+        },
+        {
+          "id": "gpu",
+          "label": "GPU Upload",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "3. Off-Thread Rasterization & Upload",
+      "description": "Raster worker threads execute Skia/GPU commands per tile and upload bitmaps into VRAM textures.",
+      "state": {
+        "rasterWorkers": 4,
+        "vramAllocatedMB": 6.4,
+        "frameReady": true
+      },
+      "visualNodes": [
+        {
+          "id": "paint",
+          "label": "DisplayList",
+          "status": "done"
+        },
+        {
+          "id": "tile",
+          "label": "Tiling",
+          "status": "done"
+        },
+        {
+          "id": "raster",
+          "label": "Raster",
+          "status": "done"
+        },
+        {
+          "id": "gpu",
+          "label": "GPU Upload",
+          "status": "active"
+        }
+      ]
+    }
+  ]
+}

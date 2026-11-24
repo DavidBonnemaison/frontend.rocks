@@ -1,0 +1,93 @@
+{
+  "type": "step-machine",
+  "id": "double-payment-race-condition",
+  "title": "Double-Submit Race: Unbounded Clicks vs FSM + Idempotency Key",
+  "description": "Trace how two pointer clicks inside one 16 ms frame bypass React's disabled prop and settle as two distinct Stripe charges.",
+  "steps": [
+    {
+      "label": "1. Synchronous DOM Capture & Bubble (t = 0 ms)",
+      "description": "Two rapid pointerup/click events dispatch synchronously on the <button> before React schedules a commit. Both handlers read isSubmitting === false from the current closure.",
+      "codeHighlight": "button.addEventListener('click', onPay); // Click #1 & #2 both enter handler",
+      "state": {
+        "frameMs": 0.4,
+        "reactDisabledProp": false,
+        "inFlightRequests": 0,
+        "ledgerCharges": 0
+      },
+      "visualNodes": [
+        { "id": "dom", "label": "DOM Click x2", "status": "error" },
+        { "id": "state", "label": "isSubmitting: false", "status": "active" },
+        { "id": "net", "label": "POST /v1/charges (0)", "status": "idle" },
+        { "id": "ledger", "label": "Ledger (0)", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Uncoalesced Handler Invocation (t = 1 ms)",
+      "description": "Without leading-edge coalescing or an immediate synchronous lock, both click callbacks invoke submitPayment() in the same macrotask.",
+      "codeHighlight": "setIsSubmitting(true); // queued for next render, does NOT block click #2",
+      "state": {
+        "frameMs": 1.2,
+        "reactDisabledProp": false,
+        "inFlightRequests": 2,
+        "ledgerCharges": 0
+      },
+      "visualNodes": [
+        { "id": "dom", "label": "DOM Click x2", "status": "done" },
+        { "id": "state", "label": "Pending Render", "status": "error" },
+        { "id": "net", "label": "POST /v1/charges x2", "status": "error" },
+        { "id": "ledger", "label": "Ledger (0)", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Network Blip & Retry Without FSM (t = 3,200 ms)",
+      "description": "Request #1 hits a 3.2 s TLS stall; a naive timeout resets isSubmitting to false while Request #1 is still in flight on the wire.",
+      "codeHighlight": "catch (err) { setIsSubmitting(false); } // unlocks UI while req #1 is still alive",
+      "state": {
+        "frameMs": 3200,
+        "reactDisabledProp": false,
+        "inFlightRequests": 2,
+        "ledgerCharges": 1
+      },
+      "visualNodes": [
+        { "id": "dom", "label": "User Retries", "status": "active" },
+        { "id": "state", "label": "Boolean Soup Reset", "status": "error" },
+        { "id": "net", "label": "Req #1 + Req #2 Live", "status": "error" },
+        { "id": "ledger", "label": "Charge #1 Settled", "status": "active" }
+      ]
+    },
+    {
+      "label": "4. Missing AbortSignal Leaves Orphaned Socket (t = 4,100 ms)",
+      "description": "Neither request carries an AbortController signal. When the user retries or navigates, the browser keeps the orphaned HTTP/2 stream open until the server commits.",
+      "codeHighlight": "fetch('/v1/charges', { method: 'POST', body }); // no signal, no cancellation",
+      "state": {
+        "frameMs": 4100,
+        "reactDisabledProp": true,
+        "inFlightRequests": 2,
+        "ledgerCharges": 2
+      },
+      "visualNodes": [
+        { "id": "dom", "label": "Button Disabled (Too Late)", "status": "done" },
+        { "id": "state", "label": "FSM Absent", "status": "error" },
+        { "id": "net", "label": "2x HTTP 200 OK", "status": "error" },
+        { "id": "ledger", "label": "Double Charge ($198)", "status": "error" }
+      ]
+    },
+    {
+      "label": "5. Fixed Architecture: FSM + Idempotency-Key (t = 0..4,100 ms)",
+      "description": "An explicit FSM transitions IDLE -> SUBMITTING synchronously in a ref/machine, attaches an AbortController, and stamps a stable Idempotency-Key UUID per checkout intent.",
+      "codeHighlight": "headers: { 'Idempotency-Key': intentUuid }, signal: controller.signal",
+      "state": {
+        "frameMs": 4100,
+        "reactDisabledProp": true,
+        "inFlightRequests": 1,
+        "ledgerCharges": 1
+      },
+      "visualNodes": [
+        { "id": "dom", "label": "Click #2 Ignored", "status": "done" },
+        { "id": "state", "label": "FSM: SUBMITTING", "status": "done" },
+        { "id": "net", "label": "Idempotent Replay", "status": "done" },
+        { "id": "ledger", "label": "Single Charge ($99)", "status": "done" }
+      ]
+    }
+  ]
+}

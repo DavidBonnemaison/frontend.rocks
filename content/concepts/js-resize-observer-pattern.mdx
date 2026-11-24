@@ -1,0 +1,60 @@
+---
+id: js-resize-observer-pattern
+title: JS ResizeObserver Pattern for Adaptive Layout
+domain: css-layout
+maturity_status: superseded
+superseded_by:
+  - css-container-queries
+summary_tldr: "Legacy pattern using ResizeObserver and JS state to toggle CSS classes based on container width. Superseded by @container."
+relations:
+  - target_id: browser-rendering-pipeline
+    type: under_the_hood
+    note: "ResizeObserver callbacks execute between Layout and Paint, triggering a second style recalculation cycle."
+  - target_id: css-container-queries
+    type: contrasts_with
+    note: "ResizeObserver mutates styles in JS after Layout, whereas @container queries resolve size rules in one CSS pass."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "ResizeObserver loop"
+  - "hydration flash"
+  - "responsive layout"
+web_feature_id: resize-observer
+---
+
+## TL;DR
+
+Before [CSS Container Queries](/concepts/css-container-queries), adapting a component to its parent required observing box dimensions with `ResizeObserver` in JavaScript and toggling conditional classes after the initial render.
+
+## Interactive Lab
+
+Compare execution cost between the `ResizeObserver` approach and `@container` in `PatternComparatorLab`.
+
+## Under the Hood
+
+1. The engine executes the initial Layout pass of the [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline) using default classes.
+2. `ResizeObserver` invokes the JS callback right before Paint with the measured `contentRect`.
+3. Mutating component state (`setState` / `classList.toggle`) invalidates style and forces a second Layout calculation on the next frame.
+
+```js
+// Legacy pattern: measures box after Layout, then dirties Layout again
+const ro = new ResizeObserver(([entry]) => {
+  const isWide = entry.contentRect.width >= 420;
+  card.classList.toggle('card--wide', isWide);
+});
+ro.observe(cardSlot);
+```
+
+## Problem Genealogy
+
+- **2015 (Element Queries polyfills)**: Expensive `window.resize` listeners blind to CSS-driven layout changes.
+- **2019 (`ResizeObserver` + React Hooks)**: Asynchronous box observation, but delayed by one frame relative to SSR, guaranteeing a visible layout snap on hydration.
+- **2023+ (`@container`)**: Native single-pass Layout resolution with zero JS.
+
+## Production Pitfalls
+
+- **`ResizeObserver loop completed with undelivered notifications`**: Resizing a parent inside a child's observer callback creates multi-frame oscillation that browsers eventually abort with a console warning.
+- **Hydration visual flash (CLS)**: During SSR, container width is unknown; the component snaps abruptly after client mount.
+- **When not to use `ResizeObserver`**: Stop using it for responsive CSS styling; reserve it for `<canvas>` or WebGL viewport resizing.

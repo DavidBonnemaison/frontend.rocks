@@ -1,0 +1,43 @@
+{
+  "concept_id": "view-transitions-api",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-view-transitions-1/",
+      "spec_section": "2. Concepts",
+      "quote": "The user agent captures the old state as static images, runs the update callback, captures the live new state, and animates a pseudo-element tree between them."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-newly",
+    "chrome": "111+",
+    "firefox": "144+",
+    "safari": "18+",
+    "notes": "Same-document document.startViewTransition() is Baseline Newly Available. Cross-document @view-transition remains Chromium/Safari."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Old Snapshot Capture",
+      "DOM Update Callback",
+      "Pseudo-Tree Construction",
+      "Compositor Animation"
+    ],
+    "mechanism_summary": "Engine pauses rendering briefly to capture old textures, executes DOM mutation, then animates ::view-transition-old/new pairs."
+  },
+  "production_failures": [
+    {
+      "symptom": "ViewTransition rejects with InvalidStateError or skips animation",
+      "root_cause": "Two elements share the same active view-transition-name simultaneously in the DOM.",
+      "mitigation": "Ensure every active view-transition-name is unique at snapshot time, or assign names dynamically before startViewTransition()."
+    },
+    {
+      "symptom": "Page feels frozen while waiting for data inside startViewTransition()",
+      "root_cause": "Awaiting a slow network fetch inside the startViewTransition callback blocks rendering until the promise resolves.",
+      "mitigation": "Fetch data first, then call document.startViewTransition() around the synchronous DOM swap."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-view-transitions-1/",
+    "https://developer.mozilla.org/en-US/docs/Web/API/View_Transition_API"
+  ]
+}

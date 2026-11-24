@@ -1,0 +1,48 @@
+{
+  "concept_id": "state-topology-boundaries",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/nav-history-apis.html#the-history-interface",
+      "spec_section": "7.4.2 The History interface",
+      "quote": "history.replaceState(data, unused, url) updates the current session history entry URL without triggering a document reload."
+    },
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams",
+      "spec_section": "URLSearchParams Web API",
+      "quote": "The URLSearchParams interface defines utility methods to work with the query string of a URL."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "49+",
+    "firefox": "44+",
+    "safari": "10.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "State Ownership Classification",
+      "Boundary Serialization (Memory / URL / Cache / IDB)",
+      "Revalidation & History Synchronization",
+      "Scoped Subtree Notification"
+    ],
+    "mechanism_summary": "Partitions client state by source of truth and persistence lifetime across component memory, URLSearchParams, server cache machines, and IndexedDB."
+  },
+  "production_failures": [
+    {
+      "symptom": "Throttled History API error and frozen filter bar during slider drag",
+      "root_cause": "Binding continuous range slider input events directly to history.replaceState() exceeds browser IPC rate limits (100 calls per 30s in Safari/Chromium).",
+      "mitigation": "Keep transient drag state in ephemeral component memory and commit to URLSearchParams only on pointerup or debounced settle."
+    },
+    {
+      "symptom": "User edits vanish after background refetch completes",
+      "root_cause": "Server response overwrites local form state because fetched entities and unsaved draft edits share the same store slice.",
+      "mitigation": "Separate server cache snapshots from ephemeral or IndexedDB-backed draft buffers keyed by dirty state."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams",
+    "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API",
+    "https://html.spec.whatwg.org/multipage/nav-history-apis.html#the-history-interface"
+  ]
+}

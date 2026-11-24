@@ -1,0 +1,43 @@
+{
+  "concept_id": "virtual-dom-reconciliation",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://react.dev/learn/preserving-and-resetting-state",
+      "spec_section": "React Reconciliation: Tree Diffing & Keys",
+      "quote": "When a component renders, React compares the returned tree with the previous render using element type and key to decide whether to update or remount DOM nodes."
+    },
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model",
+      "spec_section": "MDN DOM Mutation Cost",
+      "quote": "Mutating live DOM nodes triggers style recalculation and layout invalidation; batching minimal mutations reduces browser pipeline work."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+ (JS Object Diffing)",
+    "firefox": "1+ (JS Object Diffing)",
+    "safari": "1+ (JS Object Diffing)"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["VDOM Render Invocation", "Fiber/Tree Breadth Diff", "Keyed List Matching", "Commit Phase DOM Patch"],
+    "mechanism_summary": "Computes a minimal DOM mutation batch by diffing lightweight JS element trees in O(n) heuristics before committing writes to the live DOM."
+  },
+  "production_failures": [
+    {
+      "symptom": "Input focus and typed text jump to the wrong row when sorting or prepending a list",
+      "root_cause": "List items used array index as key={i}, causing reconciliation to reuse existing DOM nodes for different data items.",
+      "mitigation": "Assign stable, unique domain IDs as key={item.id} so reconciliation moves DOM nodes instead of mutating mismatched state."
+    },
+    {
+      "symptom": "INP exceeds 300ms when typing in a filter box above a 1,000-row table",
+      "root_cause": "Top-level state update re-rendered and diffed 1,000 un-memoized VDOM subtrees synchronously on every keystroke.",
+      "mitigation": "Colocate input state, virtualize offscreen rows, or adopt fine-grained signals for O(1) leaf updates."
+    }
+  ],
+  "sources": [
+    "https://react.dev/learn/preserving-and-resetting-state",
+    "https://react.dev/learn/rendering-lists#why-does-react-need-keys",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model"
+  ]
+}

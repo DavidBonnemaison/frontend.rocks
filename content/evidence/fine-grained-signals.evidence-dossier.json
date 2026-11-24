@@ -1,0 +1,40 @@
+{
+  "concept_id": "fine-grained-signals",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://github.com/tc39/proposal-signals",
+      "spec_section": "TC39 Signals Proposal (Stage 1)",
+      "quote": "Signals model a reactive dependency graph with glitch-free push-pull propagation."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "interop-experimental",
+    "chrome": "TC39 Stage 1 (polyfill)",
+    "firefox": "TC39 Stage 1 (polyfill)",
+    "safari": "TC39 Stage 1 (polyfill)"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Dependency Tracking",
+      "Push Dirty Flag",
+      "Lazy Pull Recompute"
+    ],
+    "mechanism_summary": "Glitch-free push-pull propagation over an acyclic observer graph."
+  },
+  "production_failures": [
+    {
+      "symptom": "Infinite effect loop saturating the main thread",
+      "root_cause": "An effect reads and writes the same signal without a guard.",
+      "mitigation": "Derive values via pure Computed signals instead of mutating inside an Effect."
+    },
+    {
+      "symptom": "UI fails to update after state change",
+      "root_cause": "Signal read performed outside the synchronous scope of computed/effect (after await).",
+      "mitigation": "Capture all signal reads before any asynchronous operation."
+    }
+  ],
+  "sources": [
+    "https://github.com/tc39/proposal-signals"
+  ]
+}

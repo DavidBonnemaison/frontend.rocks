@@ -1,0 +1,48 @@
+{
+  "concept_id": "command-pattern-event-sourcing-ui",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://martinfowler.com/eaaDev/EventSourcing.html",
+      "spec_section": "Event Sourcing Pattern",
+      "quote": "Capture all changes to an application state as a sequence of events, allowing current state to be rebuilt deterministically by replaying the log."
+    },
+    {
+      "source_url": "https://redux.js.org/understanding/thinking-in-redux/three-principles",
+      "spec_section": "Pure Reducers & Serializable Actions",
+      "quote": "Changes are made with pure functions that take the previous state and an action and return the next state without side effects."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+ (Pure JS Reducer + Append-Only Array)",
+    "firefox": "1+ (Pure JS Reducer + Append-Only Array)",
+    "safari": "1+ (Pure JS Reducer + Append-Only Array)"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Deterministic Command Capture (timestamps/IDs pre-computed)",
+      "Append-Only Log Persistence",
+      "Pure Reducer Fold / Checkpoint Replay",
+      "Cursor Scrubbing & Time-Travel Projection"
+    ],
+    "mechanism_summary": "Derives UI state as a deterministic fold over an append-only log of serializable commands, enabling exact replay and O(1) scrubbing with checkpoints."
+  },
+  "production_failures": [
+    {
+      "symptom": "Tab crashes with Out-Of-Memory during long Figma-like canvas sessions",
+      "root_cause": "Every pointermove event appended a full command and deep state snapshot to an unbounded array.",
+      "mitigation": "Coalesce high-frequency drag commands on pointerup and compact older logs into periodic structural-sharing checkpoints."
+    },
+    {
+      "symptom": "Replaying a user's exported bug log produces different IDs and timestamps",
+      "root_cause": "Reducer called Date.now() and crypto.randomUUID() during execution instead of reading pre-generated values from the command payload.",
+      "mitigation": "Move all non-deterministic inputs into the command creator before appending to the log."
+    }
+  ],
+  "sources": [
+    "https://redux.js.org/understanding/thinking-in-redux/three-principles",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Structured_clone_algorithm",
+    "https://martinfowler.com/eaaDev/EventSourcing.html"
+  ]
+}

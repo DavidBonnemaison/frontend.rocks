@@ -1,0 +1,53 @@
+{
+  "type": "step-machine",
+  "id": "microfrontend-isolation-models",
+  "title": "Micro-Frontend Isolation Boundaries",
+  "description": "Compare shared module graphs, Shadow DOM scoping, and iframe process isolation.",
+  "steps": [
+    {
+      "label": "1. Shared ES Module Graph",
+      "description": "Import map resolves 'react' to a single cached module URL across both host and remote.",
+      "codeHighlight": "import React from 'react'; // 1 shared module instance",
+      "state": {
+        "cssIsolated": false,
+        "jsHeapShared": true,
+        "duplicateFrameworks": 0
+      },
+      "visualNodes": [
+        { "id": "host", "label": "Host Shell", "status": "done" },
+        { "id": "mod", "label": "Shared Module Map", "status": "done" },
+        { "id": "remote", "label": "Billing Remote", "status": "active" }
+      ]
+    },
+    {
+      "label": "2. Shadow DOM Style Boundary",
+      "description": "Remote attaches a ShadowRoot; outer CSS rules cannot cross into the widget tree.",
+      "codeHighlight": "this.attachShadow({ mode: 'open' }).appendChild(widgetRoot);",
+      "state": {
+        "cssIsolated": true,
+        "jsHeapShared": true,
+        "browsingContexts": 1
+      },
+      "visualNodes": [
+        { "id": "host", "label": "Host CSS (Blocked)", "status": "idle" },
+        { "id": "mod", "label": "ShadowRoot Boundary", "status": "done" },
+        { "id": "remote", "label": "Scoped Widget DOM", "status": "done" }
+      ]
+    },
+    {
+      "label": "3. Cross-Origin Iframe Sandbox",
+      "description": "Untrusted remote runs in a separate origin and JS heap; data crosses via postMessage.",
+      "codeHighlight": "iframe.contentWindow.postMessage(payload, 'https://partner.example');",
+      "state": {
+        "cssIsolated": true,
+        "jsHeapShared": false,
+        "browsingContexts": 2
+      },
+      "visualNodes": [
+        { "id": "host", "label": "Host Origin", "status": "done" },
+        { "id": "mod", "label": "postMessage() Bridge", "status": "active" },
+        { "id": "remote", "label": "Isolated Process", "status": "done" }
+      ]
+    }
+  ]
+}

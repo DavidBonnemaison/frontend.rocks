@@ -1,0 +1,66 @@
+---
+id: shadow-dom-encapsulation
+title: Shadow DOM Encapsulation and Event Retargeting
+domain: dom-events
+maturity_status: baseline-widely
+summary_tldr: "Isolate component CSS and DOM trees without iframes—Shadow DOM blocks outer selectors, projects light DOM via <slot>, and retargets bubbling events to the host."
+relations:
+  - target_id: dom-event-propagation
+    type: requires
+    note: "Shadow trees modify event propagation by retargeting event.target to the host at the ShadowRoot."
+  - target_id: css-cascade-layers
+    type: contrasts_with
+    note: "Cascade Layers organize light-DOM specificity; Shadow DOM creates a hard selector boundary."
+  - target_id: mutation-observer
+    type: contrasts_with
+    note: "Outer MutationObserver instances stop at the ShadowRoot boundary unless attached inside the shadow tree."
+sources:
+  - "https://dom.spec.whatwg.org/#shadow-trees"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_shadow_DOM"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "shadow dom"
+  - "retargeting"
+  - "slot"
+  - "encapsulation"
+web_feature_id: shadow-dom
+---
+
+## TL;DR
+
+Shadow DOM attaches an isolated DOM and CSS subtree to a host element. Outer stylesheets cannot pierce the boundary, light-DOM children project into `<slot>` placeholders, and composed [DOM Events](/concepts/dom-event-propagation) crossing outward have `event.target` rewritten to the host element.
+
+## Interactive Lab
+
+Trace `ShadowRoot` boundary crossing and `event.target` retargeting in `StepMachineLab`.
+
+## Under the Hood
+
+Blink attaches a `ShadowRoot` as an encapsulated subtree whose styles and IDs are scoped away from document selectors, then merges `<slot>` placeholders with light-DOM children in the flat tree for layout. When a composed event bubbles past the `ShadowRoot` boundary, the engine rewrites `event.target` to the host element.
+
+1. **Flat Tree Composition**: The layout engine merges `<slot>` elements with slotted light-DOM children without moving nodes in the actual DOM.
+2. **Hard Style Boundary**: Document selectors stop at the `ShadowRoot`; only inheritable properties (`color`, `font`) and CSS custom properties cross inward, unlike [CSS Cascade Layers](/concepts/css-cascade-layers).
+3. **Event Retargeting**: Built-in UI events (`click`, `input`) have `composed: true` and retarget `e.target` to the host; custom events default to `composed: false` and stop at the boundary.
+
+```html
+<ui-badge>
+  <template shadowrootmode="open">
+    <style>:host { display: inline-flex; border: 1px solid; }</style>
+    <slot></slot>
+  </template>
+  Verified
+</ui-badge>
+```
+
+## Problem Genealogy
+
+- **2013 (Shadow DOM v0)**: Blink-only prototype with `/deep/` and `>>>` combinators that leaked styles anyway.
+- **2016 (Shadow DOM v1)**: Removed piercing combinators, standardized `<slot>` and `attachShadow({ mode })`.
+- **2024 (Declarative Shadow DOM)**: `<template shadowrootmode="open">` enabled SSR without waiting for JS hydration.
+
+## Production Pitfalls
+
+- **Broken `for`/`aria-labelledby` IDs**: ID references cannot cross `ShadowRoot` boundaries; keep labels and inputs in the same tree, and attach any [MutationObserver](/concepts/mutation-observer) directly to the shadow root if you need to observe internal changes.
+- **Lost Design-System Typography**: Global CSS resets (`button { font: inherit }`) do not enter shadow trees; share tokens via CSS custom properties or constructable `adoptedStyleSheets`.
+- **When not to use Shadow DOM**: Never wrap ordinary application pages or forms in Shadow DOM, it breaks global form submission, accessibility IDs, and utility CSS unless paired with `ElementInternals`.

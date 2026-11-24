@@ -1,0 +1,183 @@
+{
+  "type": "step-machine",
+  "id": "signal-graph-topological-sort",
+  "title": "Diamond Graph Push-Pull Evaluation",
+  "description": "Trace how a single write to Signal A propagates Dirty and Check marks before Effect D lazily evaluates once with consistent values.",
+  "steps": [
+    {
+      "label": "1. Initial Clean Graph",
+      "description": "All four nodes are synchronized. Source A holds 1; derived nodes B (A * 2) and C (A + 1) hold 2; sink D (B + C) holds 4 with 1 total execution.",
+      "codeHighlight": "const A = signal(1); const B = computed(() => A() * 2); const C = computed(() => A() + 1); const D = effect(() => B() + C());",
+      "state": {
+        "A": 1,
+        "B": "2 (Clean)",
+        "C": "2 (Clean)",
+        "D": "4 (Clean)",
+        "dExecutions": 1,
+        "glitchDetected": false
+      },
+      "visualNodes": [
+        {
+          "id": "node-a",
+          "label": "A = 1",
+          "status": "done"
+        },
+        {
+          "id": "node-b",
+          "label": "B = 2 [Clean]",
+          "status": "done"
+        },
+        {
+          "id": "node-c",
+          "label": "C = 2 [Clean]",
+          "status": "done"
+        },
+        {
+          "id": "node-d",
+          "label": "D = 4 [Clean]",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "label": "2. Push Phase: Write A = 2",
+      "description": "A increments its version and pushes invalidation marks without running user code. Direct dependents B and C become Dirty; transitive sink D becomes Check.",
+      "codeHighlight": "A.set(2); // marks B, C -> Dirty; marks D -> Check",
+      "state": {
+        "A": 2,
+        "B": "2 (Dirty)",
+        "C": "2 (Dirty)",
+        "D": "4 (Check)",
+        "dExecutions": 1,
+        "glitchDetected": false
+      },
+      "visualNodes": [
+        {
+          "id": "node-a",
+          "label": "A = 2 (v2)",
+          "status": "active"
+        },
+        {
+          "id": "node-b",
+          "label": "B [Dirty]",
+          "status": "error"
+        },
+        {
+          "id": "node-c",
+          "label": "C [Dirty]",
+          "status": "error"
+        },
+        {
+          "id": "node-d",
+          "label": "D [Check]",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "3. Pull Phase: D Verifies B First",
+      "description": "Effect D flushes. Because D is marked Check, it defers its own body and pulls upstream dependency B first. B recomputes 2 * 2 = 4 and marks D Dirty.",
+      "codeHighlight": "updateIfNecessary(B); // B: 2 -> 4, flips D from Check to Dirty",
+      "state": {
+        "A": 2,
+        "B": "4 (Clean)",
+        "C": "2 (Dirty)",
+        "D": "4 (Dirty)",
+        "dExecutions": 1,
+        "glitchDetected": false
+      },
+      "visualNodes": [
+        {
+          "id": "node-a",
+          "label": "A = 2 (v2)",
+          "status": "done"
+        },
+        {
+          "id": "node-b",
+          "label": "B = 4 [Clean]",
+          "status": "active"
+        },
+        {
+          "id": "node-c",
+          "label": "C [Dirty]",
+          "status": "error"
+        },
+        {
+          "id": "node-d",
+          "label": "D [Dirty]",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "4. Pull Phase: D Reads C",
+      "description": "D begins evaluating B() + C(). B() returns cached 4 immediately; C() triggers updateIfNecessary(C), which computes 2 + 1 = 3 before returning to D.",
+      "codeHighlight": "updateIfNecessary(C); // C: 2 -> 3 (Clean)",
+      "state": {
+        "A": 2,
+        "B": "4 (Clean)",
+        "C": "3 (Clean)",
+        "D": "evaluating",
+        "dExecutions": 1,
+        "glitchDetected": false
+      },
+      "visualNodes": [
+        {
+          "id": "node-a",
+          "label": "A = 2 (v2)",
+          "status": "done"
+        },
+        {
+          "id": "node-b",
+          "label": "B = 4 [Clean]",
+          "status": "done"
+        },
+        {
+          "id": "node-c",
+          "label": "C = 3 [Clean]",
+          "status": "active"
+        },
+        {
+          "id": "node-d",
+          "label": "D [Running]",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "label": "5. Consistent Commit (Zero Glitches)",
+      "description": "D completes with B = 4 and C = 3, committing 7 and resetting to Clean. D never observed the torn state (B = 4, C = 2) and ran exactly once for this write.",
+      "codeHighlight": "D.value = 4 + 3; // 7 (Clean), total executions = 2",
+      "state": {
+        "A": 2,
+        "B": "4 (Clean)",
+        "C": "3 (Clean)",
+        "D": "7 (Clean)",
+        "dExecutions": 2,
+        "glitchDetected": false
+      },
+      "visualNodes": [
+        {
+          "id": "node-a",
+          "label": "A = 2 (v2)",
+          "status": "done"
+        },
+        {
+          "id": "node-b",
+          "label": "B = 4 [Clean]",
+          "status": "done"
+        },
+        {
+          "id": "node-c",
+          "label": "C = 3 [Clean]",
+          "status": "done"
+        },
+        {
+          "id": "node-d",
+          "label": "D = 7 [Clean]",
+          "status": "done"
+        }
+      ]
+    }
+  ]
+}

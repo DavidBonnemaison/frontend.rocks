@@ -1,0 +1,42 @@
+{
+  "concept_id": "realtime-streams-backpressure-jitter",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/server-sent-events.html",
+      "spec_section": "9.2.2 The EventSource interface",
+      "quote": "When a user agent is to reestablish the connection, it must set the Last-Event-ID header to the last event ID string and wait the reconnection time."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "43+",
+    "firefox": "39+",
+    "safari": "10.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "HTTP/2 SSE or WebSocket Frame Ingress",
+      "ReadableStream Queue & desiredSize Check",
+      "TCP Receive Window Backpressure",
+      "Full-Jitter Exponential Backoff on Disconnect"
+    ],
+    "mechanism_summary": "Stream-backed transports propagate consumer desiredSize back to the OS socket buffer, while full-jitter exponential backoff decorrelates client reconnects across a bounded random window."
+  },
+  "production_failures": [
+    {
+      "symptom": "Origin server CPU spikes to 100% immediately after a brief load-balancer restart",
+      "root_cause": "Clients reconnect using deterministic intervals or unjittered exponential backoff, creating synchronized retry waves.",
+      "mitigation": "Apply full-jitter backoff: Math.random() * Math.min(capMs, baseMs * 2 ** attempt) with AbortSignal cancellation."
+    },
+    {
+      "symptom": "Browser tab OOMs during high-throughput market or telemetry bursts",
+      "root_cause": "Legacy WebSocket.onmessage pushes frames faster than the main thread renders, growing JS queues without TCP backpressure.",
+      "mitigation": "Consume frames through a ReadableStream (WebSocketStream or fetch stream) so paused reads throttle the socket."
+    }
+  ],
+  "sources": [
+    "https://websockets.spec.whatwg.org/",
+    "https://html.spec.whatwg.org/multipage/server-sent-events.html"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "concept_id": "dom-xss-trusted-types",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://w3c.github.io/trusted-types/dist/spec/#trusted-types-csp-directive",
+      "spec_section": "Trusted Types §4.2 require-trusted-types-for CSP Directive",
+      "quote": "When require-trusted-types-for 'script' is active, DOM injection sinks such as Element.innerHTML and script.src reject raw strings and require a TrustedHTML, TrustedScript, or TrustedScriptURL instance."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "interop-experimental",
+    "chrome": "83+",
+    "firefox": "135+ (partial / rolling out)",
+    "safari": "26+ (rolling out)",
+    "notes": "Supported in Chromium since 2020; polyfill available via trusted-types npm package."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "CSP require-trusted-types-for 'script' Enforcement",
+      "TrustedTypePolicyFactory.createPolicy() Sanitizer",
+      "DOM Sink Type Verification (TrustedHTML / TrustedScriptURL)"
+    ],
+    "mechanism_summary": "The DOM parser and script loader reject plain strings at ~60 dangerous sinks unless wrapped by an audited TrustedTypePolicy."
+  },
+  "production_failures": [
+    {
+      "symptom": "TypeError: Failed to set the 'innerHTML' property on 'Element': This document requires 'TrustedHTML' assignment",
+      "root_cause": "Enabling Content-Security-Policy: require-trusted-types-for 'script' broke a third-party widget writing raw strings to innerHTML.",
+      "mitigation": "Deploy in Content-Security-Policy-Report-Only mode first, then wrap legacy sinks via a sanitized 'default' policy or DOMPurify.sanitize(..., { RETURN_TRUSTED_TYPE: true })."
+    },
+    {
+      "symptom": "Wildcard trusted-types * policy allows any bundle to mint unverified TrustedHTML",
+      "root_cause": "Leaving trusted-types * in CSP lets compromised dependencies register pass-through policies that return raw strings.",
+      "mitigation": "Allowlist only named audited policies in CSP: trusted-types dompurify app-sanitizer;"
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API",
+    "https://w3c.github.io/trusted-types/dist/spec/"
+  ]
+}

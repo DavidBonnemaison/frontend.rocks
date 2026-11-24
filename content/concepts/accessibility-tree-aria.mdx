@@ -1,0 +1,66 @@
+---
+id: accessibility-tree-aria
+title: The Accessibility Tree and WAI-ARIA Semantics
+domain: security-a11y
+maturity_status: baseline-widely
+summary_tldr: "Parallel OS-exposed tree derived from the DOM and CSSOM that computes each element's Role, Accessible Name, States, and Properties for assistive technologies."
+relations:
+  - target_id: browser-rendering-pipeline
+    type: requires
+    note: "CSS visibility (display: none, visibility: hidden) prunes nodes from the Accessibility Tree."
+  - target_id: native-dialog-element
+    type: under_the_hood
+    note: "Native <dialog>.showModal() marks background siblings inert in both focus order and the Accessibility Tree."
+  - target_id: custom-elements-lifecycle
+    type: contrasts_with
+    note: "Native elements expose built-in ARIA semantics, whereas autonomous custom elements require ElementInternals to wire roles."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Glossary/Accessibility_tree"
+  - "https://w3c.github.io/aria/"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "Accessibility Tree"
+  - "WAI-ARIA"
+  - "Accessible Name"
+  - "a11y"
+---
+
+## TL;DR
+
+Browsers compile a parallel Accessibility Tree from the DOM and CSSOM, stripping decorative nodes and computing four fields per control: **Role**, **Name**, **State**, and **Value**. ARIA attributes only patch this metadata layer, they never add keyboard behavior or focusability on their own.
+
+## Interactive Lab
+
+Compare a `div[role="button"]` implementation against a native `<button>` in the Accessibility Tree.
+
+## Under the Hood
+
+If the [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline) paints pixels for eyes, the Accessibility Tree serializes a structured wireframe for OS assistive APIs (`UIA` on Windows, `NSAccessibility` on macOS, `ATK` on Linux).
+
+1. **CSS Pruning**: `display: none`, `visibility: hidden`, and `aria-hidden="true"` remove nodes from the Accessibility Tree, whereas `opacity: 0` leaves them exposed.
+2. **AccName Computation**: Engines resolve an element's Accessible Name in strict precedence: `aria-labelledby` > `aria-label` > native `<label>`/`alt` > text content.
+3. **Metadata Only**: Setting `role="button"` changes the tree node's role string, but does not wire `Tab` focus or `Enter`/`Space` key activation, unlike `<button>` or [Native Dialog](/concepts/native-dialog-element).
+
+```html
+<!-- Bad: role="presentation" or aria-hidden="true" on a focusable control -->
+<button aria-hidden="true">Broken</button>
+
+<!-- Good: native semantics + dynamic ARIA state + live region -->
+<button type="button" aria-expanded="false" aria-controls="menu-list">
+  Options
+</button>
+<div role="status" aria-live="polite">Saved 3 items.</div>
+```
+
+## Problem Genealogy
+
+- **1999–2008 (DHTML Widget Era)**: Custom `<div>` dropdowns and tabs left screen readers blind because HTML4 had no widget roles.
+- **2014 (WAI-ARIA 1.0)**: Standardized `role`, `aria-*` states, and live regions across browsers and screen readers.
+- **2022+ (`inert` & Popover/Dialog)**: Shifted modal and disclosure semantics back into native HTML attributes to eliminate manual ARIA traps.
+
+## Production Pitfalls
+
+- **First Rule of ARIA violation**: Replacing `<button>` with `<div role="button">` drops keyboard activation, form submission, and disabled semantics for zero gain.
+- **`aria-hidden="true"` on focusable elements**: Leaves the button reachable via `Tab` while hiding its announcement from screen readers ("ghost focus"); use the `inert` attribute instead.
+- **When not to use ARIA**: Whenever a native HTML element (`<button>`, `<a href>`, `<input>`, `<dialog>`) already carries the required role and keyboard behavior, omit redundant `role` attributes; for [Custom Elements](/concepts/custom-elements-lifecycle), expose roles via `ElementInternals` instead of mutating host `aria-*` attributes.

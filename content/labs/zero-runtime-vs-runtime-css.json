@@ -1,0 +1,53 @@
+{
+  "type": "step-machine",
+  "id": "zero-runtime-vs-runtime-css",
+  "title": "Runtime CSSOM vs Zero-Runtime Atomic CSS",
+  "description": "Compare runtime insertRule() style invalidation against build-time atomic extraction.",
+  "steps": [
+    {
+      "label": "1. Runtime: Hash & Mutate CSSOM",
+      "description": "Component renders with dynamic prop; JS hashes object and calls sheet.insertRule().",
+      "codeHighlight": "sheet.insertRule(`.css-9x2k { width: ${percent}%; }`);",
+      "state": {
+        "mode": "runtime-css-in-js",
+        "cssomMutations": 1,
+        "styleRecalcTriggered": true
+      },
+      "visualNodes": [
+        { "id": "build", "label": "Build: Uncompiled", "status": "idle" },
+        { "id": "js", "label": "JS Hash + insertRule()", "status": "active" },
+        { "id": "cssom", "label": "CSSOM Invalidated", "status": "error" }
+      ]
+    },
+    {
+      "label": "2. Zero-Runtime: Static Extraction",
+      "description": "Compiler emits .x_w_var { width: var(--w) } once into a static .css asset.",
+      "codeHighlight": ".x_w_var { width: var(--w); }",
+      "state": {
+        "mode": "zero-runtime",
+        "runtimeCssKb": 0,
+        "cssomMutations": 0
+      },
+      "visualNodes": [
+        { "id": "build", "label": "Build: Static Atomic CSS", "status": "done" },
+        { "id": "js", "label": "JS Runtime: 0 KB", "status": "idle" },
+        { "id": "cssom", "label": "CSSOM Frozen", "status": "done" }
+      ]
+    },
+    {
+      "label": "3. Dynamic Update via CSS Variable",
+      "description": "Updating --w on element.style updates width without touching CSSStyleSheet rules.",
+      "codeHighlight": "el.style.setProperty('--w', `${percent}%`);",
+      "state": {
+        "mode": "zero-runtime",
+        "cssomMutations": 0,
+        "incrementalRecalc": true
+      },
+      "visualNodes": [
+        { "id": "build", "label": "Build: Static Atomic CSS", "status": "done" },
+        { "id": "js", "label": "Inline --w Updated", "status": "done" },
+        { "id": "cssom", "label": "CSSOM Untouched", "status": "done" }
+      ]
+    }
+  ]
+}

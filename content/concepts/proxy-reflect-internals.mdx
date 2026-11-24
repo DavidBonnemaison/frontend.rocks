@@ -1,0 +1,64 @@
+---
+id: proxy-reflect-internals
+title: Proxy Traps and Reflect Internals
+domain: js-runtime
+maturity_status: baseline-widely
+summary_tldr: "Build fine-grained reactivity without breaking inherited getters—Proxy traps intercept [[Get]]/[[Set]] while Reflect forwards receiver binding, at the cost of bypassing V8 Inline Caches."
+relations:
+  - target_id: prototype-chain-lookup
+    type: requires
+    note: "Proxy traps intercept [[Get]] and [[GetPrototypeOf]] before ordinary prototype traversal runs."
+  - target_id: v8-hidden-classes-ic
+    type: under_the_hood
+    note: "Proxy exotic objects bypass V8 Inline Cache fast-paths on every intercepted property access."
+sources:
+  - "https://tc39.es/ecma262/#sec-proxy-object-internal-methods-and-internal-slots"
+  - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "proxy"
+  - "reflect"
+  - "receiver"
+  - "reactivity"
+web_feature_id: proxy-reflect
+---
+
+## TL;DR
+
+`Proxy` intercepts ECMAScript's internal operations (`[[Get]]`, `[[Set]]`, `[[Apply]]`) before ordinary [Prototype Chain Lookup](/concepts/prototype-chain-lookup) runs. Always pair traps with `Reflect` to preserve `receiver` binding for getters, while accepting that every trapped read bypasses [V8 Inline Caches](/concepts/v8-hidden-classes-ic).
+
+## Interactive Lab
+
+Step through exotic trap dispatch, `Reflect` forwarding, and invariant checks in `StepMachineLab`.
+
+## Under the Hood
+
+V8 marks a `Proxy` as an exotic `JSProxy` object, routing `[[Get]]`, `[[Set]]`, and `[[OwnPropertyKeys]]` out of [V8 Inline Caches](/concepts/v8-hidden-classes-ic) into JS trap functions. Every intercepted read pays trap dispatch and invariant-verification overhead, and forwarding via `Reflect` preserves the `receiver` binding for inherited getters.
+
+1. **Exotic Dispatch**: V8 marks the wrapper as a `JSProxy`, routing property reads out of [Inline Caches](/concepts/v8-hidden-classes-ic) into JS trap handlers.
+2. **Receiver Preservation**: Passing `receiver` to `Reflect.get(target, key, receiver)` ensures inherited getters read reactive properties on the proxy, not the raw target.
+3. **Invariant Checks**: After a trap returns, the engine enforces spec invariants (e.g., a non-writable, non-configurable property cannot report a different value).
+
+```js
+function trackReads(target, onRead) {
+  return new Proxy(target, {
+    get(obj, key, receiver) {
+      onRead(key);
+      return Reflect.get(obj, key, receiver);
+    },
+  });
+}
+```
+
+## Problem Genealogy
+
+- **2009 (ES5 `Object.defineProperty`)**: Required pre-registering every known key; could not detect new properties or array index writes.
+- **2015 (ES6 `Proxy` & `Reflect`)**: Exposed 13 meta-programming traps covering dynamic keys, `in`, `delete`, and function calls.
+- **2020+ (Fine-Grained Reactivity)**: Vue 3 and Solid stores replaced `defineProperty` walking with lazy `Proxy` traps.
+
+## Production Pitfalls
+
+- **Private Field `#x` Crash**: Calling a method on a proxied class with `#private` fields throws `TypeError` because the `Proxy` lacks the target's private slot.
+- **Built-in Slot Mismatch**: `Map`, `Set`, and `Date` methods fail when `this` is a `Proxy` unless bound to the raw target.
+- **When not to use `Proxy`**: Never wrap large numerical arrays or 60 fps particle buffers in a `Proxy`; the trap overhead dwarfs the computation.

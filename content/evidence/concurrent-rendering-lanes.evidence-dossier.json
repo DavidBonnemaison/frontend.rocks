@@ -1,0 +1,42 @@
+{
+  "concept_id": "concurrent-rendering-lanes",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://wicg.github.io/scheduling-apis/",
+      "spec_section": "Section 4: The Prioritized Task Scheduling API",
+      "quote": "scheduler.yield() allows a long-running task to yield control to the event loop so higher-priority user input and rendering tasks can execute before resuming."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "94+",
+    "firefox": "90+",
+    "safari": "15+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Bitmask Lane Assignment (Sync vs Transition)",
+      "Interruptible Fiber Unit-of-Work Loop",
+      "5 ms Frame Budget Deadline Check",
+      "Urgent Lane Preemption & Commit"
+    ],
+    "mechanism_summary": "A 31-bit lane bitmask prioritizes updates while a linked-list fiber loop checks frame deadlines every unit of work, yielding to input events and preempting low-priority renders."
+  },
+  "production_failures": [
+    {
+      "symptom": "Input lag on search box despite using debouncing",
+      "root_cause": "Filtering a 3,000-row list synchronously on the SyncLane blocks the main thread for >120 ms per keystroke.",
+      "mitigation": "Keep input value updates on SyncLane and wrap the expensive list state update in startTransition (TransitionLane)."
+    },
+    {
+      "symptom": "UI tearing between header badge and list items",
+      "root_cause": "An external store mutates while a TransitionLane render is yielded mid-tree, causing post-yield components to read newer data.",
+      "mitigation": "Subscribe to external mutable stores via useSyncExternalStore to force consistent snapshots."
+    }
+  ],
+  "sources": [
+    "https://wicg.github.io/scheduling-apis/",
+    "https://react.dev/reference/react/useTransition"
+  ]
+}

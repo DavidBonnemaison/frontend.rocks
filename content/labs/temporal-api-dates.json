@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "temporal-api-dates",
+  "title": "Mutable Legacy Date vs Immutable Temporal Types",
+  "before": {
+    "label": "Legacy Date (Mutable & UTC-Trap)",
+    "code": "const d = new Date('2026-03-08'); // UTC midnight -> Mar 7 in US!\nd.setDate(d.getDate() + 1); // Mutates in place, 0-indexed months",
+    "metrics": {
+      "lines": 2,
+      "reflows": "Mutable instance",
+      "dependencies": "No PlainDate / IANA DST"
+    },
+    "previewNote": "Silently mutates operands and conflates calendar dates with UTC instants."
+  },
+  "after": {
+    "label": "Temporal.PlainDate & ZonedDateTime",
+    "code": "const day = Temporal.PlainDate.from('2026-03-08');\nconst next = day.add({ days: 1 }); // Immutable '2026-03-09'\nconst meeting = next.toZonedDateTime({ timeZone: 'America/New_York', plainTime: '09:00' });",
+    "metrics": {
+      "lines": 3,
+      "reflows": "Immutable value",
+      "dependencies": "Native ICU4X timezone"
+    },
+    "previewNote": "Separates wall-clock dates from timezones and preserves DST invariants."
+  }
+}

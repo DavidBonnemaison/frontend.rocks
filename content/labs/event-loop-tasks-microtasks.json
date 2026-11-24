@@ -1,0 +1,147 @@
+{
+  "type": "step-machine",
+  "id": "event-loop-tasks-microtasks",
+  "title": "Task vs Microtask vs Frame Scheduling",
+  "description": "Observe why Promise.then always runs before setTimeout(0) and before Paint.",
+  "steps": [
+    {
+      "label": "1. Macrotask Execution",
+      "description": "Synchronous script schedules setTimeout(cb, 0) then Promise.resolve().then(micro).",
+      "codeHighlight": "setTimeout(cb, 0); Promise.resolve().then(micro);",
+      "state": {
+        "callStack": [
+          "script()"
+        ],
+        "microtaskQueue": [
+          "micro"
+        ],
+        "taskQueue": [
+          "cb"
+        ]
+      },
+      "visualNodes": [
+        {
+          "id": "stack",
+          "label": "Call Stack",
+          "status": "active"
+        },
+        {
+          "id": "micro",
+          "label": "Microtasks (1)",
+          "status": "idle"
+        },
+        {
+          "id": "render",
+          "label": "Render",
+          "status": "idle"
+        },
+        {
+          "id": "task",
+          "label": "Task Queue (1)",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "2. Microtask Checkpoint",
+      "description": "Call Stack is empty: engine drains the entire Microtask Queue before any frame.",
+      "codeHighlight": "// Executing micro()",
+      "state": {
+        "callStack": [
+          "micro()"
+        ],
+        "microtaskQueue": [],
+        "taskQueue": [
+          "cb"
+        ]
+      },
+      "visualNodes": [
+        {
+          "id": "stack",
+          "label": "Call Stack",
+          "status": "done"
+        },
+        {
+          "id": "micro",
+          "label": "Microtasks (0)",
+          "status": "active"
+        },
+        {
+          "id": "render",
+          "label": "Render",
+          "status": "idle"
+        },
+        {
+          "id": "task",
+          "label": "Task Queue (1)",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "3. Update the Rendering",
+      "description": "Microtasks are empty: rAF + Style + Layout + Paint can now execute.",
+      "state": {
+        "callStack": [],
+        "microtaskQueue": [],
+        "framePainted": true
+      },
+      "visualNodes": [
+        {
+          "id": "stack",
+          "label": "Call Stack",
+          "status": "done"
+        },
+        {
+          "id": "micro",
+          "label": "Microtasks (0)",
+          "status": "done"
+        },
+        {
+          "id": "render",
+          "label": "Render",
+          "status": "active"
+        },
+        {
+          "id": "task",
+          "label": "Task Queue (1)",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "4. Next Macrotask (cb)",
+      "description": "On the next event loop turn, cb() is dequeued from the Task Queue.",
+      "codeHighlight": "cb();",
+      "state": {
+        "callStack": [
+          "cb()"
+        ],
+        "microtaskQueue": [],
+        "taskQueue": []
+      },
+      "visualNodes": [
+        {
+          "id": "stack",
+          "label": "Call Stack",
+          "status": "done"
+        },
+        {
+          "id": "micro",
+          "label": "Microtasks (0)",
+          "status": "done"
+        },
+        {
+          "id": "render",
+          "label": "Render",
+          "status": "done"
+        },
+        {
+          "id": "task",
+          "label": "Task Queue (0)",
+          "status": "active"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "concept_id": "client-side-router-internals",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/nav-history-apis.html#navigation-api",
+      "spec_section": "7.2.7 The Navigation API",
+      "quote": "The Navigation API provides a centralized navigate event with intercept() and an AbortSignal that aborts when a subsequent navigation supersedes the current one."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "102+",
+    "firefox": "115+",
+    "safari": "16.4+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Click / Navigate Event Interception",
+      "Radix Trie Segment Matching (Static > Param > Wildcard)",
+      "Parallel Nested Loader Execution with AbortSignal",
+      "History State Commit & Scroll/Focus Restoration"
+    ],
+    "mechanism_summary": "Radix tries resolve URL segments in O(path_length) without backtracking regexes, while AbortSignal cancels superseded loader fetches before committing History state."
+  },
+  "production_failures": [
+    {
+      "symptom": "Stale page content renders after rapid back/forward clicks",
+      "root_cause": "Route loaders ignore the navigation AbortSignal, allowing an earlier slow response to commit after a newer navigation completed.",
+      "mitigation": "Forward the router's per-navigation AbortSignal into every fetch() inside route loaders and bail on AbortError."
+    },
+    {
+      "symptom": "400+ ms blank layout delay on nested routes",
+      "root_cause": "Fetching data inside component useEffect hooks instead of parallel route loaders creates sequential network waterfalls.",
+      "mitigation": "Hoist data dependencies to route-level loaders dispatched concurrently right after radix matching."
+    }
+  ],
+  "sources": [
+    "https://html.spec.whatwg.org/multipage/nav-history-apis.html#navigation-api",
+    "https://wicg.github.io/urlpattern/"
+  ]
+}

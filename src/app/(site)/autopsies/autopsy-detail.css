@@ -1,0 +1,308 @@
+.autopsy-article {
+  padding: 24px 0 64px;
+  max-width: 920px;
+}
+
+.autopsy-section {
+  margin-bottom: 32px;
+}
+
+.autopsy-section-heading {
+  font-size: clamp(1.375rem, 2.2vw, 1.5rem);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  margin: 2.75rem 0 1rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  color: var(--text);
+}
+
+.autopsy-section-heading--flush {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.autopsy-section-num {
+  font-family: var(--mono);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Explicit list restoration inside autopsy prose (overrides Tailwind Preflight reset) */
+.autopsy-prose p {
+  margin: 0 0 1rem;
+  line-height: 1.68;
+}
+
+.autopsy-prose ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin: 0.85rem 0 1.15rem;
+}
+
+.autopsy-prose ol {
+  list-style-type: decimal;
+  padding-left: 1.35rem;
+  margin: 0.85rem 0 1.15rem;
+}
+
+.autopsy-prose li {
+  margin-bottom: 0.55rem;
+  line-height: 1.65;
+}
+
+.autopsy-prose li > strong {
+  color: var(--text);
+}
+
+/* Timestamped Incident Timeline */
+.autopsy-timeline {
+  list-style: none !important;
+  padding: 4px 0 4px 22px !important;
+  margin: 1.2rem 0 1.4rem !important;
+  border-left: 2px solid var(--semantic-legacy-border);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.autopsy-timeline-item {
+  position: relative;
+  margin-bottom: 0 !important;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.autopsy-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -29px;
+  top: 16px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #f57642;
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 2px rgba(245, 118, 66, 0.35);
+}
+
+.autopsy-timeline-ts {
+  display: inline-block;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--semantic-legacy-text);
+  background: var(--semantic-legacy-bg);
+  border: 1px solid var(--semantic-legacy-border);
+  border-radius: 4px;
+  padding: 1px 7px;
+  margin-right: 8px;
+  vertical-align: baseline;
+}
+
+/* Dedicated Red Herring / Failed Naive Patch Callout */
+.autopsy-red-herring {
+  margin: 1.5rem 0 2rem;
+  padding: 18px 20px;
+  border-radius: var(--radius-md, 10px);
+  background: var(--semantic-legacy-bg);
+  border: 1px solid var(--semantic-legacy-border);
+  border-left: 4px solid #f57642;
+}
+
+.autopsy-red-herring-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.autopsy-rejected-badge {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+}
+
+.autopsy-red-herring-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--semantic-legacy-text);
+}
+
+.autopsy-red-herring .autopsy-prose > :last-child {
+  margin-bottom: 0;
+}
+
+/* Layer Dissection Step Cards */
+.autopsy-step-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 1rem;
+}
+
+.autopsy-step-card {
+  padding: 18px 20px;
+  border-radius: var(--radius-md, 10px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.autopsy-step-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.autopsy-step-badge {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 5px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.autopsy-step-title {
+  margin: 0;
+  font-size: 1.06rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.autopsy-step-card .autopsy-prose > :last-child {
+  margin-bottom: 0;
+}
+
+/* Architectural Fix / Case File Section */
+.autopsy-fix-card {
+  margin-top: 2.75rem;
+  margin-bottom: 32px;
+  padding: 22px 24px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--accent);
+  background: var(--surface);
+}
+
+.autopsy-narrative-h2 {
+  font-size: clamp(1.375rem, 2.2vw, 1.55rem);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  margin: 2.5rem 0 1rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+}
+
+.autopsy-narrative-body > .autopsy-prose > .autopsy-narrative-h2:first-child {
+  margin-top: 1.25rem;
+}
+
+.autopsy-narrative-body {
+  scroll-margin-top: 84px;
+}
+
+.autopsy-inline-widget {
+  margin: 2rem 0;
+  scroll-margin-top: 84px;
+}
+
+.autopsy-case-file-grid {
+  margin: 1.15rem 0 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  border-top: 1px solid var(--border);
+}
+
+.autopsy-case-file-row {
+  display: grid;
+  grid-template-columns: 165px minmax(0, 1fr);
+  gap: 8px 18px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: baseline;
+}
+
+.autopsy-case-file-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.autopsy-case-file-row dt {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.autopsy-case-file-row dd {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.autopsy-case-file-row dd code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.14);
+}
+
+@media (max-width: 640px) {
+  .autopsy-red-herring,
+  .autopsy-step-card,
+  .autopsy-fix-card {
+    padding: 14px 15px;
+  }
+
+  .autopsy-timeline {
+    padding-left: 18px !important;
+  }
+
+  .autopsy-timeline-item::before {
+    left: -25px;
+  }
+
+  .autopsy-case-file-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
+

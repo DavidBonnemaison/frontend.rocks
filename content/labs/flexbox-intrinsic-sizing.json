@@ -1,0 +1,44 @@
+{
+  "type": "live-sandbox",
+  "id": "flexbox-intrinsic-sizing",
+  "title": "Flex Item Overflow vs min-width: 0 Sandbox",
+  "description": "Observe how the default min-width: auto prevents a flex item from shrinking below its unbreakable min-content width.",
+  "height": 240,
+  "html": "<div class=\"container-bounds\"><div class=\"bounds-label mono\">Flex Container (width: 310px)</div><div class=\"flex-row\" id=\"row\"><aside class=\"sidebar\">Sidebar<br/>84px</aside><main class=\"main-col\" id=\"main\"><div class=\"unbreakable mono\">https://cdn.example.invalid/assets/immutable-chunk-hash-8f3c2b19a0.js</div></main></div><div class=\"readout mono\" id=\"readout\"></div></div>",
+  "css": ".container-bounds { padding: 8px 4px; }\n.bounds-label { font-size: 11px; color: #94a3b8; margin-bottom: 6px; }\n.flex-row { display: flex; gap: 8px; width: 310px; border: 2px dashed #f87171; border-radius: 6px; padding: 8px; background: #0d1016; }\n.sidebar { flex: 0 0 84px; background: rgba(148, 163, 184, 0.14); border: 1px solid #475569; border-radius: 4px; padding: 8px; font-size: 11px; color: #cbd5e1; }\n.main-col { flex: 1 var(--flex-shrink, 1) 0%; min-width: auto; background: rgba(56, 189, 248, 0.12); border: 1px solid #38bdf8; border-radius: 4px; padding: 8px; }\n#sandbox-root.min-w-0 .main-col { min-width: 0; border-color: #34d399; background: rgba(52, 211, 153, 0.1); }\n.unbreakable { width: var(--content-w, 300px); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: #1e293b; padding: 5px 7px; border-radius: 4px; font-size: 11px; color: #f8fafc; }\n#sandbox-root:not(.min-w-0) .unbreakable { max-width: none; }\n.readout { margin-top: 14px; font-size: 11px; color: #cbd5e1; background: #0d1016; border: 1px solid #1e293b; border-radius: 4px; padding: 6px 8px; }",
+  "js": "var row = document.getElementById('row'); var main = document.getElementById('main'); var r = document.getElementById('readout'); if (row && main && r) { var overflow = row.scrollWidth > row.clientWidth; r.textContent = 'container clientWidth: ' + row.clientWidth + 'px | main offsetWidth: ' + main.offsetWidth + 'px | overflow: ' + (overflow ? 'YES (' + (row.scrollWidth - row.clientWidth) + 'px)' : 'NONE'); }",
+  "controls": [
+    {
+      "key": "minWidthZero",
+      "label": "min-width: 0 on flex item",
+      "kind": "toggle",
+      "target": "class",
+      "className": "min-w-0",
+      "defaultValue": false
+    },
+    {
+      "key": "flexShrink",
+      "label": "flex-shrink",
+      "kind": "range",
+      "target": "css-var",
+      "cssVar": "--flex-shrink",
+      "min": 0,
+      "max": 1,
+      "step": 1,
+      "defaultValue": 1
+    },
+    {
+      "key": "contentWidth",
+      "label": "Unbreakable child width",
+      "kind": "range",
+      "target": "css-var",
+      "cssVar": "--content-w",
+      "min": 140,
+      "max": 360,
+      "step": 20,
+      "unit": "px",
+      "defaultValue": 300
+    }
+  ],
+  "expectedObservation": "With min-width: 0 disabled, even flex-shrink: 1 cannot compress the main column below its unbreakable child's intrinsic width, causing horizontal overflow past the red dashed container boundary. Enabling min-width: 0 lifts that floor so text-overflow: ellipsis engages."
+}

@@ -1,0 +1,53 @@
+{
+  "type": "step-machine",
+  "id": "regexp-backtracking-unicode",
+  "title": "NFA Backtracking Explosion vs Linear Match",
+  "description": "Trace how nested quantifiers (a+)+ explore 2^n paths on mismatch while /u handles surrogate pairs.",
+  "steps": [
+    {
+      "label": "1. Greedy Forward Scan",
+      "description": "Pattern /^(a+)+$/ consumes all 'a' characters in 'aaaaaaaaaa!' before hitting '!'.",
+      "codeHighlight": "/^(a+)+$/.test('aaaaaaaaaa!')",
+      "state": {
+        "pattern": "/^(a+)+$/",
+        "index": 10,
+        "backtracks": 0
+      },
+      "visualNodes": [
+        { "id": "input", "label": "aaaaaaaaaa!", "status": "active" },
+        { "id": "nfa", "label": "NFA Stack (Depth 1)", "status": "active" },
+        { "id": "cpu", "label": "Main Thread", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Exponential Backtrack Cascade",
+      "description": "Every partition of the 10 'a's is retried in turn (2^10 = 1024 attempts; 30 'a's = 1 billion attempts).",
+      "codeHighlight": "// Tries (9,1), (8,2), (8,1,1)...",
+      "state": {
+        "pattern": "/^(a+)+$/",
+        "backtracks": 1024,
+        "complexity": "O(2^n)"
+      },
+      "visualNodes": [
+        { "id": "input", "label": "aaaaaaaaaa!", "status": "error" },
+        { "id": "nfa", "label": "NFA Stack (2^n)", "status": "error" },
+        { "id": "cpu", "label": "Main Thread Blocked", "status": "error" }
+      ]
+    },
+    {
+      "label": "3. Linear Non-Ambiguous Pattern + /u",
+      "description": "Rewriting to /^a+$/u removes nested quantifiers (O(n)) and decodes full Unicode code points.",
+      "codeHighlight": "/^\\p{Letter}+$/v.test(text)",
+      "state": {
+        "pattern": "/^\\p{Letter}+$/v",
+        "backtracks": 0,
+        "complexity": "O(n)"
+      },
+      "visualNodes": [
+        { "id": "input", "label": "Unicode Code Points", "status": "done" },
+        { "id": "nfa", "label": "Linear Scan O(n)", "status": "done" },
+        { "id": "cpu", "label": "Main Thread Free", "status": "done" }
+      ]
+    }
+  ]
+}

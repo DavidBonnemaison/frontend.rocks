@@ -1,0 +1,66 @@
+---
+id: user-preference-media-queries
+title: User Preference Media Queries
+domain: security-a11y
+maturity_status: baseline-widely
+summary_tldr: "CSS Media Queries Level 5 features (prefers-reduced-motion, prefers-color-scheme, forced-colors) that mirror OS-level accessibility and display settings into CSS and window.matchMedia()."
+relations:
+  - target_id: css-cascade-layers
+    type: requires
+    note: "Preference media queries override base theme tokens cleanly when structured inside cascade layers."
+  - target_id: gpu-compositor-layers
+    type: under_the_hood
+    note: "prefers-reduced-motion swaps large compositor transform animations for static states or subtle opacity fades."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion"
+  - "https://drafts.csswg.org/mediaqueries-5/#mf-user-preferences"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "prefers-reduced-motion"
+  - "prefers-color-scheme"
+  - "forced-colors"
+  - "media queries"
+web_feature_id: prefers-reduced-motion
+---
+
+## TL;DR
+
+User preference media queries (`prefers-reduced-motion`, `prefers-color-scheme`, `prefers-contrast`, `forced-colors`) bridge OS accessibility settings directly into CSS and `window.matchMedia()`. Engines re-evaluate affected stylesheets live whenever the user flips a system setting.
+
+## Interactive Lab
+
+Toggle `prefers-reduced-motion`, `prefers-color-scheme`, and `forced-colors` to inspect style and JS overrides.
+
+## Under the Hood
+
+Instead of inventing a custom settings modal per website, user preference media queries wire your stylesheet directly to the OS control panel, letting [CSS Cascade Layers](/concepts/css-cascade-layers) swap tokens in one pass.
+
+1. **Motion Gate**: `prefers-reduced-motion: reduce` targets vestibular triggers (large [GPU Compositor](/concepts/gpu-compositor-layers) translations, parallax, and smooth-scrolling) while keeping subtle opacity fades.
+2. **Forced Colors Override**: When `forced-colors: active` triggers (Windows High Contrast), the engine strips `box-shadow`, `background-image`, and custom `color` values, mapping UI to system keywords (`Canvas`, `CanvasText`, `Highlight`).
+3. **JS Synchronization**: `window.matchMedia('(prefers-reduced-motion: reduce)')` exposes `.matches` and a `change` event for WebGL, canvas, or `scrollTo()` animations.
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media (forced-colors: active) {
+  .card { border: 1px solid CanvasText; }
+}
+```
+
+## Problem Genealogy
+
+- **2010–2018 (Manual Theme Toggles & Unstoppable Parallax)**: Sites ignored OS dark mode and triggered motion sickness with unguarded scroll-jacking.
+- **2019 (`prefers-reduced-motion` & `prefers-color-scheme`)**: Browser vendors exposed macOS, iOS, Windows, and Android system flags to CSS.
+- **2021+ (`forced-colors` & `color-scheme`)**: Replaced legacy `-ms-high-contrast` prefixes with standard system color palettes and native form-control theming.
+
+## Production Pitfalls
+
+- **Building focus rings with `box-shadow` only**: `forced-colors: active` strips `box-shadow`, erasing keyboard focus indicators; always use `outline` (or `outline: 2px solid transparent` alongside shadows).
+- **Forgetting JS-driven animations**: CSS `@media (prefers-reduced-motion: reduce)` cannot stop `requestAnimationFrame` loops or `element.scrollIntoView({ behavior: 'smooth' })`; check `matchMedia()` in JS.
+- **When not to use `forced-color-adjust: none`**: Only disable forced colors on color-accurate swatches or photo canvases; overriding it on buttons or text breaks contrast for low-vision users.

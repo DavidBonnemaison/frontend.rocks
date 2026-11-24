@@ -1,0 +1,71 @@
+---
+id: state-topology-boundaries
+title: "Client State Topology: Ephemeral, URL, Server Cache & Persistent"
+domain: state-architecture
+maturity_status: baseline-widely
+summary_tldr: "Eliminates stale data, broken back-button navigation, and redundant re-renders by assigning every piece of UI state to its canonical owner: ephemeral memory, URL search params, a server cache, or IndexedDB."
+relations:
+  - target_id: url-as-state-store
+    type: requires
+    note: "Shareable filters, pagination, and active tabs belong in URLSearchParams rather than in-memory stores."
+  - target_id: server-state-cache-machines
+    type: requires
+    note: "Remote entities require staleness tracking, deduplication, and background revalidation instead of manual store slices."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API"
+  - "https://html.spec.whatwg.org/multipage/nav-history-apis.html#the-history-interface"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "state-topology"
+  - "server-state"
+  - "url-state"
+  - "ephemeral-state"
+  - "persistence"
+---
+
+## TL;DR
+
+Dumping every variable into one global store breaks browser Back navigation, leaks stale server responses, and triggers tree-wide re-renders. Partitioning client state across four distinct owners (ephemeral memory, URL search params, server cache, and IndexedDB) keeps each source of truth synchronized with its lifecycle.
+
+## Interactive Lab
+
+Compare a monolithic global store against a four-tier state topology in `PatternComparatorLab`.
+
+## Under the Hood
+
+Every client state variable has an authoritative lifecycle and a serialization boundary. Assigning state to the wrong tier forces manual synchronization code that drifts out of sync across renders and navigations.
+
+1. **Ephemeral UI state**: Hover flags, modal open toggles, and draft input text live in component memory and unmount with the DOM subtree.
+2. **Navigational URL state**: Filters, sort order, and pagination serialize into `URLSearchParams` via [URL as State Store](/concepts/url-as-state-store) so reloads and shared links restore the exact view.
+3. **Server cache state**: Remote records belong to a dedicated [Server State Cache Machine](/concepts/server-state-cache-machines) that tracks `staleTime`, deduplicates in-flight fetches, and invalidates on mutation.
+4. **Durable client state**: Offline drafts and user preferences write asynchronously to [IndexedDB](/concepts/indexeddb-transactions-quotas) to survive tab termination.
+
+```ts
+type Topology<T> = {
+  ephemeral: { dropdownOpen: boolean };
+  url: URLSearchParams; // ?page=2&sort=asc
+  serverCache: Map<string, { data: T; fetchedAt: number }>;
+  persistent: IDBDatabase; // offline drafts & auth metadata
+};
+
+function selectOwner(isRemote: boolean, isShareable: boolean, isDurable: boolean) {
+  if (isRemote) return 'serverCache';
+  if (isShareable) return 'url';
+  if (isDurable) return 'persistent';
+  return 'ephemeral';
+}
+```
+
+## Problem Genealogy
+
+- **2015–2018 (Monolithic Redux Stores)**: Teams normalized API payloads, modal booleans, and filter strings into one global object, shipping 40+ KB of boilerplate and forcing manual `isFetching` flags for every endpoint.
+- **2019–2022 (Server-Cache Split)**: Dedicated query caches removed ~70% of client store slices by separating remote snapshots from local UI state.
+- **2023+ (URL & Local-First Convergence)**: Frameworks standardized `URLSearchParams` and IndexedDB sync engines as explicit topology layers.
+
+## Production Pitfalls
+
+- **Back button resets search filters**: Storing pagination or filter facets in memory instead of `URLSearchParams` wipes user context on history pop or link sharing.
+- **Mirroring server cache into local state**: Copying fetched rows into component state on mount disconnects the view from background revalidation and serves stale mutations.
+- **When not to use URL state**: Never serialize high-frequency coordinates (drag offsets, canvas pan) or sensitive PII tokens into `history.replaceState()`; Blink throttles `replaceState` after 100 calls per 30 seconds and URLs leak into browser history and `Referer` headers.

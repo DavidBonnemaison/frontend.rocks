@@ -1,0 +1,42 @@
+{
+  "concept_id": "typed-arrays-zero-copy",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://tc39.es/ecma262/#sec-typedarray-objects",
+      "spec_section": "23.2 TypedArray Objects",
+      "quote": "A TypedArray presents an array-like view of an underlying binary data buffer (ArrayBuffer) with a fixed numeric element type."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "7+",
+    "firefox": "4+",
+    "safari": "5.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Contiguous ArrayBuffer Allocation",
+      "Typed View Offset/Stride Mapping",
+      "SIMD / Unboxed Register Access",
+      "Zero-Copy Ownership Transfer"
+    ],
+    "mechanism_summary": "ArrayBuffer allocates a raw contiguous byte block while TypedArray views index it directly without JS object boxing, enabling O(1) transfer between workers."
+  },
+  "production_failures": [
+    {
+      "symptom": "TypeError: Cannot perform TypedArray.prototype.set on a detached ArrayBuffer",
+      "root_cause": "Sending an ArrayBuffer in postMessage transfer list detaches its byte length to 0 in the sending thread; subsequent reads throw.",
+      "mitigation": "Treat transferred buffers as moved ownership and allocate or return a fresh buffer from the worker."
+    },
+    {
+      "symptom": "Corrupted 32-bit integers when parsing network packets across architectures",
+      "root_cause": "TypedArray views use host CPU endianness (usually little-endian), whereas network protocols use big-endian byte order.",
+      "mitigation": "Use DataView.getUint32(offset, false) when decoding explicit big-endian binary formats."
+    }
+  ],
+  "sources": [
+    "https://tc39.es/ecma262/#sec-typedarray-objects",
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Typed_arrays"
+  ]
+}

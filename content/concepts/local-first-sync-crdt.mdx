@@ -1,0 +1,63 @@
+---
+id: local-first-sync-crdt
+title: "Local-First Sync & CRDTs"
+domain: state-architecture
+maturity_status: interop-experimental
+summary_tldr: "Persists every edit locally in IndexedDB/OPFS at 0 ms network wait and uses Conflict-free Replicated Data Types (CRDTs) so offline peers merge deterministically."
+relations:
+  - target_id: optimistic-ui-rollback
+    type: contrasts_with
+    note: "Optimistic UI rolls back if the server rejects; Local-First treats local storage as primary and merges via CRDTs."
+  - target_id: service-worker-lifecycle
+    type: requires
+    note: "Offline-capable local-first apps pair IndexedDB persistence with a Service Worker shell."
+sources:
+  - "https://www.inkandswitch.com/local-first/"
+  - "https://crdt.tech/"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "local-first"
+  - "crdt"
+  - "indexeddb"
+  - "offline-sync"
+  - "eventual-consistency"
+---
+
+## TL;DR
+
+Local-first apps read and write against local IndexedDB or OPFS at 0 ms, treating the server as a sync peer rather than a gatekeeper. Conflict-free Replicated Data Types (CRDTs) tag operations with `(clientId, logicalClock)` so concurrent offline edits converge to the exact same state regardless of arrival order.
+
+## Interactive Lab
+
+Compare wall-clock Last-Write-Wins overwrites against commutative CRDT delta merging using `PatternComparatorLab`.
+
+## Under the Hood
+
+Unlike [Optimistic UI](/concepts/optimistic-ui-rollback), where the server remains judge and jury and failed mutations roll back, a CRDT works like an append-only ledger with mathematical commutativity (`merge(A, B) === merge(B, A)`). Paired with a [Service Worker](/concepts/service-worker-lifecycle) for offline asset booting, the client never blocks on a round-trip.
+
+1. **Local persistence**: Edits commit immediately to IndexedDB or Origin Private File System (OPFS) in sub-millisecond transactions.
+2. **Causal IDs**: Each character or map key receives a unique Lamport/Hybrid Logical Clock `(clock, clientId)` tuple, immune to skewed laptop system clocks.
+3. **State-vector sync**: On reconnect, peers exchange compact version vectors and stream only missing operations, converging identically with zero central lock.
+
+```js
+// Commutative LWW-Register merge: order-independent convergence
+function mergeRegister(local, remote) {
+  if (remote.hlc > local.hlc) return remote;
+  if (remote.hlc === local.hlc && remote.clientId > local.clientId) return remote;
+  return local;
+}
+```
+
+## Problem Genealogy
+
+- **2006 (Operational Transformation, Google Docs)**: Transformed concurrent cursor indices on a central server, notorious for subtle convergence bugs off-server.
+- **2011 (Shapiro et al. CRDTs)**: Proved algebraic semilattice properties guaranteeing lock-free peer convergence.
+- **2019+ (Local-First Software, Ink & Switch, Yjs, Automerge)**: Combined CRDTs with IndexedDB/SQLite-Wasm to bring sub-frame responsiveness to collaborative web apps.
+
+## Production Pitfalls
+
+- **Unbounded tombstone growth**: Deleted characters in sequence CRDTs stay as invisible tombstones so concurrent edits know where they sat; without snapshot compaction, a 10 KB note can bloat to 50 MB of history.
+- **Wall-clock `Date.now()` tie-breakers**: Relying on a user's system clock for Last-Write-Wins lets a laptop with a clock set to 2099 win every merge forever.
+- **When not to use CRDTs**: For strict financial ledgers, inventory counts, or unique-username claims where two offline writes *cannot* both succeed, use server-authoritative transactions instead.

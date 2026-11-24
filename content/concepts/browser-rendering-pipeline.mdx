@@ -1,0 +1,76 @@
+---
+id: browser-rendering-pipeline
+title: Browser Rendering Pipeline (Critical Rendering Path)
+domain: rendering-pipeline
+maturity_status: baseline-widely
+summary_tldr: "Avoid 60fps-killing main-thread reflows by targeting compositor-only properties—every geometric DOM write forces Style, Layout, Paint, and Composite to re-run."
+relations:
+  - target_id: dom-cssom-construction
+    type: requires
+    note: "Style calculation requires parsed DOM and CSSOM trees before constructing the render tree."
+  - target_id: gpu-compositor-layers
+    type: under_the_hood
+    note: "Delegates promoted element layers to the GPU compositor thread after paint and layerization."
+  - target_id: content-visibility
+    type: contrasts_with
+    note: "content-visibility: auto skips Layout and Paint for offscreen subtrees instead of running the full pipeline."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/Performance/Critical_rendering_path"
+  - "https://web.dev/articles/renderingng-architecture"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "reflow"
+  - "repaint"
+  - "layout shift"
+  - "frame"
+  - "blink"
+---
+
+## TL;DR
+
+The rendering engine executes five sequential phases: Style, Layout, Paint, Layerize, and Composite. Mutating geometric properties invalidates every downstream phase; mutating `transform` or `opacity` bypasses Style, Layout, and Paint directly to the Compositor Thread.
+
+## Interactive Lab
+
+Simulate how each DOM/CSS mutation triggers specific phases of the Blink pipeline in `StepMachineLab`.
+
+## Under the Hood
+
+Blink executes frame rendering as a strict unidirectional pipeline from Style through Layout, Paint, Layerize, and Composite. Modifying geometry at Layout invalidates every downstream stage, whereas mutating `transform` or `opacity` updates a GPU compositor matrix directly without re-running Style, Layout, or Paint.
+
+1. **Style (Recalc Style)**: Blink matches every node from [DOM & CSSOM Construction](/concepts/dom-cssom-construction) against CSSOM rules (governed by [CSS Cascade Layers](/concepts/css-cascade-layers)) and computes resolved `ComputedStyle` values (unless skipped offscreen via [content-visibility](/concepts/content-visibility)).
+2. **Layout (Reflow)**: The engine computes exact geometry (boxes, `x/y` coordinates, widths, heights) in the `LayoutTree`.
+3. **Paint**: Emits a list of draw instructions (`DisplayItems`: backgrounds, borders, glyphs) sorted by [CSS Stacking Context](/concepts/css-stacking-context), without rasterizing yet.
+4. **Composite**: The `Compositor Thread` splits [GPU Compositor Layers](/concepts/gpu-compositor-layers) into tiles, rasterizes them on GPU, and applies `transform` / `opacity` without blocking the main thread.
+
+```css
+/* Triggers Layout -> Paint -> Composite (expensive on main thread) */
+.drawer.open {
+  left: 0;
+  width: 320px;
+}
+
+/* Skips Layout and Paint; runs on Compositor Thread */
+.drawer-fast.open {
+  transform: translate3d(0, 0, 0);
+}
+```
+
+| Mutated Property | Triggered Phases | Main Thread Cost |
+| :--- | :--- | :--- |
+| `width` / `top` / `margin` | Style -> Layout -> Paint -> Composite | High |
+| `background-color` / `box-shadow` | Style -> Paint -> Composite | Medium |
+| `transform` / `opacity` | Composite only (if promoted layer) | Near zero |
+
+## Problem Genealogy
+
+- **1999 (DOM Level 1)**: Every DOM read/write triggers synchronous recalculations on a single thread, an architecture designed for static hypertext, later abused for interactive apps.
+- **2008 (Hardware Acceleration)**: Separation of the `Compositor Thread` to animate scrolling and transforms off the main thread.
+- **2021+ (RenderingNG)**: Modular pipeline architecture isolating each phase for parallel GPU rasterization.
+
+## Production Pitfalls
+
+- **[Layout Thrashing](/concepts/layout-thrashing)**: Reading `element.offsetHeight` immediately after writing `element.style.width` inside a `for` loop forces a synchronous Layout on every iteration, turning a 16 ms frame budget into a 200 ms stall.
+- **Layer Explosion**: Applying `will-change: transform` to hundreds of nodes exhausts mobile GPU VRAM and crashes tabs.
+- **When not to use manual promotion**: Do not force `translateZ(0)` on static elements; let the engine promote layers only during active animations.

@@ -1,0 +1,54 @@
+{
+  "type": "step-machine",
+  "id": "async-determinism-fake-timers",
+  "title": "Fake Timer Heap & Microtask Draining",
+  "description": "Trace virtual clock advancement and microtask checkpoint draining across a debounced Promise.",
+  "steps": [
+    {
+      "label": "1. Schedule Macrotask Timer",
+      "description": "setTimeout inserts a callback at virtual timestamp 200ms without registering an OS timer.",
+      "codeHighlight": "setTimeout(() => fetchResults().then(setState), 200);",
+      "state": {
+        "virtualNowMs": 0,
+        "timerHeapSize": 1,
+        "microtaskQueueSize": 0
+      },
+      "visualNodes": [
+        { "id": "clock", "label": "Virtual Clock (0ms)", "status": "active" },
+        { "id": "heap", "label": "Timer Heap [200ms]", "status": "active" },
+        { "id": "micro", "label": "Microtask Queue (0)", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Pop Timer at 200ms",
+      "description": "advanceTimersByTimeAsync(200) moves virtualNow to 200ms and executes the timer callback, enqueuing a Promise microtask.",
+      "codeHighlight": "await vi.advanceTimersByTimeAsync(200);",
+      "state": {
+        "virtualNowMs": 200,
+        "timerHeapSize": 0,
+        "microtaskQueueSize": 1
+      },
+      "visualNodes": [
+        { "id": "clock", "label": "Virtual Clock (200ms)", "status": "done" },
+        { "id": "heap", "label": "Timer Heap (empty)", "status": "done" },
+        { "id": "micro", "label": "Microtask Queue (1)", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Drain Microtask Checkpoint",
+      "description": "The async advancement yields so the Promise continuation runs setState() before the assertion executes.",
+      "codeHighlight": "expect(screen.getByText('Results')).toBeVisible();",
+      "state": {
+        "virtualNowMs": 200,
+        "timerHeapSize": 0,
+        "microtaskQueueSize": 0,
+        "stateCommitted": true
+      },
+      "visualNodes": [
+        { "id": "clock", "label": "Virtual Clock (200ms)", "status": "done" },
+        { "id": "heap", "label": "Timer Heap (empty)", "status": "done" },
+        { "id": "micro", "label": "Microtask Drained", "status": "done" }
+      ]
+    }
+  ]
+}

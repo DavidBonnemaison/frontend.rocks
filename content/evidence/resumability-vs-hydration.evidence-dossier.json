@@ -1,0 +1,44 @@
+{
+  "concept_id": "resumability-vs-hydration",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://web.dev/articles/rendering-on-the-web",
+      "spec_section": "web.dev: Rendering on the Web (Hydration Cost)",
+      "quote": "Hydration requires downloading, parsing, and executing component JavaScript on the client to attach event listeners and reconstruct state over server-rendered HTML."
+    },
+    {
+      "source_url": "https://qwik.dev/docs/concepts/resumable/",
+      "spec_section": "Qwik Architecture: Resumability",
+      "quote": "Resumability serializes application state, component boundaries, and event listener closures into HTML attributes so execution resumes on interaction without eager boot."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "interop-experimental",
+    "chrome": "1+ (HTML/JS runtime pattern)",
+    "firefox": "1+ (HTML/JS runtime pattern)",
+    "safari": "1+ (HTML/JS runtime pattern)",
+    "notes": "Architectural pattern supported in all browsers; framework primitives (Qwik resumability, React Server Components + selective hydration) vary in maturity."
+  },
+  "engine_internals": {
+    "pipeline_phases": ["SSR HTML + Serialized State", "Global Delegated Listener", "Interaction-Triggered Chunk Fetch", "Lazy Closure Resume"],
+    "mechanism_summary": "Eliminates eager O(N) hydration boot by serializing framework state into HTML and lazily loading only the clicked handler's JS chunk via event delegation."
+  },
+  "production_failures": [
+    {
+      "symptom": "Page appears interactive at 1.2s (FCP) but clicks do nothing for 2.5s (Uncanny Valley)",
+      "root_cause": "SSR painted the button HTML early, while eager hydration blocked the main thread downloading and executing the entire component tree.",
+      "mitigation": "Use selective/partial hydration (Islands), React Server Components, or resumable lazy handlers to keep main-thread boot under 50ms."
+    },
+    {
+      "symptom": "Hydration mismatch error wipes and re-renders the entire SSR DOM on the client",
+      "root_cause": "Client render produced different HTML than SSR (e.g., reading window.innerWidth or new Date() during initial render).",
+      "mitigation": "Keep initial render deterministic across server and client, deferring browser-only values to post-mount effects."
+    }
+  ],
+  "sources": [
+    "https://web.dev/articles/rendering-on-the-web",
+    "https://qwik.dev/docs/concepts/resumable/",
+    "https://developer.mozilla.org/en-US/docs/Glossary/Hydration"
+  ]
+}

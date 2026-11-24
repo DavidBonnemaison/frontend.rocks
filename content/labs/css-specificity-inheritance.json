@@ -1,0 +1,101 @@
+{
+  "type": "step-machine",
+  "id": "css-specificity-inheritance",
+  "title": "Cascade & Inheritance Resolution Order",
+  "description": "Step through how the style engine picks a winning declaration.",
+  "steps": [
+    {
+      "label": "1. Origin & @layer Precedence",
+      "description": "Author unlayered rules beat all @layer rules; !important reverses layer order.",
+      "codeHighlight": "@layer base { #nav .link { color: red; } }",
+      "state": {
+        "origin": "author",
+        "layer": "base",
+        "specificity": "(1, 1, 0)"
+      },
+      "visualNodes": [
+        {
+          "id": "layer",
+          "label": "@layer",
+          "status": "active"
+        },
+        {
+          "id": "spec",
+          "label": "(A, B, C)",
+          "status": "idle"
+        },
+        {
+          "id": "order",
+          "label": "Source Order",
+          "status": "idle"
+        },
+        {
+          "id": "inherit",
+          "label": "Inheritance",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "2. Specificity Tuple (A, B, C)",
+      "description": "Within the same layer, compare IDs (A), classes/attrs/pseudo-classes (B), then tags/pseudo-elements (C). :where() adds (0, 0, 0).",
+      "codeHighlight": ":where(.card) .title { color: navy; } /* (0, 1, 0) */",
+      "state": {
+        "winnerTuple": "(0, 1, 0)",
+        "loserTuple": "(0, 0, 1)"
+      },
+      "visualNodes": [
+        {
+          "id": "layer",
+          "label": "@layer",
+          "status": "done"
+        },
+        {
+          "id": "spec",
+          "label": "(A, B, C)",
+          "status": "active"
+        },
+        {
+          "id": "order",
+          "label": "Source Order",
+          "status": "idle"
+        },
+        {
+          "id": "inherit",
+          "label": "Inheritance",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "3. Source Order & Inheritance Fallback",
+      "description": "Ties go to the last declaration in source order. Unmatched inherited properties copy from parent ComputedStyle.",
+      "state": {
+        "computedColor": "navy",
+        "inheritedFont": "Inter"
+      },
+      "visualNodes": [
+        {
+          "id": "layer",
+          "label": "@layer",
+          "status": "done"
+        },
+        {
+          "id": "spec",
+          "label": "(A, B, C)",
+          "status": "done"
+        },
+        {
+          "id": "order",
+          "label": "Source Order",
+          "status": "done"
+        },
+        {
+          "id": "inherit",
+          "label": "Inheritance",
+          "status": "active"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+---
+id: css-containment
+title: "CSS Containment"
+domain: rendering-pipeline
+maturity_status: baseline-widely
+summary_tldr: "The contain property fences off subtrees so style, layout, or paint invalidations never leak to the rest of the document."
+relations:
+  - target_id: render-tree-layout
+    type: requires
+    note: "Layout containment prevents subtree geometry changes from invalidating ancestor boxes."
+  - target_id: paint-rasterization
+    type: requires
+    note: "Paint containment clips descendants and bounds DisplayItem invalidation rects."
+sources:
+  - "https://drafts.csswg.org/css-contain-2/"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/contain"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "contain"
+  - "layout containment"
+  - "paint containment"
+  - "strict"
+  - "content"
+web_feature_id: contain
+---
+
+## TL;DR
+
+CSS Containment (`contain`) installs firewalls inside the rendering tree. By promising that a subtree's `layout`, `paint`, `style`, or `size` is independent, the engine stops invalidation walks at the container boundary instead of recalculating the whole page.
+
+## Interactive Lab
+
+Toggle `layout`, `paint`, and `size` containment flags against document node counts in `ConstraintSimulatorLab`.
+
+## Under the Hood
+
+Containment acts like watertight bulkheads in a ship hull: a leak inside one compartment cannot flood adjacent cabins.
+
+1. **`contain: layout`**: Turns the element into a layout root and [Block Formatting Context](/concepts/block-formatting-context). Internal reflows stop at its border.
+2. **`contain: paint`**: Clips descendants at the padding edge and creates a [CSS Stacking Context](/concepts/css-stacking-context). Off-screen paint work can be skipped.
+3. **`contain: content`**: Shorthand for `layout paint style`, safe for auto-sized containers. `contain: strict` adds `size`, requiring explicit dimensions.
+
+```css
+/* Safe bulkheads for independent feed cards */
+.feed-card {
+  contain: content; /* layout + paint + style; auto-height preserved */
+}
+
+/* Requires explicit dimensions or aspect-ratio */
+.widget-slot {
+  contain: strict;
+  height: 240px;
+}
+```
+
+## Problem Genealogy
+
+- **2014–2016**: Virtualized lists and dashboards suffered O(n) reflows because engines had to assume any child mutation could push siblings.
+- **2019 (CSS Containment L1/L2)**: `contain` formalized engine-level isolation contracts, later powering `@container` queries and `content-visibility`.
+
+## Production Pitfalls
+
+- **Accidental 0px collapse with `contain: strict`**: Adding `size` containment ignores child intrinsic height; without an explicit `height`, the box collapses to zero.
+- **Clipped tooltips under `contain: paint`**: Paint containment forces clipping to the padding edge, slicing off `position: absolute` popovers.
+- **When not to use `contain: paint`**: Do not apply `contain: paint` or `contain: content` to containers that must render overflowing dropdowns, focus rings, or shadows outside their bounds.

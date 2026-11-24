@@ -1,0 +1,42 @@
+{
+  "concept_id": "pointer-events-touch-action",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://w3c.github.io/pointerevents/#the-touch-action-css-property",
+      "spec_section": "9.1 The touch-action CSS property",
+      "quote": "The touch-action CSS property determines whether touch input may trigger default behavior supplied by the user agent, such as panning or zooming."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "55+",
+    "firefox": "59+",
+    "safari": "13+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Compositor Hit-Test & touch-action Region Check",
+      "pointerdown Dispatch",
+      "setPointerCapture() Routing",
+      "pointercancel vs pointermove Stream"
+    ],
+    "mechanism_summary": "CSS touch-action instructs the compositor up front which gestures belong to the browser vs JS, preventing pointercancel during custom drags."
+  },
+  "production_failures": [
+    {
+      "symptom": "Custom touch drag stops firing pointermove after 10px on mobile",
+      "root_cause": "Without touch-action: none (or pan-y), the browser claims the touch gesture for native scrolling and fires pointercancel.",
+      "mitigation": "Declare touch-action: none on draggable handles and call setPointerCapture(e.pointerId) on pointerdown."
+    },
+    {
+      "symptom": "Dragging cursor outside a small slider thumb drops pointerup and leaves UI stuck in drag state",
+      "root_cause": "Pointer events target the element under the cursor unless captured; fast mouse movement exits the thumb before pointerup.",
+      "mitigation": "Call target.setPointerCapture(e.pointerId) on pointerdown so pointermove and pointerup route to the handle."
+    }
+  ],
+  "sources": [
+    "https://w3c.github.io/pointerevents/#the-touch-action-css-property",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events"
+  ]
+}

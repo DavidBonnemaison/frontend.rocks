@@ -1,0 +1,100 @@
+---
+id: multi-tab-websocket-thundering-herd
+case_number: 10
+title: "Autopsy #10: 10,000 Users, 80,000 WebSockets, and a Synchronized Stampede"
+symptom: "Users opening 8 tabs exhaust realtime gateway sockets and freeze the main thread during 400 msg/s bursts."
+failure_mode: cascading-latency
+format: narrative
+case_type: composite
+cast:
+  - marc
+  - karim
+  - thomas
+traversed_concepts:
+  - concept_id: broadcast-channel-web-locks
+    step_order: 1
+    role_in_chain: "Coordinates cross-tab socket ownership using Web Locks and fans out frames over BroadcastChannel."
+  - concept_id: dedicated-web-workers
+    step_order: 2
+    role_in_chain: "Moves JSON parsing and frame normalization off the main thread into a dedicated worker."
+  - concept_id: streams-api-backpressure
+    step_order: 3
+    role_in_chain: "Applies TransformStream queuing and desiredSize thresholds so slow tabs drop or coalesce stale frames."
+  - concept_id: cross-tab-leader-election
+    step_order: 4
+    role_in_chain: "Elects a single active tab to hold the upstream WebSocket and transfers ownership on tab close."
+  - concept_id: realtime-streams-backpressure-jitter
+    step_order: 5
+    role_in_chain: "Enforces full-jitter exponential backoff on reconnects so gateway restarts do not trigger a thundering herd."
+case_file:
+  trigger: "`useRealtimeFeed()` opened a dedicated WebSocket per component tree; power users kept 8 tabs open at market open"
+  symptom: "80,000 concurrent sockets, 1,840 ms p95 INP, and a 14-minute `503` storm after one gateway restart"
+  root_cause: "No cross-tab socket sharing, 3,200 `JSON.parse()` calls/s per browser, and fixed 1,000 ms reconnect timers"
+  bad_fixes:
+    - label: "`setTimeout(reconnect, 1000)` + 100 ms React throttle"
+      outcome: "Synchronized 80,000 reconnects to the exact millisecond and still ran 3,200 `JSON.parse()` calls/s before `setState`"
+  fix: "Elect one leader via `navigator.locks`, run the socket in a Dedicated Worker with coalescing backpressure, and use full-jitter backoff"
+  how_to_spot: "Open 8 tabs and inspect `chrome://net-export` or gateway metrics: 8 open WebSockets from one browser profile"
+  deleted: "Fixed 1,000 ms `setTimeout` reconnect, per-tab `new WebSocket()` in `useRealtimeFeed()`"
+reading_time_min: 7
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Streams_API/Using_readable_streams"
+  - "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/"
+last_verified_at: "2026-11-17"
+proof_status: unverified
+---
+
+## Eight tabs per user at nine in the morning
+
+Thomas asked for live ticker widgets on the trading dashboard so portfolio managers could watch price ticks without hitting refresh. We shipped `useRealtimeFeed()`, which opened a WebSocket inside each widget tree. In local testing with one tab open and a mock feed running at 5 messages per second, CPU sat at 2% and our integration suite passed in four seconds. Nobody tested what happens when someone opens eight browser tabs before coffee.
+
+At 09:00 on market open, 10,000 power users logged in with an average of 8 tabs open across watchlists, order books, and charts, and upstream traffic climbed to 400 messages per second. Marc watched 80,000 concurrent WebSockets hit the realtime gateways, pushing TLS handshake CPU to 100%. On the client, each user's 8 tabs were running 3,200 `JSON.parse()` calls per second on their main threads, pushing p95 INP to 1,840 ms. Clicking a tab or typing a ticker symbol took nearly two seconds to respond.
+
+Then a single gateway node restarted.
+
+## One thousand milliseconds of precision
+
+Karim had written a neat reconnect helper when he built the hook:
+
+```ts
+ws.onclose = () => {
+  setTimeout(() => connect(), 1000);
+};
+```
+
+When the alerts fired in `#frontend`, we also added a 100 ms React `setState` throttle to calm down rendering.
+
+When the gateway node dropped, 80,000 sockets waited 1,000 milliseconds in lockstep and slammed the TLS terminator in the exact same millisecond, knocking it over again. They waited another 1,000 milliseconds and repeated the charge for fourteen minutes straight, turning a 5-second node recycle into a 14-minute `503` outage. Meanwhile, the 100 ms React throttle only delayed `setState`; it did nothing to stop 8 tabs from opening 8 sockets or running 3,200 `JSON.parse()` calls per second before the throttle even ran. Every tab was still paying the full deserialization cost for data that was already obsolete two frames later.
+
+## Sharing one socket across eight tabs
+
+<CausalChainStepper />
+
+First, we needed [cross-tab leader election](/concepts/cross-tab-leader-election) via [Web Locks and BroadcastChannel](/concepts/broadcast-channel-web-locks) (`navigator.locks.request('realtime-feed', ...)`). Only one tab per browser origin holds the upstream WebSocket at a time, cutting Marc's gateway load from 80,000 sockets down to 10,000. The remaining 7 tabs subscribe passively to `BroadcastChannel` frames without opening a single TCP connection, and if the leader tab closes, the browser automatically grants the lock to the next waiting tab.
+
+Second, we moved `JSON.parse()` and frame normalization into a [Dedicated Web Worker](/concepts/dedicated-web-workers) so 400 msg/s bursts never touched the UI thread's input responsiveness.
+
+## Backpressure and jitter
+
+Third, we added [Streams API backpressure](/concepts/streams-api-backpressure) (`TransformStream` coalescing by ticker symbol per animation frame) so slow tabs drop stale intermediate prices instead of queuing thousands of outdated ticks. When a consumer falls behind, only the latest price for each ticker survives into the next render batch, keeping memory flat even during market-open spikes.
+
+Fourth, we replaced Karim's fixed `1000` ms timer with [full-jitter exponential backoff](/concepts/realtime-streams-backpressure-jitter) (`Math.random() * Math.min(cap, base * 2 ** attempt)`) so reconnects spread evenly across time instead of marching in formation. When we simulated a gateway restart in staging, reconnect traffic flattened into a smooth curve instead of a vertical wall.
+
+<FailureSimulator />
+
+## The background tab timer trap
+
+First try after deploying leader election: when a user switched away from the leader tab and left it in the background while trading in tab two, all 7 visible tabs stopped updating after a minute.
+
+Chrome throttles `setTimeout` and `requestAnimationFrame` in background tabs to 1 Hz (and even lower after five minutes) to save battery. Because our coalescing flush loop was running inside the leader tab's window context, putting that tab in the background starved every foreground tab listening on `BroadcastChannel`. Portfolio managers staring at tab two thought the market feed had frozen while tab one sat quietly throttled in the background.
+
+Moving the WebSocket and its coalescing loop into the Worker, and releasing the Web Lock on `visibilitychange` whenever a visible tab could take over, kept frames flowing at full speed regardless of which tab had focus. We also verified in Playwright across two simultaneous pages that closing the leader tab transfers the Web Lock and resumes `BroadcastChannel` delivery in under 50 milliseconds.
+
+## What stayed in the codebase
+
+<CaseFile />
+
+A reconnect delay without randomness is just a scheduled denial-of-service attack.
+
+Marc framed the graph of the 80,000 synchronized reconnects and hung it above his desk, right next to the gateway CPU chart that now sits quietly at 18% even when every trader in London opens ten tabs before the opening bell rings on Monday morning. Nobody has shipped a raw `setTimeout` reconnect since.

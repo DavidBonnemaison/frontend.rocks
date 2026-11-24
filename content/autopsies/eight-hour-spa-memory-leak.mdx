@@ -1,0 +1,133 @@
+---
+id: eight-hour-spa-memory-leak
+case_number: 2
+title: "Autopsy #02: The Dashboard That Died Every Day at 16:40"
+symptom: "SPA operations dashboard climbs from 120 MB to 2.4 GB RAM over an 8-hour shift and crashes with Aw, Snap!"
+failure_mode: memory-exhaustion
+format: narrative
+case_type: composite
+cast:
+  - karim
+  - ines
+  - nadia
+traversed_concepts:
+  - concept_id: js-garbage-collection
+    step_order: 1
+    role_in_chain: "Unreclaimed objects survive Scavenge and promote to V8 Old Space, forcing frequent Mark-Compact pauses."
+  - concept_id: js-memory-leaks-retainers
+    step_order: 2
+    role_in_chain: "Live retainer edges from global registries pin entire detached DOM subtrees and Fiber nodes in memory."
+  - concept_id: stale-closures-hooks
+    step_order: 3
+    role_in_chain: "Long-lived observer and timer callbacks capture stale React state arrays and DOM refs across route swaps."
+  - concept_id: mutation-observer
+    step_order: 4
+    role_in_chain: "A MutationObserver registered without disconnect() holds a native C++ root edge to its JS callback."
+  - concept_id: abortcontroller-cancellation
+    step_order: 5
+    role_in_chain: "Missing AbortController teardown prevents unified cancellation of observers, listeners, and polling streams."
+case_file:
+  trigger: "Added a 12-line `MutationObserver` to auto-fit alert table columns on live NOC wallboards"
+  symptom: "Wallboard monitors booted at 09:00 crashed every day around 16:40 with Chrome's `Aw, Snap!` OOM screen"
+  root_cause: "Un-disconnected `MutationObserver` held a native C++ root edge to a closure capturing 50 MB alert arrays and detached `<tr>` trees"
+  bad_fixes:
+    - label: "`telemetryRows = null` in cleanup"
+      outcome: "Manual GC dropped 4 MB locally; wallboards still died at 16:42 the next afternoon"
+  fix: "Call `observer.disconnect()` via `signal.addEventListener('abort', ..., { once: true })` alongside all listeners"
+  how_to_spot: "Take 3 Heap Snapshots across tab switches and filter for `Detached HTMLTableRowElement` retainers"
+  deleted: "Manual `ref.current = null` cleanup guesses, uncancelled polling interval"
+reading_time_min: 7
+sources:
+  - "https://v8.dev/blog/trash-talk"
+  - "https://dom.spec.whatwg.org/#interface-mutationobserver"
+  - "https://dom.spec.whatwg.org/#interface-abortcontroller"
+  - "https://developer.chrome.com/docs/devtools/memory-problems/"
+last_verified_at: "2026-11-17"
+proof_status: unverified
+lab_id: eight-hour-spa-memory-leak
+---
+
+## Office hours for a memory leak
+
+The NOC wallboard screens boot at 09:00 every morning and stay on a single browser tab showing live infrastructure alerts. Karim shipped a 12-line `MutationObserver` in a pull request titled `feat: auto-fit alert columns` so column widths adjusted whenever a new alert streamed in.
+
+Inès ran her 10-minute smoke suite on the staging build. Memory sat flat at 120 MB, console output was clean, and all automated checks passed. Nobody leaves a smoke test running for eight hours, which is how a slow leak buys itself a production deploy.
+
+At 16:40 that afternoon, seven hours and forty minutes after boot, the first wallboard monitor went gray and displayed Chrome's `Aw, Snap!` out-of-memory screen. Four minutes later, the second monitor followed it. By 16:50, all four wallboards were dead, and the on-call rotation had to watch alerts from their laptops until someone walked over with a wireless keyboard to hit refresh.
+
+Nadia posted a photo of the blank wall in `#frontend` and asked if the dashboard had started keeping office hours. Someone replied with a thumbs-up, assuming it was a joke about Friday deploys, until she followed up with the timestamp from the day before.
+
+## Nulling the variable, keeping the leak
+
+Karim opened DevTools Memory on his laptop, clicked around for two minutes, and noticed the `useEffect` cleanup did not clear the table data ref. He added two lines to the cleanup function:
+
+```ts
+return () => {
+  telemetryRows = null;
+  tableRef.current = null;
+};
+```
+
+Locally, he switched tabs once, clicked the little trash can icon in the Memory panel, watched the heap dip by 4 MB, and merged the hotfix.
+
+The next day at 16:42, the wallboards died in the exact same order. The leak kept its schedule.
+
+## Fourteen thousand detached rows
+
+Inès pulled a production build onto her test machine and took three Heap Snapshots using the three-snapshot comparison technique: load `EMEA`, switch to `US`, switch to `APAC`, and switch back to `EMEA`. Any object created during the `US` and `APAC` visits should have been collected once we left those views.
+
+When we filtered the third snapshot by `Detached`, 14,000 `HTMLTableRowElement` nodes were sitting quietly in V8's Old Space. Every time an operator or rotation script switched regions, React unmounted the old alert table, yet every `<tr>` from that table stayed alive in memory alongside a 50 MB array of historical alert payloads.
+
+```
+Native C++ MutationObserver (document.body)
+  └── JS callback closure
+        ├── stale `alerts` array (50 MB)
+        └── `tableRef` → Detached <table> → 14,000 Detached <tr>
+```
+
+This is where [V8 garbage collection](/concepts/js-garbage-collection) stops being polite. New allocations land in the young generation (Scavenge), where short-lived objects are swept cheaply in a millisecond. Objects that remain reachable across two scavenges get promoted to Old Space, where V8 has to run expensive Mark-Compact pauses. By hour five on the wallboards, those pauses were freezing frames for 900 milliseconds at a time, until the renderer process crossed 2.4 GB and Chrome killed the tab.
+
+## Why null did nothing
+
+The reason those rows survived every GC cycle was a single [retainer edge](/concepts/js-memory-leaks-retainers) from C++ land.
+
+Karim's [MutationObserver](/concepts/mutation-observer) was attached to `document.body` with `{ childList: true, subtree: true }`. Its callback closed over the component's `alerts` array and `tableRef`, creating a classic [stale closure](/concepts/stale-closures-hooks) pinned across every region switch.
+
+Setting `telemetryRows = null` inside the `useEffect` cleanup only reassigned a local binding inside that effect's scope. It did not touch the `MutationObserver` registered on `document.body`, which had never called `observer.disconnect()`. As long as a live DOM observer exists on an ancestor still in the document, Blink's C++ wrapper holds a strong root edge to the JS callback, and V8 treats the entire closure scope and every detached DOM node it touches as reachable. Cleaning up a local variable while leaving the observer attached is like sweeping the porch while the hose is still running.
+
+<CausalChainStepper />
+
+<FailureSimulator />
+
+## One signal, one missed method
+
+We moved every listener, polling `fetch`, and observer in the dashboard under a single [AbortController](/concepts/abortcontroller-cancellation) created per effect mount.
+
+First try: we passed `{ signal: controller.signal }` to every `addEventListener` and `fetch`, removed the old ad-hoc cleanup lines, and deployed to one test wallboard.
+
+`MutationObserver.observe()` does not accept a `signal` option. Passing `{ signal }` in the options bag is silently ignored by the DOM API, and because we had deleted the explicit `observer.disconnect()` line during the refactor, the observer kept leaking. We had cut the leak rate in half by fixing the window listeners, which meant the wallboard now survived until 21:00 and died during the night shift instead.
+
+Wiring the observer explicitly to the abort event closed the last tap:
+
+```ts
+useEffect(() => {
+  const controller = new AbortController();
+  const observer = new MutationObserver(() => measureColumns(tableRef.current));
+
+  if (tableRef.current) {
+    observer.observe(tableRef.current, { childList: true, subtree: true });
+  }
+  controller.signal.addEventListener('abort', () => observer.disconnect(), { once: true });
+  window.addEventListener('resize', onResize, { signal: controller.signal });
+
+  return () => controller.abort();
+}, [region]);
+```
+
+## What stayed in the codebase
+
+<CaseFile />
+
+V8's garbage collector does not read your intentions; it follows live pointers.
+
+The NOC wallboards now stay up all week without crashing, which gave everyone enough uninterrupted screen time to notice that the middle monitor has had a dead pixel since August.

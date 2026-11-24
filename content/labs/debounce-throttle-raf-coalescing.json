@@ -1,0 +1,32 @@
+{
+  "type": "constraint-simulator",
+  "id": "debounce-throttle-raf-coalescing",
+  "title": "Event Rate Limiting: Debounce vs Throttle vs rAF",
+  "description": "Compare how burst pointer/key events map to handler invocations under each coalescing strategy.",
+  "presetMode": "event-coalescing",
+  "controls": [
+    {
+      "key": "strategy",
+      "label": "Coalescing Strategy",
+      "kind": "select",
+      "options": ["raf-coalesce", "throttle-100ms", "debounce-300ms"],
+      "defaultValue": "raf-coalesce"
+    },
+    {
+      "key": "inputBurstHz",
+      "label": "Raw Input Event Rate",
+      "kind": "range",
+      "min": 30,
+      "max": 240,
+      "step": 30,
+      "defaultValue": 120,
+      "unit": "Hz"
+    },
+    {
+      "key": "cancelOnUnmount",
+      "label": "Cancel Pending Timer/rAF on Cleanup",
+      "kind": "toggle",
+      "defaultValue": true
+    }
+  ]
+}

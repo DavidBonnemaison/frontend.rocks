@@ -1,0 +1,51 @@
+{
+  "type": "step-machine",
+  "id": "hydration-mismatch-mechanics",
+  "title": "Hydration Cursor & Subtree Bailout",
+  "description": "Trace how a DOM cursor detects SSR mismatches and isolates client re-renders to Suspense boundaries.",
+  "steps": [
+    {
+      "label": "1. Walk Server DOM Cursor",
+      "description": "Hydrator matches <main> and <section> against server HTML without creating new DOM nodes.",
+      "codeHighlight": "tryToClaimNextHydratableInstance(fiber);",
+      "state": {
+        "cursorNode": "<time>",
+        "serverText": "14:00:00 UTC",
+        "clientText": "06:00:00 AM"
+      },
+      "visualNodes": [
+        { "id": "root", "label": "App Root (matched)", "status": "done" },
+        { "id": "suspense", "label": "<Suspense> Boundary", "status": "active" },
+        { "id": "leaf", "label": "<time> Mismatch", "status": "error" }
+      ]
+    },
+    {
+      "label": "2. Escalate to Suspense Boundary",
+      "description": "Hydrator aborts the mismatched subtree and walks up to the enclosing Suspense boundary.",
+      "codeHighlight": "throwOnHydrationMismatch(fiber); // caught by Suspense",
+      "state": {
+        "bailoutBoundary": "Suspense#clock",
+        "outerTreePreserved": true
+      },
+      "visualNodes": [
+        { "id": "root", "label": "App Root (preserved)", "status": "done" },
+        { "id": "suspense", "label": "<Suspense> Caught", "status": "active" },
+        { "id": "leaf", "label": "Server DOM Discarded", "status": "error" }
+      ]
+    },
+    {
+      "label": "3. Client-Only Subtree Re-Render",
+      "description": "Runtime renders fresh client DOM inside the boundary while leaving the rest of the page intact.",
+      "codeHighlight": "renderClientSubtree(suspenseBoundary);",
+      "state": {
+        "bailoutBoundary": "Suspense#clock",
+        "clientRecovered": true
+      },
+      "visualNodes": [
+        { "id": "root", "label": "App Root (intact)", "status": "done" },
+        { "id": "suspense", "label": "<Suspense> Recovered", "status": "done" },
+        { "id": "leaf", "label": "<time> Client DOM", "status": "done" }
+      ]
+    }
+  ]
+}

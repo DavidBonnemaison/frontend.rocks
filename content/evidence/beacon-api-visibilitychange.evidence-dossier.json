@@ -1,0 +1,41 @@
+{
+  "concept_id": "beacon-api-visibilitychange",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://w3c.github.io/beacon/#sendbeacon-method",
+      "spec_section": "Beacon API §3.1 sendBeacon() Method",
+      "quote": "The sendBeacon() method queues an asynchronous HTTP POST transmission that the user agent delivers in the background even after the originating document has unloaded."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "39+",
+    "firefox": "31+",
+    "safari": "11.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "visibilitychange / pagehide Signal",
+      "64 KB Origin Keepalive Quota Check",
+      "Browser Network Service Background POST"
+    ],
+    "mechanism_summary": "The renderer hands the serialized payload to the browser network process with a 64 KB keepalive cap so the OS socket survives tab destruction."
+  },
+  "production_failures": [
+    {
+      "symptom": "Analytics drops 35% of mobile session-end events when wired to the unload event",
+      "root_cause": "Mobile OSes suspend backgrounded tabs without firing unload, and unload/beforeunload listeners disable Back/Forward Cache (bfcache).",
+      "mitigation": "Flush telemetry on document.visibilitychange when document.visibilityState === 'hidden' and pagehide, never on unload."
+    },
+    {
+      "symptom": "navigator.sendBeacon() returns false silently when flushing large error logs",
+      "root_cause": "Total pending keepalive + beacon bytes across the origin exceed the spec's 64 KB cap.",
+      "mitigation": "Batch telemetry below 64 KB, check the boolean return value of sendBeacon(), and fall back to IndexedDB retry on next load."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/Navigator/sendBeacon",
+    "https://w3c.github.io/beacon/"
+  ]
+}

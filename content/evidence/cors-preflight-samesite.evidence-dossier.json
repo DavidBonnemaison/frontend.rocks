@@ -1,0 +1,41 @@
+{
+  "concept_id": "cors-preflight-samesite",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://fetch.spec.whatwg.org/#cors-preflight-fetch-0",
+      "spec_section": "Fetch Living Standard §4.5 CORS-preflight fetch",
+      "quote": "Before sending a non-simple cross-origin request, the user agent issues an OPTIONS preflight carrying Access-Control-Request-Method and Access-Control-Request-Headers."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "80+ (SameSite=Lax default)",
+    "firefox": "79+ (SameSite=Lax default)",
+    "safari": "13.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Simple-Request vs Preflight Classification",
+      "OPTIONS Preflight & Access-Control-Max-Age Cache",
+      "SameSite Cookie Attachment Rules"
+    ],
+    "mechanism_summary": "The Fetch layer gates cross-origin reads behind server-returned Access-Control-Allow-* headers and restricts cross-site cookie attachment via SameSite attributes."
+  },
+  "production_failures": [
+    {
+      "symptom": "Every authenticated API call incurs a 2x latency penalty from repeated OPTIONS preflights",
+      "root_cause": "Sending custom headers (Authorization, Content-Type: application/json) without Access-Control-Max-Age on the server forces an OPTIONS round-trip on every request.",
+      "mitigation": "Return Access-Control-Max-Age: 86400 (capped at 7200s in Chromium, 86400s in Firefox) on OPTIONS responses."
+    },
+    {
+      "symptom": "Session cookies silently omitted on cross-site OAuth redirect or embedded widget fetch",
+      "root_cause": "Cookies without SameSite=None; Secure default to SameSite=Lax, which strips cookies from cross-site POSTs and subresource fetches.",
+      "mitigation": "Set SameSite=Lax for first-party sessions, or SameSite=None; Secure for intentional cross-site embedded APIs, paired with CSRF tokens."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS",
+    "https://fetch.spec.whatwg.org/#http-cors-protocol"
+  ]
+}

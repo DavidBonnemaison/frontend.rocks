@@ -1,0 +1,67 @@
+---
+id: css-grid-track-sizing
+title: "CSS Grid Track Sizing Algorithm"
+domain: css-layout
+maturity_status: baseline-widely
+summary_tldr: "Grid resolves tracks in four passes: fixed lengths, intrinsic content bounds, minmax() clamping, and fr free-space distribution."
+relations:
+  - target_id: block-formatting-context
+    type: requires
+    note: "Grid establishes a grid formatting context independent of block and float flow."
+  - target_id: flexbox-intrinsic-sizing
+    type: contrasts_with
+    note: "Grid sizes 2D tracks before placing items, whereas Flexbox distributes 1D space from item intrinsic sizes."
+  - target_id: css-subgrid
+    type: contrasts_with
+    note: "Independent nested grids size their own tracks, whereas subgrid inherits track definitions from the parent grid."
+sources:
+  - "https://drafts.csswg.org/css-grid-2/#algo-track-sizing"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "CSS Grid"
+  - "fr unit"
+  - "minmax"
+  - "track sizing"
+  - "1fr blowout"
+web_feature_id: grid
+---
+
+## TL;DR
+
+CSS Grid resolves column and row tracks in deterministic passes: fixed lengths lock first, intrinsic `min-content`/`max-content` bounds resolve next, and `fr` units divide only the remaining free space. Crucially, `1fr` means `minmax(auto, 1fr)`, not `minmax(0, 1fr)`.
+
+## Interactive Lab
+
+Step through the Grid track-sizing passes for fixed, intrinsic, and `fr` tracks in `StepMachineLab`.
+
+## Under the Hood
+
+Grid sizing works like dividing a restaurant bill: fixed-price items come off the top, minimum cover charges (`min-content`) are reserved, and `fr` tracks split whatever cash remains on the table.
+
+1. **Fixed Pass**: Explicit `px`, `rem`, and resolved `%` tracks lock immediately.
+2. **Intrinsic Pass**: `auto`, `min-content`, and `1fr` tracks query their children's minimum content widths, just like [Flexbox & Intrinsic Sizing](/concepts/flexbox-intrinsic-sizing).
+3. **Flexible (`fr`) Pass**: Leftover space divides proportionally across `fr` factors; `minmax(0, 1fr)` bypasses the intrinsic minimum floor.
+
+```css
+.app-shell {
+  display: grid;
+  /* Prevents wide <pre> blocks from blowing out the main column */
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 1.5rem;
+}
+```
+
+To share parent tracks with nested card internals, pair this with [CSS Subgrid](/concepts/css-subgrid).
+
+## Problem Genealogy
+
+- **2011–2016**: Multi-column layouts relied on float percentages, `calc()`, and equal-height JS hacks.
+- **2017 (Grid L1)**: All major browsers shipped CSS Grid simultaneously, introducing `fr`, `minmax()`, and two-dimensional track alignment.
+
+## Production Pitfalls
+
+- **The `1fr` grid blowout**: Writing `1fr` instead of `minmax(0, 1fr)` allows unbreakable text or `<pre>` blocks to push the track wider than the viewport.
+- **`auto-fill` vs `auto-fit` confusion**: `auto-fill` preserves empty ghost tracks at the end of a row; `auto-fit` collapses empty tracks to `0px` so existing items expand.
+- **When not to use Grid**: Avoid Grid for simple inline wrapping chips or toolbars where items should size to their own content and wrap naturally, use Flexbox with `flex-wrap: wrap`.

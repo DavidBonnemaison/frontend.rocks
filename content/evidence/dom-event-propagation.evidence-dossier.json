@@ -1,0 +1,42 @@
+{
+  "concept_id": "dom-event-propagation",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://dom.spec.whatwg.org/#dispatching-events",
+      "spec_section": "2.9 Dispatching events",
+      "quote": "Events propagate through the event path in capturing, target, and bubbling phases."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+",
+    "firefox": "1+",
+    "safari": "1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Hit-Testing",
+      "Capturing Phase",
+      "At-Target Phase",
+      "Bubbling Phase"
+    ],
+    "mechanism_summary": "Static construction of the event path prior to listener execution."
+  },
+  "production_failures": [
+    {
+      "symptom": "Blocked scroll / mobile jank with touchstart listener",
+      "root_cause": "Listener not marked { passive: true }, forcing the Compositor to wait on the main thread.",
+      "mitigation": "Pass { passive: true } on wheel/touchstart listeners that do not call preventDefault()."
+    },
+    {
+      "symptom": "Popover menus fail to dismiss on internal clicks",
+      "root_cause": "Calling e.stopPropagation() inside a child button.",
+      "mitigation": "Avoid stopPropagation() and filter via e.target.closest()."
+    }
+  ],
+  "sources": [
+    "https://dom.spec.whatwg.org/#dispatching-events",
+    "https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Building_blocks/Event_bubbling"
+  ]
+}

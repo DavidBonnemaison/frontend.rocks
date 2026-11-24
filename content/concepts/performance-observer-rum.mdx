@@ -1,0 +1,67 @@
+---
+id: performance-observer-rum
+title: "PerformanceObserver & RUM Telemetry"
+domain: network-perf
+maturity_status: baseline-widely
+summary_tldr: "Streams real-user timing entries (LCP, INP, LoAF, resource timing) asynchronously via PerformanceObserver with buffered: true and flushes via sendBeacon."
+relations:
+  - target_id: core-web-vitals-mechanics
+    type: requires
+    note: "PerformanceObserver is the low-level browser API that emits LCP, CLS, and Event Timing entries."
+  - target_id: bfcache-navigation
+    type: requires
+    note: "RUM scripts must flush on visibilitychange/pagehide instead of unload to preserve bfcache."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver"
+  - "https://w3c.github.io/performance-timeline/"
+  - "https://web.dev/articles/debug-performance-in-the-field"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "performance-observer"
+  - "rum"
+  - "sendbeacon"
+  - "long-animation-frames"
+  - "buffered"
+---
+
+## TL;DR
+
+`PerformanceObserver` subscribes to the browser's internal performance timeline without polling `performance.getEntries()`. Pass `buffered: true` to capture entries recorded before your script booted, and flush metrics via `navigator.sendBeacon()` on `visibilitychange` so you never break `bfcache`.
+
+## Interactive Lab
+
+Step through buffered entry subscription, attribution capture, and `sendBeacon` flushing using `StepMachineLab`.
+
+## Under the Hood
+
+Polling `performance.getEntriesByType()` on a timer is like checking your mailbox every ten milliseconds; `PerformanceObserver` acts like a push notification delivered in an idle callback whenever the engine records a [Core Web Vitals](/concepts/core-web-vitals-mechanics) entry or Long Animation Frame (`long-animation-frame`).
+
+1. Calling `observer.observe({ type, buffered: true })` replays entries emitted before the observer attached.
+2. Each `PerformanceEntry` carries high-resolution `DOMHighResTimeStamp` offsets and attribution fields (such as the LCP `element` or blocking script URL).
+3. On `document.visibilityState === 'hidden'`, `navigator.sendBeacon()` hands the payload to the browser's background network queue without blocking navigation or invalidating [bfcache](/concepts/bfcache-navigation).
+
+```js
+const observer = new PerformanceObserver((list) => {
+  for (const entry of list.getEntries()) {
+    queueMetric({ name: entry.name, start: entry.startTime, value: entry.duration });
+  }
+});
+observer.observe({ type: 'long-animation-frame', buffered: true });
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') flushWithSendBeacon();
+});
+```
+
+## Problem Genealogy
+
+- **2012 (Navigation Timing `performance.timing`)**: Exposed integer epoch timestamps (`domComplete - navigationStart`), forcing manual polling.
+- **2016 (`PerformanceObserver`)**: Introduced push-based observation and sub-millisecond monotonic clocks (`performance.now()`).
+- **2024+ (Long Animation Frames / LoAF)**: Replaced opaque 50 ms `longtask` warnings with full script-URL attribution showing *which* third-party script froze the frame.
+
+## Production Pitfalls
+
+- **Forgetting `buffered: true`**: Attaching an observer after React/Vue hydrates misses early LCP and FCP entries unless `buffered: true` is set.
+- **Flushing on `unload`**: Using `window.addEventListener('unload', ...)` disables bfcache across your entire domain; always use `visibilitychange` or `pagehide`.
+- **When not to use 100% raw RUM beacons**: On high-traffic sites, sending every `resource` entry for every pageview inflates analytics bills and user battery; sample 1–5% of sessions or aggregate before flushing.

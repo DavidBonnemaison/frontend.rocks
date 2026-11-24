@@ -1,0 +1,52 @@
+{
+  "type": "step-machine",
+  "id": "actor-over-worker-architecture",
+  "title": "Actor-over-Worker Mailbox & Zero-Copy Reply",
+  "description": "Trace how the main thread dispatches a command over MessageChannel while staying responsive for 60fps rendering.",
+  "steps": [
+    {
+      "label": "1. Main Thread Posts Command + Port2",
+      "description": "UI dispatches a search/query intent with a dedicated MessageChannel port, immediately yielding back to rAF and input.",
+      "codeHighlight": "worker.postMessage({ method: 'query', payload, replyPort: port2 }, [port2]);",
+      "state": {
+        "mainThread": "60fps idle",
+        "workerMailbox": ["query#1"]
+      },
+      "visualNodes": [
+        { "id": "main", "label": "Main Thread (UI)", "status": "idle" },
+        { "id": "mailbox", "label": "Actor Mailbox", "status": "active" },
+        { "id": "worker", "label": "Worker Actor", "status": "active" }
+      ]
+    },
+    {
+      "label": "2. Worker Executes Sequentially",
+      "description": "Worker isolate drains mailbox#1, queries local OPFS index without locks, and packs result into a transferable buffer.",
+      "codeHighlight": "const buf = encodeRows(rows); replyPort.postMessage({ result: buf }, [buf]);",
+      "state": {
+        "mainThread": "rendering frame",
+        "workerMailbox": [],
+        "opfsReadMs": 14
+      },
+      "visualNodes": [
+        { "id": "main", "label": "Main Thread (UI)", "status": "active" },
+        { "id": "mailbox", "label": "Actor Mailbox", "status": "idle" },
+        { "id": "worker", "label": "Worker Actor", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Zero-Copy Ownership Transfer",
+      "description": "Main thread receives the detached ArrayBuffer on port1 without structured-clone copy and commits minimal DOM updates.",
+      "codeHighlight": "port1.onmessage = ({ data }) => renderView(new Uint8Array(data.result));",
+      "state": {
+        "mainThread": "committed",
+        "workerBufferNeutered": true,
+        "copyBytes": 0
+      },
+      "visualNodes": [
+        { "id": "main", "label": "Main Thread (UI)", "status": "done" },
+        { "id": "mailbox", "label": "Actor Mailbox", "status": "done" },
+        { "id": "worker", "label": "Worker Actor", "status": "done" }
+      ]
+    }
+  ]
+}

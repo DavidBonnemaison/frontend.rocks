@@ -1,0 +1,66 @@
+---
+id: command-pattern-event-sourcing-ui
+title: "Deterministic Command Logs & Time-Travel Debugging"
+domain: state-architecture
+maturity_status: baseline-widely
+summary_tldr: "Makes complex editor bugs reproducible in seconds by storing state transitions as an immutable append-only command log rather than mutating objects in place."
+relations:
+  - target_id: undo-redo-structural-sharing
+    type: requires
+    note: "Structural sharing snapshots let command logs rewind state in O(1) without cloning the full document."
+  - target_id: local-first-sync-crdt
+    type: requires
+    note: "Replicated operation logs require deterministic command application to converge across offline clients."
+sources:
+  - "https://redux.js.org/understanding/thinking-in-redux/three-principles"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Structured_clone_algorithm"
+  - "https://martinfowler.com/eaaDev/EventSourcing.html"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "command-pattern"
+  - "event-sourcing"
+  - "time-travel"
+  - "deterministic-replay"
+  - "audit-log"
+---
+
+## TL;DR
+
+In-place state mutations erase the causal history that triggered a UI bug, making production corruption irreproducible. Recording every user intent as a serializable command in an append-only log enables deterministic replay, [Undo/Redo](/concepts/undo-redo-structural-sharing), and bug-report time-travel debugging.
+
+## Interactive Lab
+
+Trace command capture, pure reducer replay, and cursor scrubbing in `StepMachineLab`.
+
+## Under the Hood
+
+Event sourcing treats current UI state as a pure left-fold (`reduce`) over an ordered log of immutable commands starting from `initialState`. Replaying the exact sequence on another machine produces bit-identical state only if reducers remain deterministic.
+
+1. **Pure command objects**: Serialize `{ type, payload, timestamp, seq }` without class instances, functions, or DOM nodes.
+2. **Deterministic reducers**: Read `Date.now()` or `crypto.randomUUID()` at command creation time, never inside the reducer, so replay never diverges.
+3. **Checkpoint snapshots**: Pair the log with periodic [CRDT](/concepts/local-first-sync-crdt) or structural-sharing checkpoints every $N$ commands so scrubbing to index 10,000 skips replaying from zero.
+
+```ts
+type Cmd = { type: 'ADD'; delta: number } | { type: 'SET'; value: number };
+
+function replay(commands: Cmd[], targetIndex: number, initial = 0): number {
+  let state = initial;
+  for (let i = 0; i <= targetIndex; i++) {
+    const cmd = commands[i];
+    state = cmd.type === 'ADD' ? state + cmd.delta : cmd.value;
+  }
+  return state;
+}
+```
+
+## Problem Genealogy
+
+- **2014–2016 (Elm Architecture & Redux DevTools)**: Introduced time-travel debugging by keeping actions pure and serializable, though storing unbounded action histories leaked hundreds of megabytes in long sessions.
+- **2018+ (Design Tools & Multiplayer Editors)**: Combined bounded command logs with periodic snapshots and inverse patches for sub-millisecond scrubbing.
+
+## Production Pitfalls
+
+- **Browser tab hits 2 GB OOM after 4 hours in a canvas editor**: Retaining every mouse-move command and full-document snapshot in memory leaks unbounded heap; coalesce continuous gestures and cap log length with periodic checkpoints.
+- **Time-travel replay produces different state than live session**: Calling `Math.random()` or reading `window.innerWidth` inside the reducer breaks determinism on replay.
+- **When not to use client event sourcing**: For simple CRUD forms, ephemeral hover/scroll UI, or high-frequency 120 Hz pointer streams without coalescing, storing an append-only command log wastes heap memory and CPU on replay.

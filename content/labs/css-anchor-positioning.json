@@ -1,0 +1,87 @@
+{
+  "type": "step-machine",
+  "id": "css-anchor-positioning",
+  "title": "Native Anchor & Flip Fallback Resolution",
+  "description": "Step through how Layout binds a popover to an anchor and flips on viewport collision.",
+  "steps": [
+    {
+      "label": "1. Register Anchor & Target",
+      "description": "Trigger declares anchor-name: --menu-btn; tooltip binds via position-anchor: --menu-btn.",
+      "codeHighlight": ".trigger { anchor-name: --menu-btn; }\n.tip { position: fixed; position-anchor: --menu-btn; }",
+      "state": {
+        "anchorRegistered": "--menu-btn",
+        "targetLayer": "Top Layer"
+      },
+      "visualNodes": [
+        {
+          "id": "reg",
+          "label": "anchor-name",
+          "status": "active"
+        },
+        {
+          "id": "place",
+          "label": "position-area",
+          "status": "idle"
+        },
+        {
+          "id": "flip",
+          "label": "flip-block",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "2. Resolve Preferred Placement",
+      "description": "position-area: top places the tooltip above the anchor’s top edge.",
+      "codeHighlight": "position-area: top;",
+      "state": {
+        "preferredSide": "top",
+        "overflowsViewport": true
+      },
+      "visualNodes": [
+        {
+          "id": "reg",
+          "label": "anchor-name",
+          "status": "done"
+        },
+        {
+          "id": "place",
+          "label": "position-area",
+          "status": "active"
+        },
+        {
+          "id": "flip",
+          "label": "flip-block",
+          "status": "idle"
+        }
+      ]
+    },
+    {
+      "label": "3. Apply position-try-fallbacks",
+      "description": "Because top overflows the viewport, Layout automatically flips to bottom without any JS measurement.",
+      "codeHighlight": "position-try-fallbacks: flip-block;",
+      "state": {
+        "resolvedSide": "bottom",
+        "jsMeasurements": 0,
+        "reflows": 1
+      },
+      "visualNodes": [
+        {
+          "id": "reg",
+          "label": "anchor-name",
+          "status": "done"
+        },
+        {
+          "id": "place",
+          "label": "position-area",
+          "status": "done"
+        },
+        {
+          "id": "flip",
+          "label": "flip-block",
+          "status": "active"
+        }
+      ]
+    }
+  ]
+}

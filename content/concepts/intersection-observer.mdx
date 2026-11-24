@@ -1,0 +1,66 @@
+---
+id: intersection-observer
+title: IntersectionObserver and Asynchronous Visibility
+domain: dom-events
+maturity_status: baseline-widely
+summary_tldr: "Eliminate scroll-handler layout thrashing in lazy loading and infinite lists—IntersectionObserver reads cached layout boxes once per frame after Layout."
+relations:
+  - target_id: browser-rendering-pipeline
+    type: requires
+    note: "IntersectionObserver computes intersections once per frame immediately after the Layout phase."
+  - target_id: layout-thrashing
+    type: requires
+    note: "Replaces scroll-handler getBoundingClientRect() polling that forces synchronous layout recalculation."
+sources:
+  - "https://w3c.github.io/IntersectionObserver/"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "intersection observer"
+  - "lazy loading"
+  - "infinite scroll"
+  - "rootMargin"
+web_feature_id: intersection-observer
+---
+
+## TL;DR
+
+`IntersectionObserver` notifies your callback asynchronously when a target element crosses a visibility threshold relative to the viewport or a scroll `root`. Because the engine reads cached boxes after Layout in the [Rendering Pipeline](/concepts/browser-rendering-pipeline), it eliminates scroll-handler [Layout Thrashing](/concepts/layout-thrashing).
+
+## Interactive Lab
+
+Compare `scroll` + `getBoundingClientRect()` polling against a shared `IntersectionObserver` in `PatternComparatorLab`.
+
+## Under the Hood
+
+Blink evaluates `IntersectionObserver` registrations during `Update the Rendering` immediately after Layout, reusing already-computed box geometry instead of forcing synchronous `getBoundingClientRect()` reflows. Like a warehouse guard checking monitors once after each shift change, it fires callbacks only when `intersectionRatio` crosses a configured threshold.
+
+1. **Post-Layout Hook**: During `Update the Rendering`, the engine reuses already-computed layout boxes to test intersections.
+2. **Threshold Crossing**: Callbacks fire only when `intersectionRatio` crosses a configured threshold (not on every pixel scrolled).
+3. **One Observer, Many Targets**: A single `IntersectionObserver` instance tracks thousands of elements more cheaply than one observer per component.
+
+```js
+const io = new IntersectionObserver(
+  (entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      hydrateWidget(entry.target);
+      io.unobserve(entry.target);
+    }
+  },
+  { rootMargin: '200px 0px', threshold: 0.01 }
+);
+```
+
+## Problem Genealogy
+
+- **2010 (`scroll` + `getBoundingClientRect()`)**: Ad-visibility trackers and lazy-loaders caused catastrophic main-thread reflows.
+- **2016 (`IntersectionObserver` v1)**: Moved visibility math into the browser's post-layout step.
+- **2020 (`IntersectionObserver` v2)**: Added `trackVisibility` and `delay` for occlusion-aware ad-fraud checks.
+
+## Production Pitfalls
+
+- **One Observer Per List Item**: Instantiating `new IntersectionObserver()` inside every React card wastes memory; share one observer per threshold config.
+- **Forgetting `unobserve()`**: Leaving lazy-load observers attached after hydration keeps firing callbacks on scroll.
+- **When not to use `IntersectionObserver`**: Never use it for continuous pixel-by-pixel parallax or scroll-linked animations, use CSS `animation-timeline: scroll()` or `view()`.

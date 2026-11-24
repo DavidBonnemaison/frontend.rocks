@@ -1,0 +1,102 @@
+---
+id: useeffect-dependency-loop-ddos
+case_number: 13
+title: "Autopsy #13: The useEffect Dependency Loop That DDoSed Our Own API"
+symptom: "Changing a single URL filter triggers an infinite render loop, Maximum update depth exceeded, and a burst of 429 Too Many Requests responses."
+failure_mode: cascading-latency
+format: narrative
+case_type: composite
+cast:
+  - julie
+  - karim
+  - marc
+traversed_concepts:
+  - concept_id: execution-context-call-stack
+    step_order: 1
+    role_in_chain: "Each component invocation allocates a new { filter } object reference on the V8 heap."
+  - concept_id: stale-closures-hooks
+    step_order: 2
+    role_in_chain: "Bidirectional synchronization between URLSearchParams and local state captures desynchronized values across render cycles."
+  - concept_id: virtual-dom-reconciliation
+    step_order: 3
+    role_in_chain: "Object.is() comparison on the dependency array evaluates false on every render and reschedules the effect."
+  - concept_id: server-state-cache-machines
+    step_order: 4
+    role_in_chain: "Lacking a server-state cache machine with primitive key deduplication triggers a fresh fetch() on every iteration."
+  - concept_id: abortcontroller-cancellation
+    step_order: 5
+    role_in_chain: "In-flight HTTP requests never abort, saturating connections and tripping 429 rate limits on the API."
+case_file:
+  trigger: "Wrapped `searchParams.get('status')` in `const filter = { status }` and passed `[filter]` to `useEffect`"
+  symptom: "API gateway `GET /api/items` traffic spiked 48x (64% `429`), with 47 HTTP requests fired in 420 ms per click"
+  root_cause: "Every `setItems(data)` render allocated a fresh `{ status }` object reference, failing `Object.is()` in `useEffect`"
+  bad_fixes:
+    - label: "300 ms `debounce` around `fetch`"
+      outcome: "Network tab looked quiet for 300 ms locally; in prod each re-render re-allocated `{ status }` and re-armed timers"
+  fix: "Key `useEffect` / `useQuery` on primitive `status` string and cancel stale requests with `AbortController`"
+  how_to_spot: "Network waterfall shows identical `GET /api/items?status=open` requests firing every few milliseconds alongside `Maximum update depth exceeded`"
+  deleted: "`const filter = { status }` object literal in render, 300 ms `debounce(fetch)` wrapper"
+reading_time_min: 7
+sources:
+  - "https://react.dev/reference/react/useEffect"
+  - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is"
+  - "https://dom.spec.whatwg.org/#interface-abortcontroller"
+  - "https://www.rfc-editor.org/rfc/rfc6585#section-4"
+last_verified_at: "2026-11-17"
+proof_status: unverified
+lab_id: useeffect-dependency-loop-ddos
+---
+
+## Forty-seven requests per click
+
+To align the filter bar with a shared hook signature, Julie wrote `const filter = { status: searchParams.get('status') ?? 'open' }` at the top of the component and passed `[filter]` to the `useEffect` that calls `fetch('/api/items')` and `setItems(data)`.
+
+In local dev with a warm local mock returning an instant resolved promise and Strict Mode disabled in that branch, nobody noticed anything at first glance. The page loaded, clicking a filter pill updated the list, and the PR cleared review in ten minutes. Because the mock server answered in 1 millisecond on `localhost`, the Network panel scrolled too fast for anyone to count the rows unless they looked at the request total at the bottom.
+
+Three minutes after deploy, Marc walked into `#frontend` carrying his coffee and his laptop. `GET /api/items` traffic on the API gateway had jumped 48x, 64% of responses were `429 Too Many Requests`, and Sentry was logging thousands of `Maximum update depth exceeded` errors across 19% of active dashboard sessions. A single click on a filter pill was firing 47 HTTP requests in 420 milliseconds before React finally tripped its nested-update guard and killed the component tree.
+
+## Debouncing an infinite loop
+
+Karim wrapped the `fetch` call inside a 300 ms `debounce` inside the effect so rapid clicks would coalesce. Locally, the Network tab stayed quiet for a quarter of a second after a click, so we shipped it.
+
+In production, the loop kept running. Every time `setItems(data)` completed, React re-invoked the component's [execution context](/concepts/execution-context-call-stack), which allocated a brand-new `{ status }` object at a fresh heap address (`@0x7f1a04 !== @0x7f1b88`). During [Virtual DOM reconciliation](/concepts/virtual-dom-reconciliation), React compares dependency arrays with `Object.is()`. Because the new object reference failed `Object.is()`, React scheduled the effect again, created another debounced wrapper or re-armed timers over [stale hook closures](/concepts/stale-closures-hooks), and never cancelled the requests already in flight. Allocating a 300 ms debounce timer per render only shifted the DDoS burst 300 milliseconds into the future.
+
+## Why the waterfall kept growing
+
+<CausalChainStepper />
+
+Each uncancelled `fetch()` raced the next one to `setItems(data)`, which triggered another render, which allocated another `{ status }`, which fired another `fetch()`. Within half a second, browser connection pools (six concurrent HTTP/1.1 connections per origin, or multiplexed streams fighting over server capacity) were saturated, main-thread CPU hit 99%, and Marc's rate limiter was returning `429` to every dashboard user on the floor. Even worse, when a slow earlier response resolved after a faster newer one, `setItems` briefly painted the wrong filter results before the next render overwrote them.
+
+<FailureSimulator />
+
+## Primitive keys instead of fresh objects
+
+The real fix removed object identity from the dependency boundary. We keyed the [server-state cache](/concepts/server-state-cache-machines) (`useQuery({ queryKey: ['items', status] })`) and effect dependencies on the primitive string `status` rather than a freshly allocated object literal, and wired an [AbortController](/concepts/abortcontroller-cancellation) in the effect cleanup (`return () => controller.abort()`).
+
+Because primitive strings are compared by value under `Object.is()`, `setItems(data)` no longer invalidated the dependency array. Even when a user clicked rapidly between three filters in half a second, the cleanup aborted any superseded in-flight request before the next one settled, keeping the Network waterfall to one clean request per filter state. Gateway traffic dropped back to 1x within three minutes of deploying the fix, and `429` responses fell to zero.
+
+We also enabled React Strict Mode in local dev and added an ESLint rule (`react-hooks/exhaustive-deps`) check in CI so inline object literals passed directly into effect dependency arrays are caught before review.
+
+## The `AbortError` trap
+
+First try with `controller.abort()`: every time a user clicked quickly between two filters, a red error banner flashed on screen for half a second.
+
+```ts
+try {
+  const res = await fetch(`/api/items?status=${status}`, { signal: controller.signal });
+  setItems(await res.json());
+} catch (err) {
+  if (err instanceof Error && err.name === 'AbortError') return; // missing on first try
+  setError(err);
+}
+```
+
+Our `catch (err)` block was treating `AbortError` as a real network failure, calling `setError(err)`, and triggering an extra error render on every cancelled request. Ignoring `AbortError` before calling `setError` fixed the flash immediately, and we added a unit test asserting that aborting a stale filter request leaves the error state `null`.
+
+## What stayed in the codebase
+
+<CaseFile />
+
+In JavaScript, `{ status: 'open' } === { status: 'open' }` is `false`, and `useEffect` agrees with JavaScript.
+
+Marc silenced the pager alert and asked if, next time we wanted to load-test his API gateway, we could give him five minutes' notice in Slack. Our `useQuery` wrapper now rejects non-primitive filter objects at the type level unless they are explicitly serialized into a stable key, and `AbortController` cleanup is mandatory on every fetch effect in the repository. That single rule has prevented at least two similar loops in code review since.

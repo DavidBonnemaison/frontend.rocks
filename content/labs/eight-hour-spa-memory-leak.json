@@ -1,0 +1,93 @@
+{
+  "type": "step-machine",
+  "id": "eight-hour-spa-memory-leak",
+  "title": "8-Hour Shift Heap Climb: Retainer Chain vs AbortController Teardown",
+  "description": "Step through how an un-disconnected MutationObserver and stale closure pin detached DOM subtrees in V8 Old Space until tab OOM.",
+  "steps": [
+    {
+      "label": "1. Route Swap Without Observer Teardown (t = 0h 15m)",
+      "description": "Operator switches between Queue and Telemetry views. Component unmounts, but MutationObserver.disconnect() is never called.",
+      "codeHighlight": "observer.observe(widgetRoot, { childList: true, subtree: true }); // no cleanup",
+      "state": {
+        "shiftHours": 0.25,
+        "heapMb": 145,
+        "detachedNodes": 420,
+        "gcMajorCollections": 3
+      },
+      "visualNodes": [
+        { "id": "gc", "label": "V8 Young Gen", "status": "active" },
+        { "id": "retainer", "label": "Observer Root", "status": "error" },
+        { "id": "closure", "label": "Stale Closure", "status": "active" },
+        { "id": "heap", "label": "Heap: 145 MB", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Stale Closure Pins Old State & DOM Refs (t = 2h 00m)",
+      "description": "The observer callback closes over the mounted component's chartData array and widgetRef, keeping the unmounted React Fiber and its DOM subtree reachable from the browser's C++ observer registry.",
+      "codeHighlight": "const onMutate = () => syncChart(chartData, widgetRef.current);",
+      "state": {
+        "shiftHours": 2.0,
+        "heapMb": 580,
+        "detachedNodes": 18400,
+        "gcMajorCollections": 24
+      },
+      "visualNodes": [
+        { "id": "gc", "label": "Promoted to Old Space", "status": "error" },
+        { "id": "retainer", "label": "Detached Fiber Tree", "status": "error" },
+        { "id": "closure", "label": "chartData (Pinned)", "status": "error" },
+        { "id": "heap", "label": "Heap: 580 MB", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Major Mark-Sweep Fails to Reclaim (t = 5h 30m)",
+      "description": "V8 runs full Mark-Compact cycles every 12 seconds. Because the native MutationObserver holds a strong edge to the JS callback, every historical view remains live on the retainer graph.",
+      "codeHighlight": "// V8 GC trace: 1.4 GB live Old Space, 480 ms stop-the-world pause",
+      "state": {
+        "shiftHours": 5.5,
+        "heapMb": 1480,
+        "detachedNodes": 64200,
+        "gcMajorCollections": 112
+      },
+      "visualNodes": [
+        { "id": "gc", "label": "GC Thrashing (480 ms)", "status": "error" },
+        { "id": "retainer", "label": "64k Detached Nodes", "status": "error" },
+        { "id": "closure", "label": "28 Stale Closures", "status": "error" },
+        { "id": "heap", "label": "Heap: 1.48 GB", "status": "error" }
+      ]
+    },
+    {
+      "label": "4. V8 Heap Limit Reached: Aw, Snap! (t = 7h 45m)",
+      "description": "Blink tab hits the ~2.4 GB per-renderer V8 heap ceiling. Allocation fails and Chrome terminates the renderer process with RESULT_CODE_HUNG / Out of Memory.",
+      "codeHighlight": "FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed",
+      "state": {
+        "shiftHours": 7.75,
+        "heapMb": 2410,
+        "detachedNodes": 112000,
+        "gcMajorCollections": 290
+      },
+      "visualNodes": [
+        { "id": "gc", "label": "Allocation Failed", "status": "error" },
+        { "id": "retainer", "label": "OOM Retainer Graph", "status": "error" },
+        { "id": "closure", "label": "Renderer Killed", "status": "error" },
+        { "id": "heap", "label": "2.41 GB (Crash)", "status": "error" }
+      ]
+    },
+    {
+      "label": "5. Fixed Architecture: Unified AbortSignal Lifecycle (t = 8h 00m)",
+      "description": "A single AbortController in useEffect aborts in-flight telemetry fetches, removes window listeners, and calls observer.disconnect() on signal abort, dropping Old Space back to 128 MB.",
+      "codeHighlight": "controller.signal.addEventListener('abort', () => observer.disconnect());",
+      "state": {
+        "shiftHours": 8.0,
+        "heapMb": 128,
+        "detachedNodes": 0,
+        "gcMajorCollections": 14
+      },
+      "visualNodes": [
+        { "id": "gc", "label": "Young Gen Scavenge", "status": "done" },
+        { "id": "retainer", "label": "0 Detached Nodes", "status": "done" },
+        { "id": "closure", "label": "Edges Severed", "status": "done" },
+        { "id": "heap", "label": "Flat 128 MB", "status": "done" }
+      ]
+    }
+  ]
+}

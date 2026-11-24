@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "css-nesting-and-scope",
+  "title": "BEM Naming Conventions vs Native Nesting + @scope",
+  "description": "Compare verbose BEM class chains against native & nesting and @scope.",
+  "before": {
+    "label": "Flat BEM Without Boundaries",
+    "code": ".card__title { font-weight: 600; }\n.card__body .card__title { color: #333; }\n/* Leaks into nested sub-cards unless renamed */",
+    "metrics": {
+      "lines": 3,
+      "reflows": "0 (manual class discipline)",
+      "dependencies": "Sass / BEM convention"
+    },
+    "previewNote": "Requires unique class prefixes to prevent nested theme leaks."
+  },
+  "after": {
+    "label": "Native Nesting + @scope Donut",
+    "code": "@scope (.card) to (.card-slot) {\n  .title {\n    font-weight: 600;\n    &:hover { text-decoration: underline; }\n  }\n}",
+    "metrics": {
+      "lines": 6,
+      "reflows": "0 (native Style)",
+      "dependencies": "0 build tools"
+    },
+    "previewNote": "Matches .title inside .card, stops at .card-slot, and requires no BEM prefix."
+  }
+}

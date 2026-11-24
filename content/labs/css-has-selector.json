@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "css-has-selector",
+  "title": "JS MutationObserver/Class Toggle vs CSS :has()",
+  "description": "Compare imperative parent class syncing against declarative :has() styling.",
+  "before": {
+    "label": "JS Parent Class Sync",
+    "code": "document.querySelectorAll('.card').forEach((card) => {\n  if (card.querySelector('img')) {\n    card.classList.add('card--with-media');\n  }\n});",
+    "metrics": {
+      "lines": 5,
+      "reflows": "Extra DOM write pass",
+      "dependencies": "JS query + class sync"
+    },
+    "previewNote": "Requires re-running whenever cards hydrate or mutate."
+  },
+  "after": {
+    "label": "Native CSS :has()",
+    "code": ".card:has(> img) {\n  grid-template-columns: 120px 1fr;\n  gap: 1rem;\n}",
+    "metrics": {
+      "lines": 4,
+      "reflows": "0 extra passes",
+      "dependencies": "0 JS"
+    },
+    "previewNote": "Evaluated natively during Style resolution on any DOM change."
+  }
+}

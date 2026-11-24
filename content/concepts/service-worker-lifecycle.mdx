@@ -1,0 +1,68 @@
+---
+id: service-worker-lifecycle
+title: "Service Worker Lifecycle"
+domain: network-perf
+maturity_status: baseline-widely
+summary_tldr: "Runs an off-thread programmable network proxy through install, waiting, and activate states—ensuring one consistent asset version per open tab."
+relations:
+  - target_id: http-caching-directives
+    type: requires
+    note: "sw.js itself must be served with no-cache so browser update checks detect new worker bytes."
+  - target_id: event-loop-tasks-microtasks
+    type: under_the_hood
+    note: "Service workers execute in an isolated worker event loop and wake only for functional events."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers"
+  - "https://web.dev/articles/service-worker-lifecycle"
+  - "https://w3c.github.io/ServiceWorker/"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "service-worker"
+  - "skipWaiting"
+  - "clients-claim"
+  - "cache-storage"
+  - "offline"
+web_feature_id: service-workers
+---
+
+## TL;DR
+
+A Service Worker is an event-driven network proxy sitting between your tabs and the network. Its `install` -> `waiting` -> `activate` state machine prevents a newly deployed worker from hijacking an already-open tab mid-session and serving mismatched JS chunks.
+
+## Interactive Lab
+
+Step through `install`, `waiting`, and `activate` version transitions using `StepMachineLab`.
+
+## Under the Hood
+
+A Service Worker runs on its own [Event Loop](/concepts/event-loop-tasks-microtasks) thread with zero DOM access, acting like a local reverse proxy inside the browser. Because two tabs of the same origin share one worker, the spec enforces strict version handoff rules:
+
+1. On navigation, the browser checks `sw.js` for a single byte difference (governed by [HTTP Caching Directives](/concepts/http-caching-directives)).
+2. If changed, `v2` runs `install` in the background while `v1` keeps serving existing tabs.
+3. `v2` enters the `waiting` state until every `v1`-controlled tab closes, unless `self.skipWaiting()` forces immediate takeover.
+4. Once `activate` runs, `v2` purges stale `CacheStorage` buckets and intercepts `fetch` events.
+
+```js
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k))
+      )
+    )
+  );
+});
+```
+
+## Problem Genealogy
+
+- **2009 (HTML5 AppCache)**: Declarative manifest file with infamous "always serves stale HTML first" traps; quietly deprecated.
+- **2014 (W3C Service Workers)**: Replaced AppCache with imperative JS `fetch` interception and explicit `waiting` semantics.
+- **2020+ (Navigation Preload)**: Fixed the worker startup penalty by letting the browser fetch navigation HTML in parallel while the worker thread boots.
+
+## Production Pitfalls
+
+- **Blindly calling `skipWaiting()`**: Forcing `v2` to take over an open `v1` tab causes lazy-loaded `v1` dynamic imports to fail with `ChunkLoadError` or serve `v2` modules to `v1` HTML.
+- **Long `max-age` on `sw.js`**: Caching `sw.js` with `max-age=31536000` locks users onto an old worker for a year; always serve `sw.js` with `Cache-Control: no-cache`.
+- **When not to use a Service Worker**: On content sites that only need fast static asset caching, HTTP `immutable` headers and CDN edge caching deliver zero startup latency without worker thread wakeups.

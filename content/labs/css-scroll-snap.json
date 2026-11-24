@@ -1,0 +1,42 @@
+{
+  "type": "live-sandbox",
+  "id": "css-scroll-snap",
+  "title": "Mandatory vs Proximity Scroll Snap Sandbox",
+  "description": "Scroll horizontally or trigger programmatic nudges to test real browser scroll-snap-type, scroll-snap-stop, and scroll-padding alignment.",
+  "height": 250,
+  "html": "<div class=\"toolbar\"><button type=\"button\" id=\"btn-nudge\">Nudge +90px</button><button type=\"button\" id=\"btn-fling\">Fling +340px</button><button type=\"button\" id=\"btn-reset-scroll\">Scroll 0</button><span class=\"mono pos\" id=\"pos\">scrollLeft: 0px</span></div><div class=\"track-wrap\"><div class=\"pad-guide\" title=\"scroll-padding-inline-start\"></div><div class=\"track\" id=\"track\" tabindex=\"0\"><article class=\"slide\"><strong>01</strong><span>Snap Start</span></article><article class=\"slide\"><strong>02</strong><span>Snap Start</span></article><article class=\"slide\"><strong>03</strong><span>Snap Start</span></article><article class=\"slide\"><strong>04</strong><span>Snap Start</span></article><article class=\"slide\"><strong>05</strong><span>Snap Start</span></article></div></div>",
+  "css": ".toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }\n.toolbar button { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 5px; padding: 4px 8px; font-size: 11px; cursor: pointer; }\n.toolbar button:hover { border-color: #38bdf8; }\n.pos { margin-left: auto; font-size: 11px; color: #38bdf8; }\n.track-wrap { position: relative; border: 1px solid #1e293b; border-radius: 8px; background: #0d1016; overflow: hidden; }\n.pad-guide { position: absolute; top: 0; bottom: 0; left: var(--scroll-pad, 16px); width: 2px; background: rgba(245, 158, 11, 0.7); pointer-events: none; z-index: 2; }\n.track { display: flex; gap: 12px; overflow-x: auto; padding: 16px; scroll-padding-inline-start: var(--scroll-pad, 16px); scroll-behavior: smooth; }\n#sandbox-root.snap-mandatory .track { scroll-snap-type: x mandatory; }\n#sandbox-root.snap-proximity .track { scroll-snap-type: x proximity; }\n#sandbox-root.snap-none .track { scroll-snap-type: none; }\n.slide { flex: 0 0 180px; height: 128px; scroll-snap-align: start; border-radius: 8px; border: 1px solid #334155; background: linear-gradient(135deg, rgba(56, 189, 248, 0.14), rgba(15, 23, 42, 0.9)); padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }\n#sandbox-root.stop-always .slide { scroll-snap-stop: always; border-color: #34d399; }\n.slide strong { font-size: 22px; color: #f8fafc; }\n.slide span { font-size: 11px; color: #94a3b8; }",
+  "js": "var t = document.getElementById('track'); var pos = document.getElementById('pos'); function upd(){ if(t && pos) pos.textContent = 'scrollLeft: ' + Math.round(t.scrollLeft) + 'px'; } if (t) { t.addEventListener('scroll', upd, { passive: true }); document.getElementById('btn-nudge').onclick = function(){ t.scrollBy({ left: 90, behavior: 'smooth' }); }; document.getElementById('btn-fling').onclick = function(){ t.scrollBy({ left: 340, behavior: 'smooth' }); }; document.getElementById('btn-reset-scroll').onclick = function(){ t.scrollTo({ left: 0, behavior: 'smooth' }); }; upd(); }",
+  "controls": [
+    {
+      "key": "snapStrictness",
+      "label": "scroll-snap-type",
+      "kind": "select",
+      "target": "class",
+      "classPrefix": "snap-",
+      "options": ["mandatory", "proximity", "none"],
+      "defaultValue": "mandatory"
+    },
+    {
+      "key": "snapStopAlways",
+      "label": "scroll-snap-stop: always",
+      "kind": "toggle",
+      "target": "class",
+      "className": "stop-always",
+      "defaultValue": false
+    },
+    {
+      "key": "scrollPadding",
+      "label": "scroll-padding-inline-start",
+      "kind": "range",
+      "target": "css-var",
+      "cssVar": "--scroll-pad",
+      "min": 0,
+      "max": 48,
+      "step": 8,
+      "unit": "px",
+      "defaultValue": 16
+    }
+  ],
+  "expectedObservation": "In mandatory mode, nudging +90px forces the scroll container to settle aligned to the amber scroll-padding guide line. In proximity mode, the viewport only snaps when resting near a snap edge; in none, it stops wherever the gesture ends."
+}

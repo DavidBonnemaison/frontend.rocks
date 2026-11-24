@@ -1,0 +1,60 @@
+---
+id: dom-event-propagation
+title: DOM Event Propagation (Capture, Target, Bubble)
+domain: dom-events
+maturity_status: baseline-widely
+summary_tldr: "Three-phase DOM event traversal from window to target and back, enabling single-listener delegation on common ancestors."
+relations:
+  - target_id: event-loop-tasks-microtasks
+    type: under_the_hood
+    note: "Each user interaction event is dispatched as a macrotask with a microtask checkpoint after every listener."
+  - target_id: abortcontroller-cancellation
+    type: contrasts_with
+    note: "Passing an AbortSignal to addEventListener detaches groups of listeners without manual removeEventListener calls."
+sources:
+  - "https://dom.spec.whatwg.org/#dispatching-events"
+  - "https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Building_blocks/Event_bubbling"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "bubbling"
+  - "capture"
+  - "stopPropagation"
+  - "event delegation"
+---
+
+## TL;DR
+
+Every DOM event traverses the tree downward (**Capture**), reaches the originating element (**Target**), and walks back up to `window` (**Bubble**). Delegation attaches a single listener on a shared ancestor and identifies targets via `event.target.closest(...)`.
+
+## Interactive Lab
+
+Trace all three propagation phases across a DOM tree in `StepMachineLab`.
+
+## Under the Hood
+
+1. **Hit-Testing**: The engine identifies the deepest element under the pointer (`event.target`).
+2. **Capture Phase**: Walks `window -> document -> html -> ... -> parent`, invoking listeners registered with `{ capture: true }`.
+3. **Target & Bubble Phases**: Invokes listeners on `target`, then walks back up to `window` (unless `bubbles: false`, such as `focus`, `blur`, or `scroll`).
+4. **Microtask Checkpoint**: Between two distinct listeners triggered by a real UI event, the [Event Loop](/concepts/event-loop-tasks-microtasks) drains pending microtasks.
+
+```js
+// Single delegated listener handles 1,000 rows without per-row allocations
+tableBody.addEventListener('click', (event) => {
+  const row = event.target.closest('tr[data-row-id]');
+  if (!row) return;
+  selectRow(row.dataset.rowId);
+});
+```
+
+## Problem Genealogy
+
+- **2000 (Incompatible Netscape/IE Models)**: Capture-only in Netscape, Bubbling-only in Internet Explorer, forcing every library to ship a bespoke event normalizer.
+- **2002 (DOM Level 2 Events)**: Unified three-phase model (`addEventListener(type, fn, useCapture)`).
+- **2015+ (Root Event Delegation in Frameworks)**: Single listener at the framework root avoiding thousands of per-node listener allocations.
+
+## Production Pitfalls
+
+- **`stopPropagation()` breaks analytics and popovers**: Halting propagation prevents global listeners (including [Popover API](/concepts/popover-api-light-dismiss) light-dismiss or telemetry) from receiving the event.
+- **Non-passive `touchstart` / `wheel` listeners**: Without `{ passive: true }`, the Compositor Thread waits on the main thread before scrolling in case `preventDefault()` is called.
+- **When not to use bubbling delegation**: Events that do not bubble (`mouseenter`, `mouseleave`, `focus`, `blur`) require `focusin`/`focusout` or Capture-phase listeners, and bulk teardown is cleaner via [AbortController](/concepts/abortcontroller-cancellation) `{ signal }` options.

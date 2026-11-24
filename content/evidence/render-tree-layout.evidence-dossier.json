@@ -1,0 +1,41 @@
+{
+  "concept_id": "render-tree-layout",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-display-3/",
+      "spec_section": "2. Box Layout Modes: the display property",
+      "quote": "An element with display: none generates no boxes in the formatting structure, whereas visibility: hidden generates invisible boxes that still participate in layout."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+",
+    "firefox": "1+",
+    "safari": "1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Style Recalc",
+      "Box Tree Construction",
+      "Layout (Reflow)"
+    ],
+    "mechanism_summary": "Style resolution attaches ComputedStyle to DOM elements; LayoutNG walks the box tree to compute physical pixel coordinates."
+  },
+  "production_failures": [
+    {
+      "symptom": "Toggling visibility on a 1,000-row table triggers a 45ms frame drop",
+      "root_cause": "Using display: none destroys and recreates LayoutObjects and invalidates ancestor layout geometry.",
+      "mitigation": "Use visibility: hidden or content-visibility: hidden when preserving layout boxes across frequent toggles."
+    },
+    {
+      "symptom": "CPU spikes during infinite scroll appends",
+      "root_cause": "Appending nodes into an unconstrained document forces full-document layout passes.",
+      "mitigation": "Apply contain: layout or CSS containment boundaries to isolate subtree geometry."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-display-3/",
+    "https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/Critical_rendering_path"
+  ]
+}

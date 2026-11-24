@@ -1,0 +1,66 @@
+---
+id: css-subgrid
+title: "CSS Subgrid"
+domain: css-layout
+maturity_status: baseline-newly
+summary_tldr: "subgrid lets nested grid containers inherit parent row or column tracks so sibling cards align internal headers and footers."
+relations:
+  - target_id: css-grid-track-sizing
+    type: requires
+    note: "Subgrid participates directly in the parent grid’s track-sizing algorithm."
+  - target_id: render-tree-layout
+    type: under_the_hood
+    note: "Synchronizes nested subgrid item geometry with parent grid tracks during layout calculation."
+sources:
+  - "https://drafts.csswg.org/css-grid-2/#subgrids"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout/Subgrid"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "subgrid"
+  - "grid-template-rows"
+  - "card alignment"
+  - "CSS Grid Level 2"
+web_feature_id: subgrid
+---
+
+## TL;DR
+
+`subgrid` lets a nested grid adopt its parent's column or row tracks instead of inventing isolated ones. Child items inside sibling cards then participate in the same [CSS Grid Track Sizing](/concepts/css-grid-track-sizing) pass, keeping headings, media, and footers aligned across rows.
+
+## Interactive Lab
+
+Compare isolated nested card grids against `grid-template-rows: subgrid` in `PatternComparatorLab`.
+
+## Under the Hood
+
+Without `subgrid`, each card is an island measuring its own ceiling height; with `subgrid`, every card bolts its shelves onto the same wall studs.
+
+1. **Track Adoption**: Setting `grid-template-rows: subgrid` maps the child's row lines onto the parent's spanned tracks.
+2. **Upward Sizing**: Intrinsic content inside the subgrid feeds back into the parent's [Render Tree & Layout](/concepts/render-tree-layout) track-sizing pass, expanding the shared row for all siblings.
+3. **Explicit Span**: The subgrid container must span enough parent tracks (`grid-row: span 3`) to hold its internal rows, otherwise extra children pile into the last track.
+
+```css
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+.pricing-card {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: 0.75rem; /* Overrides parent row-gap locally */
+}
+```
+
+## Problem Genealogy
+
+- **2017–2022**: `display: contents` was abused to flatten card wrappers into a parent grid, breaking background, border, and accessibility semantics on the card container.
+- **2023+**: CSS Grid Level 2 (`subgrid`) shipped in all major engines, preserving the card wrapper box while sharing tracks.
+
+## Production Pitfalls
+
+- **Forgetting `grid-row: span N`**: A card defaults to spanning 1 row; without `span N`, all 3 subgrid children collide inside that single row.
+- **Inherited `gap`**: Subgrids inherit the parent's `gap` automatically; override `row-gap` or `column-gap` on the subgrid if internal spacing should be tighter.
+- **When not to use `subgrid`**: Avoid `subgrid` when cards have variable numbers of internal sections, use Flexbox `margin-top: auto` on the footer instead.

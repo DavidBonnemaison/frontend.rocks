@@ -1,0 +1,37 @@
+{
+  "concept_id": "css-cascade-layers",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css-cascade-5/#layering",
+      "spec_section": "6.4 Cascade Layers",
+      "quote": "Cascade layers are sorted by order of appearance, with unlayered author styles having higher priority than any named layer."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "99+",
+    "firefox": "97+",
+    "safari": "15.4+"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["CSSOM Parsing", "Cascade Sorting (Origin -> Layer -> Specificity)"],
+    "mechanism_summary": "Layer order overrides selector specificity for normal declarations."
+  },
+  "production_failures": [
+    {
+      "symptom": "!important rule in a lower layer overrides a higher layer",
+      "root_cause": "The specification reverses layer order for !important declarations.",
+      "mitigation": "Avoid !important in base layers or document it explicitly as an invariant."
+    },
+    {
+      "symptom": "Third-party stylesheet overrides design system",
+      "root_cause": "CSS imported without @import url(...) layer(vendor).",
+      "mitigation": "Wrap third-party imports in a dedicated low-priority layer."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css-cascade-5/#layering",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/@layer"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "concept_id": "undo-redo-structural-sharing",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://immerjs.github.io/immer/structural-sharing/",
+      "spec_section": "Immer: Structural Sharing & Copy-on-Write",
+      "quote": "Only the modified path from root to leaf is cloned; unchanged sibling subtrees retain their exact object references across history snapshots."
+    },
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone",
+      "spec_section": "MDN structuredClone()",
+      "quote": "structuredClone() creates a deep clone of a given value, allocating new memory for every nested object and array."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "49+ (ES6 Proxy)",
+    "firefox": "18+ (ES6 Proxy)",
+    "safari": "10+ (ES6 Proxy)"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Past/Present/Future Stacks", "Path Copy-on-Write", "Unchanged Subtree Pointer Reuse", "Future Stack Truncation on Edit"],
+    "mechanism_summary": "Stores undo/redo history by cloning only the modified ancestor spine in O(depth) while sharing untouched subtrees by reference, enabling O(1) === equality checks."
+  },
+  "production_failures": [
+    {
+      "symptom": "Browser tab hits Out-Of-Memory (OOM) crash after 40 undoable edits on a 5MB document",
+      "root_cause": "Undo stack pushed full structuredClone() or JSON.parse(JSON.stringify(state)) snapshots on every keystroke.",
+      "mitigation": "Use structural sharing (path copying / Immer patches) and coalesce rapid edits within a 300ms window."
+    },
+    {
+      "symptom": "Redo stack retains stale future branches after editing mid-history",
+      "root_cause": "Pushing a new edit to the past stack forgot to clear the future (redo) array, causing Cmd+Shift+Z to jump to an incompatible timeline.",
+      "mitigation": "Always reset future = [] whenever a new user mutation is committed while past/present advance."
+    }
+  ],
+  "sources": [
+    "https://immerjs.github.io/immer/structural-sharing/",
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone"
+  ]
+}

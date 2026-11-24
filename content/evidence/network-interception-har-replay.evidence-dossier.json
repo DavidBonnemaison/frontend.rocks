@@ -1,0 +1,48 @@
+{
+  "concept_id": "network-interception-har-replay",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://w3c.github.io/ServiceWorker/",
+      "spec_section": "4.4 Handle Fetch",
+      "quote": "A service worker intercepts fetch events for requests within its scope and may respond with a synthesized Response object via respondWith()."
+    },
+    {
+      "source_url": "https://playwright.dev/docs/mock#mocking-with-har-files",
+      "spec_section": "Playwright HAR Replay",
+      "quote": "page.routeFromHAR() matches outgoing browser requests against recorded HAR entries and fulfills them with the archived status, headers, and body."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "45+ (Service Worker) / CDP Fetch",
+    "firefox": "44+ (Service Worker) / BiDi",
+    "safari": "11.1+ (Service Worker)"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Browser Request Construction & Header Normalization",
+      "Service Worker or CDP Fetch.requestPaused Interception",
+      "HAR Index Lookup (Method, URL, Body)",
+      "Response Stream & Backpressure Replay"
+    ],
+    "mechanism_summary": "Browser-layer interception captures real Request objects below fetch/XHR bindings and fulfills them from handlers or HAR archives while preserving headers, status codes, and ReadableStream bodies."
+  },
+  "production_failures": [
+    {
+      "symptom": "Streaming AI chat UI crashes in production on chunked UTF-8 boundaries after passing all mocked tests",
+      "root_cause": "Unit tests stubbed globalThis.fetch with a single buffered JSON string instead of a multi-chunk ReadableStream.",
+      "mitigation": "Intercept at the network layer and return a chunked ReadableStream response that splits multi-byte characters across chunks."
+    },
+    {
+      "symptom": "CI E2E suite passes against stale HAR fixtures while production API returns 422",
+      "root_cause": "HAR file was recorded months earlier and never refreshed or validated against the OpenAPI/Zod schema.",
+      "mitigation": "Validate HAR response payloads against shared backend schemas in CI and set notFound: 'abort'."
+    }
+  ],
+  "sources": [
+    "https://w3c.github.io/ServiceWorker/",
+    "https://playwright.dev/docs/mock#mocking-with-har-files",
+    "https://mswjs.io/docs/"
+  ]
+}

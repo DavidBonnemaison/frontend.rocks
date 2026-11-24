@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "cdn-edge-cache-keys",
+  "title": "Edge Cache Key: Unnormalized vs Normalized",
+  "description": "Compare naive full-URL + Vary: User-Agent keys against normalized CDN edge cache keys.",
+  "before": {
+    "label": "Fragmented Key (Low Hit Ratio)",
+    "code": "// Default CDN key includes raw query + broad Vary\nKey = host + path + \"?utm_campaign=fall&fbclid=xyz99\"\nVary: Accept-Encoding, User-Agent, Cookie\n// Every user-agent string & ad click misses edge",
+    "metrics": {
+      "lines": 4,
+      "reflows": "8% Edge Hit Ratio",
+      "dependencies": "Origin flooded on traffic spikes"
+    },
+    "previewNote": "Thousands of User-Agent permutations create redundant origin fetches."
+  },
+  "after": {
+    "label": "Normalized Edge Key (High Hit Ratio)",
+    "code": "// Strip tracking params & normalize Vary\nKey = host + path + sortParams(allow=['page','sort'])\nVary: Accept-Encoding\nCache-Control: public, s-maxage=3600, stale-while-revalidate=60",
+    "metrics": {
+      "lines": 4,
+      "reflows": "94% Edge Hit Ratio",
+      "dependencies": "Origin shielded at PoP"
+    },
+    "previewNote": "Shared edge entry serves all visitors within milliseconds from nearest PoP."
+  }
+}

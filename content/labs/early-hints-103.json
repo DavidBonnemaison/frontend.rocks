@@ -1,0 +1,38 @@
+{
+  "type": "step-machine",
+  "id": "early-hints-103",
+  "title": "103 Early Hints: Overlapping Server Think Time",
+  "description": "Observe how an interim 103 frame starts CSS and font fetches before the 200 OK HTML arrives.",
+  "steps": [
+    {
+      "label": "1. Browser Sends Navigation GET",
+      "description": "Client requests /dashboard. The origin needs 350ms to query the database and render SSR HTML.",
+      "codeHighlight": "GET /dashboard HTTP/2",
+      "state": {
+        "serverThinkTimeMs": 350,
+        "htmlBytesReceived": 0,
+        "clientIdle": true
+      }
+    },
+    {
+      "label": "2. Edge Flushes 103 Early Hints",
+      "description": "At t=15ms, the CDN sends an interim 103 frame with Link preload headers while origin SSR still runs.",
+      "codeHighlight": "HTTP/2 103 Early Hints\nLink: </app.css>; rel=preload; as=style",
+      "state": {
+        "status": 103,
+        "preloadStarted": true,
+        "cssInFlight": true
+      }
+    },
+    {
+      "label": "3. 200 OK HTML Arrives",
+      "description": "At t=350ms, the HTML arrives, but app.css is already in memory—cutting First Contentful Paint.",
+      "codeHighlight": "HTTP/2 200 OK\nContent-Type: text/html; charset=utf-8",
+      "state": {
+        "status": 200,
+        "cssAlreadyCached": true,
+        "renderBlockedMs": 0
+      }
+    }
+  ]
+}

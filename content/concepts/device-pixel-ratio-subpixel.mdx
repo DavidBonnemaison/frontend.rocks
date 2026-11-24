@@ -1,0 +1,61 @@
+---
+id: device-pixel-ratio-subpixel
+title: "Device Pixel Ratio & Subpixel Rendering"
+domain: rendering-pipeline
+maturity_status: baseline-widely
+summary_tldr: "CSS pixels decouple from physical hardware pixels via devicePixelRatio, causing fractional coordinates to blur unless snapped."
+relations:
+  - target_id: paint-rasterization
+    type: requires
+    note: "Rasterization maps floating-point CSS layout coordinates onto discrete physical device pixels."
+  - target_id: render-tree-layout
+    type: under_the_hood
+    note: "Layout computes fractional CSS pixels before Paint snaps borders and transforms."
+sources:
+  - "https://drafts.csswg.org/css-values-4/#reference-pixel"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "devicePixelRatio"
+  - "DPR"
+  - "subpixel"
+  - "retina"
+  - "canvas"
+  - "hairline"
+---
+
+## TL;DR
+
+A CSS `px` is an angular unit, not a hardware dot. `window.devicePixelRatio` (DPR) maps CSS pixels to physical screen pixels; fractional coordinates or unscaled `<canvas>` buffers force bilinear filtering, blurring edges and text.
+
+## Interactive Lab
+
+Test how fractional CSS coordinates map onto physical pixel grids across DPR values in `ConstraintSimulatorLab`.
+
+## Under the Hood
+
+CSS coordinates are a floating-point blueprint, whereas your monitor is a rigid grid of physical LEDs. When a line lands halfway between two LEDs, the rasterizer smears it across both.
+
+1. **Subpixel Layout**: [Render Tree & Layout](/concepts/render-tree-layout) stores box edges in fixed-point fractions (e.g., `1/64px`).
+2. **Border Snapping**: During [Paint & Rasterization](/concepts/paint-rasterization), engines snap borders and backgrounds to whole device pixels so `1px` lines stay crisp.
+3. **Canvas & Transforms**: `<canvas>` backing stores and `transform: translate()` bypass layout snapping unless explicitly scaled by `devicePixelRatio`.
+
+```js
+const dpr = window.devicePixelRatio || 1;
+const rect = canvas.getBoundingClientRect();
+canvas.width = Math.round(rect.width * dpr);
+canvas.height = Math.round(rect.height * dpr);
+ctx.scale(dpr, dpr);
+```
+
+## Problem Genealogy
+
+- **2010 (HiDPI / Retina)**: Apple doubled physical pixel density (`dpr = 2`) while keeping CSS `px` invariant, exposing unscaled bitmaps and `<canvas>` buffers.
+- **2016+**: Fractional DPR (`1.25`, `1.5`, `2.625`) became common on Windows and Android, making naive `Math.floor(dpr)` rounding produce uneven borders.
+
+## Production Pitfalls
+
+- **Blurry `<canvas>` on HiDPI**: Setting only CSS `width` and `height` stretches a 1x bitmap across 2x or 3x physical pixels.
+- **`translate(-50%, -50%)` on odd-sized boxes**: Centering an odd-height modal with `-50%` places text on a half-pixel boundary, softening glyph edges.
+- **When not to use `0.5px` borders**: Avoid `border: 0.5px solid` for hairlines on low-DPR screens where it rounds to `0px` or `1px`; use `1px` or `transform: scaleY(0.5)` gated by `min-resolution: 2dppx`.

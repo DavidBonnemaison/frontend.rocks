@@ -1,0 +1,52 @@
+{
+  "type": "step-machine",
+  "id": "visual-regression-subpixel-rendering",
+  "title": "Deterministic Rasterization for Visual Snapshots",
+  "description": "Trace how OS font hinting and async web fonts cause false diffs, and how containerization stabilizes pixels.",
+  "steps": [
+    {
+      "label": "1. Host-OS Divergence (macOS vs Linux)",
+      "description": "macOS CoreText and Linux FreeType rasterize anti-aliased glyph edges differently, causing false diffs.",
+      "codeHighlight": "// macOS Retina DPR=2 vs Linux CI DPR=1 produces 3.2% pixel diff",
+      "state": {
+        "os": "macOS vs Linux",
+        "dpr": "2 vs 1",
+        "diffRatio": 0.032
+      },
+      "visualNodes": [
+        { "id": "raster", "label": "Host Rasterizer", "status": "error" },
+        { "id": "fonts", "label": "Web Fonts", "status": "idle" },
+        { "id": "diff", "label": "Pixel Diff (3.2% FAIL)", "status": "error" }
+      ]
+    },
+    {
+      "label": "2. Pin Container & Await Fonts",
+      "description": "Run in pinned Linux Docker Chromium, emulate reducedMotion, and await document.fonts.ready.",
+      "codeHighlight": "await page.emulateMedia({ reducedMotion: 'reduce' }); await page.evaluate(() => document.fonts.ready);",
+      "state": {
+        "os": "Pinned Linux Docker",
+        "fontsReady": true,
+        "animations": "disabled"
+      },
+      "visualNodes": [
+        { "id": "raster", "label": "Pinned Skia Container", "status": "done" },
+        { "id": "fonts", "label": "Fonts Ready", "status": "done" },
+        { "id": "diff", "label": "Pixel Diff", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Capture Deterministic PNG",
+      "description": "Skia produces identical software-rasterized pixel buffers with 0.0% diff across CI workers.",
+      "codeHighlight": "await expect(card).toHaveScreenshot({ animations: 'disabled' });",
+      "state": {
+        "diffRatio": 0,
+        "passed": true
+      },
+      "visualNodes": [
+        { "id": "raster", "label": "Pinned Skia Container", "status": "done" },
+        { "id": "fonts", "label": "Fonts Ready", "status": "done" },
+        { "id": "diff", "label": "0.0% Diff PASS", "status": "done" }
+      ]
+    }
+  ]
+}

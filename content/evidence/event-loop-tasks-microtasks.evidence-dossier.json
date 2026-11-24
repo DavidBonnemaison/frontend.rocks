@@ -1,0 +1,41 @@
+{
+  "concept_id": "event-loop-tasks-microtasks",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/webappapis.html#perform-a-microtask-checkpoint",
+      "spec_section": "8.1.7.3 Perform a microtask checkpoint",
+      "quote": "While the microtask queue is not empty, pop the oldest microtask and run it."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "66+",
+    "firefox": "69+",
+    "safari": "12.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Task Execution",
+      "Microtask Checkpoint",
+      "Update the Rendering"
+    ],
+    "mechanism_summary": "V8 drains the microtask queue after every JS task prior to rendering."
+  },
+  "production_failures": [
+    {
+      "symptom": "Frozen UI and infinite INP",
+      "root_cause": "Infinite recursion in Promise.then / queueMicrotask starving Update the Rendering.",
+      "mitigation": "Use setTimeout or scheduler.yield() to yield control back to the main thread."
+    },
+    {
+      "symptom": "Heavy computation split via Promises still blocks scrolling",
+      "root_cause": "Microtasks execute within the same frame before Paint.",
+      "mitigation": "Offload heavy work to a Web Worker or yield between macrotasks."
+    }
+  ],
+  "sources": [
+    "https://html.spec.whatwg.org/multipage/webappapis.html#event-loops",
+    "https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide"
+  ]
+}

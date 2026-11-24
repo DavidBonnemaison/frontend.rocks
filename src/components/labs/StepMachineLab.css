@@ -1,0 +1,134 @@
+/* Mobile-first & memory-inspector ergonomics for StepMachineLab */
+
+.lab-card[data-testid='lab-step-machine'] {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.lab-card[data-testid='lab-step-machine'] .step-body,
+.lab-card[data-testid='lab-step-machine'] .step-info,
+.lab-card[data-testid='lab-step-machine'] .step-state {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.lab-card[data-testid='lab-step-machine'] .step-node {
+  max-width: 100%;
+}
+
+.lab-card[data-testid='lab-step-machine'] .lab-code {
+  max-width: 100%;
+  overflow-x: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+  tab-size: 2;
+}
+
+.lab-card[data-testid='lab-step-machine'] .lab-code code {
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.lab-card[data-testid='lab-step-machine'] .state-grid {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.lab-card[data-testid='lab-step-machine'] .state-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.lab-card[data-testid='lab-step-machine'] .state-row-modified {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.08);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.lab-card[data-testid='lab-step-machine'] .state-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.lab-card[data-testid='lab-step-machine'] .state-key {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.lab-card[data-testid='lab-step-machine'] .state-row-modified .state-key {
+  color: var(--text);
+}
+
+.lab-card[data-testid='lab-step-machine'] .state-modified-badge {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 999px;
+  padding: 1px 7px;
+  flex-shrink: 0;
+}
+
+.lab-card[data-testid='lab-step-machine'] .state-val {
+  margin: 0;
+  width: 100%;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--accent);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.lab-card[data-testid='lab-step-machine'] .lab-controls {
+  flex-wrap: wrap;
+}
+
+.lab-card[data-testid='lab-step-machine'] .step-dots {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .lab-card[data-testid='lab-step-machine'] {
+    padding: 14px;
+  }
+
+  .lab-card[data-testid='lab-step-machine'] .lab-code {
+    padding: 10px;
+    font-size: 0.78rem;
+  }
+
+  .lab-card[data-testid='lab-step-machine'] .state-row {
+    padding: 9px 10px;
+  }
+}

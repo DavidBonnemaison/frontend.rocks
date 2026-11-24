@@ -1,0 +1,37 @@
+{
+  "concept_id": "css-stacking-context",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/css2/#elaborate-stacking-contexts",
+      "spec_section": "Appendix E. Elaborate description of Stacking Contexts",
+      "quote": "Each stacking context is painted atomically; descendant elements cannot interleave with elements outside the context."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+",
+    "firefox": "1+",
+    "safari": "1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Style", "Paint (DisplayItem ordering)", "Composite"],
+    "mechanism_summary": "opacity < 1, transform, filter, or isolation: isolate create an atomic Z-axis boundary."
+  },
+  "production_failures": [
+    {
+      "symptom": "Modal or dropdown clipped behind a sticky header despite z-index: 9999",
+      "root_cause": "An intermediate ancestor creates a stacking context via transform or opacity < 1.",
+      "mitigation": "Remove the intermediate stacking context or use <dialog> / Popover API (Top Layer)."
+    },
+    {
+      "symptom": "Unmanageable z-index collisions across micro-frontends",
+      "root_cause": "Sharing the root stacking context without explicit isolation.",
+      "mitigation": "Isolate each root widget with isolation: isolate."
+    }
+  ],
+  "sources": [
+    "https://drafts.csswg.org/css2/#elaborate-stacking-contexts",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_positioned_layout/Understanding_z-index/Stacking_context"
+  ]
+}

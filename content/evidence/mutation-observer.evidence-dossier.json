@@ -1,0 +1,42 @@
+{
+  "concept_id": "mutation-observer",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://dom.spec.whatwg.org/#mutation-observers",
+      "spec_section": "4.3 Mutation observers",
+      "quote": "Queue a mutation observer microtask to notify each registered observer of its queued MutationRecord list."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "26+",
+    "firefox": "14+",
+    "safari": "6+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "DOM Tree / Attribute Mutation",
+      "MutationRecord Append to Observer Queue",
+      "Microtask Checkpoint Notification",
+      "Batched Records Callback Execution"
+    ],
+    "mechanism_summary": "MutationObserver batches all synchronous DOM mutations into a MutationRecord array and invokes its callback as a single microtask before the next render."
+  },
+  "production_failures": [
+    {
+      "symptom": "Tab freezes in infinite microtask loop when observing childList or attributes",
+      "root_cause": "Mutating the observed DOM subtree inside the MutationObserver callback queues another MutationRecord microtask, starving Update the Rendering.",
+      "mitigation": "Guard callbacks against self-triggered mutations or call takeRecords() / disconnect() around internal DOM writes."
+    },
+    {
+      "symptom": "100ms+ UI stalls when typing in a rich-text editor with subtree: true",
+      "root_cause": "Observing characterData and subtree on document.body delivers thousands of MutationRecords on every keystroke or framework render.",
+      "mitigation": "Scope observe() to the narrowest container and filter with attributeFilter instead of watching all attributes."
+    }
+  ],
+  "sources": [
+    "https://dom.spec.whatwg.org/#mutation-observers",
+    "https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver"
+  ]
+}

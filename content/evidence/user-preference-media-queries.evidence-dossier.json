@@ -1,0 +1,41 @@
+{
+  "concept_id": "user-preference-media-queries",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.csswg.org/mediaqueries-5/#mf-user-preferences",
+      "spec_section": "Media Queries Level 5 §11 User Preference Media Features",
+      "quote": "User preference media features (prefers-reduced-motion, prefers-color-scheme, prefers-contrast, forced-colors) expose OS-level accessibility and display settings to CSS and matchMedia()."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "74+ (reduced-motion), 76+ (color-scheme), 89+ (forced-colors)",
+    "firefox": "63+ (reduced-motion), 67+ (color-scheme), 89+ (forced-colors)",
+    "safari": "10.1+ (reduced-motion), 12.1+ (color-scheme)"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "OS Accessibility Settings IPC",
+      "MediaQueryList Evaluation & CSSOM Recalculation",
+      "Forced Colors System Palette Override"
+    ],
+    "mechanism_summary": "The browser subscribes to OS preference flags and re-evaluates CSS rules and window.matchMedia() listeners live when the user toggles dark mode, reduced motion, or High Contrast."
+  },
+  "production_failures": [
+    {
+      "symptom": "Custom focus rings and SVG icons vanish completely in Windows High Contrast (forced-colors: active)",
+      "root_cause": "forced-colors mode strips custom background-color and box-shadow values, making box-shadow focus rings and dark SVGs invisible.",
+      "mitigation": "Use CSS outline (which forced-colors preserves), currentColor for inline SVGs, and forced-color-adjust: none only on calibrated swatches."
+    },
+    {
+      "symptom": "prefers-reduced-motion: reduce disables critical loading spinners or JS scroll-to-section logic",
+      "root_cause": "Treating reduced-motion as 'zero animation' instead of replacing vestibular parallax/zooms with gentle opacity fades.",
+      "mitigation": "Replace transform/scale motion with short opacity transitions and gate JS scroll({ behavior: 'smooth' }) via matchMedia('(prefers-reduced-motion: reduce)')."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion",
+    "https://drafts.csswg.org/mediaqueries-5/#mf-user-preferences"
+  ]
+}

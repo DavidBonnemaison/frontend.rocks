@@ -1,0 +1,76 @@
+{
+  "type": "step-machine",
+  "id": "offline-first-conflict-storm",
+  "title": "4-Hour Tunnel Sync: LWW Overwrite vs CRDT + Outbox Convergence",
+  "description": "Step through how an offline edit on a train collides with a teammate's online commit across IndexedDB, Web Locks, and idempotent sync.",
+  "steps": [
+    {
+      "label": "1. Offline Write Hits IndexedDB Quota & Transaction",
+      "description": "Client A enters a tunnel and edits section 2. The write commits to IndexedDB inside an explicit readwrite transaction.",
+      "codeHighlight": "const tx = db.transaction(['ops'], 'readwrite'); tx.objectStore('ops').put(delta);",
+      "state": {
+        "network": "offline",
+        "clientAVersion": "v42+local1",
+        "teammateServerVersion": "v42",
+        "indexedDbCommitted": true
+      },
+      "visualNodes": [
+        { "id": "idb", "label": "IndexedDB Tx", "status": "done" },
+        { "id": "crdt", "label": "CRDT Delta", "status": "active" },
+        { "id": "locks", "label": "Web Lock", "status": "idle" },
+        { "id": "outbox", "label": "Outbox Queue", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Teammate Commits Concurrent Edit Online",
+      "description": "While Client A is disconnected, Client B edits section 1 and pushes v43 to the server. Without CRDTs, Client A's stale snapshot will clobber v43.",
+      "codeHighlight": "ydocB.transact(() => ytext.insert(0, 'Header fix: '));",
+      "state": {
+        "network": "offline (Client A)",
+        "clientAStateVector": "{ A: 1, B: 0 }",
+        "serverStateVector": "{ A: 0, B: 1 }",
+        "conflictDetected": true
+      },
+      "visualNodes": [
+        { "id": "idb", "label": "IndexedDB Tx", "status": "done" },
+        { "id": "crdt", "label": "Divergent Vector", "status": "active" },
+        { "id": "locks", "label": "Web Lock", "status": "idle" },
+        { "id": "outbox", "label": "Outbox Queue", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Multi-Tab Wakeup Contends on Storage",
+      "description": "Client A exits the tunnel with two open tabs. BroadcastChannel notifies peers while navigator.locks serializes outbox drainage so tabs do not race.",
+      "codeHighlight": "navigator.locks.request('doc-sync-lock', { ifAvailable: true }, drainOutbox);",
+      "state": {
+        "network": "online",
+        "openTabs": 2,
+        "leaderTab": "tab-1",
+        "lockAcquired": true
+      },
+      "visualNodes": [
+        { "id": "idb", "label": "IndexedDB Tx", "status": "done" },
+        { "id": "crdt", "label": "Divergent Vector", "status": "done" },
+        { "id": "locks", "label": "Leader Lock Held", "status": "active" },
+        { "id": "outbox", "label": "Outbox Queue", "status": "idle" }
+      ]
+    },
+    {
+      "label": "4. Idempotent Outbox Flushes CRDT Delta",
+      "description": "The leader tab sends the encoded Yjs delta with an idempotencyKey. A retry on flaky cellular 4G deduplicates cleanly on the server.",
+      "codeHighlight": "fetch('/sync', { method: 'POST', headers: { 'Idempotency-Key': op.id }, body: delta });",
+      "state": {
+        "network": "flaky-4g",
+        "retryCount": 2,
+        "serverDeduplicated": true,
+        "convergedVersion": "v44 (A+B)"
+      },
+      "visualNodes": [
+        { "id": "idb", "label": "IndexedDB Tx", "status": "done" },
+        { "id": "crdt", "label": "Merged A + B", "status": "done" },
+        { "id": "locks", "label": "Leader Lock Held", "status": "done" },
+        { "id": "outbox", "label": "Idempotent Flush", "status": "done" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "concept_id": "native-dialog-element",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/interactive-elements.html#dom-dialog-showmodal",
+      "spec_section": "4.11.4 The dialog element",
+      "quote": "showModal() adds the dialog to the document's top layer and marks the rest of the document inert."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "37+",
+    "firefox": "98+",
+    "safari": "15.4+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Top Layer Insertion",
+      "Inert Subtree Marking",
+      "Paint After Root"
+    ],
+    "mechanism_summary": "The Top Layer is painted after every stacking context in the document."
+  },
+  "production_failures": [
+    {
+      "symptom": "Background remains clickable behind the dialog",
+      "root_cause": "Opened via dialog.show() instead of dialog.showModal().",
+      "mitigation": "Always call showModal() for blocking modals."
+    },
+    {
+      "symptom": "CSS close transition snaps immediately",
+      "root_cause": "The [open] attribute is removed immediately and display reverts to none.",
+      "mitigation": "Combine transition-behavior: allow-discrete with @starting-style."
+    }
+  ],
+  "sources": [
+    "https://html.spec.whatwg.org/multipage/interactive-elements.html#the-dialog-element",
+    "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dialog"
+  ]
+}

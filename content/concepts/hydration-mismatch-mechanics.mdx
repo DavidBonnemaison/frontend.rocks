@@ -1,0 +1,65 @@
+---
+id: hydration-mismatch-mechanics
+title: "Hydration Mismatch & Subtree Bailout Mechanics"
+domain: framework-internals
+maturity_status: baseline-widely
+summary_tldr: "One mismatched timestamp or browser-extension node during SSR hydration can discard the server DOM and force a synchronous client re-render. Understanding cursor matching and Suspense bailout boundaries keeps LCP and INP intact."
+relations:
+  - target_id: resumability-vs-hydration
+    type: requires
+    note: "Full hydration replays component trees against existing DOM nodes, unlike resumability which skips tree walking."
+  - target_id: streaming-ssr-flushing
+    type: requires
+    note: "Suspense boundaries isolate hydration mismatches to a single streamed chunk instead of bailing out the entire document."
+sources:
+  - "https://react.dev/reference/react-dom/client/hydrateRoot"
+  - "https://html.spec.whatwg.org/multipage/parsing.html"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "hydration mismatch"
+  - "ssr"
+  - "suspense bailout"
+  - "dom cursor"
+---
+
+## TL;DR
+
+During hydration, the runtime walks existing server DOM nodes with a cursor while executing components. When client output diverges from server markup, the engine bails out of [Resumability vs Hydration](/concepts/resumability-vs-hydration) recovery, tears down the subtree, and re-renders inside the nearest [Streaming SSR](/concepts/streaming-ssr-flushing) boundary.
+
+## Interactive Lab
+
+Trace DOM cursor alignment, mismatch detection, and Suspense subtree bailout in `StepMachineLab`.
+
+## Under the Hood
+
+Hydration attaches event listeners and internal fiber pointers to pre-existing DOM nodes without recreating them.
+
+1. **DOM Cursor Walk**: As each component renders, the hydrator advances `nextHydratableInstance` across child `Element` and `Text` nodes, verifying tag names and critical text content.
+2. **Mismatch Detection**: Non-deterministic inputs (`Date.now()`, `Intl.DateTimeFormat` timezone differences, `window.innerWidth`) produce a client virtual node that fails tag or text comparison against the cursor.
+3. **Subtree Bailout**: On mismatch, React throws a recoverable hydration error, walks up to the nearest `<Suspense>` boundary (or root), deletes the server DOM inside that boundary, and schedules a client-only render pass.
+
+```tsx
+function LocalTimestamp({ iso }: { iso: string }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  return (
+    <time dateTime={iso}>
+      {mounted ? new Date(iso).toLocaleTimeString() : iso.slice(11, 19) + ' UTC'}
+    </time>
+  );
+}
+```
+
+## Problem Genealogy
+
+- **2015 (`ReactDOM.render` Checksum)**: React hashed rendered markup with `adler32`; any single-character mismatch nuked the entire `document.body` and rebuilt it synchronously.
+- **2017 (`hydrate()` Per-Node Patching)**: Switched to per-node cursor walking and patched mismatched attributes in place, leaving structural mismatches silent and buggy.
+- **2022 (`hydrateRoot` + Suspense Bailouts)**: Enforced strict tree matching while isolating bailouts to `<Suspense>` boundaries so a footer mismatch no longer destroys the hero section.
+
+## Production Pitfalls
+
+- **Root-Level Bailouts**: Placing no `<Suspense>` boundaries above a mismatched component forces the hydrator to discard the entire page DOM, spiking Total Blocking Time by 150–400 ms.
+- **Browser Extensions Mutating `<body>`**: Extensions that inject `<style>` or `<div>` siblings directly into `document.body` shift the cursor and trigger root mismatches if the app mounts directly on `<body>`.
+- **When not to use `suppressHydrationWarning`**: Never slap `suppressHydrationWarning` on structural elements or containers with mismatched children; it only silences text/attribute warnings on a single leaf node and leaves wrong event targets attached.

@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "web-crypto-subtle",
+  "title": "Client Hashing & Encryption: JS Crypto Polyfill vs SubtleCrypto",
+  "before": {
+    "label": "Pure-JS Crypto Library (crypto-js)",
+    "code": "import CryptoJS from 'crypto-js';\nconst hash = CryptoJS.SHA256(largePayload).toString();\n// Runs synchronously on main thread; key sits in JS heap",
+    "metrics": {
+      "lines": 3,
+      "reflows": "Main-thread block",
+      "dependencies": "~45 kB min+gz"
+    },
+    "previewNote": "Blocks JS thread, ships 45 kB bundle, exposes raw key strings."
+  },
+  "after": {
+    "label": "Native crypto.subtle (AES-GCM / SHA-256)",
+    "code": "const iv = crypto.getRandomValues(new Uint8Array(12));\nconst cipher = await crypto.subtle.encrypt(\n  { name: 'AES-GCM', iv }, key, bytes\n);",
+    "metrics": {
+      "lines": 4,
+      "reflows": "Native C++ thread",
+      "dependencies": "0 kB"
+    },
+    "previewNote": "Hardware-accelerated AES-NI/SHA off-thread; non-extractable keys."
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "runtime-boundary-validation",
+  "title": "Unsafe Type Assertion vs Runtime Boundary Parsing",
+  "description": "Compare compile-time type casting against safeParse boundary enforcement on untrusted API payloads.",
+  "before": {
+    "label": "Blind Type Cast (Runtime Drift Uncaught)",
+    "code": "const user = (await res.json()) as { profile: { name: string } };\n// Crashes deep in React render if backend omits profile:\nreturn <span>{user.profile.name.toUpperCase()}</span>;",
+    "metrics": {
+      "lines": 3,
+      "reflows": "Uncaught TypeError crashes entire tree",
+      "dependencies": "0 KB runtime, zero safety"
+    },
+    "previewNote": "TypeScript passes at build time, then throws TypeError in production when API shape drifts."
+  },
+  "after": {
+    "label": "Boundary Parser (Fail Explicit at I/O)",
+    "code": "const parsed = UserSchema.safeParse(await res.json());\nif (!parsed.success) {\n  return reportSchemaDrift(parsed.error);\n}\nreturn <span>{parsed.data.profile.name.toUpperCase()}</span>;",
+    "metrics": {
+      "lines": 5,
+      "reflows": "Isolated fallback UI on drift",
+      "dependencies": "1-12 KB schema parser (Valibot/Zod)"
+    },
+    "previewNote": "Corrupted payloads are quarantined at the fetch boundary before touching UI state."
+  }
+}

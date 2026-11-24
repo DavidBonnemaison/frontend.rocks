@@ -1,0 +1,61 @@
+---
+id: promises-async-await-internals
+title: Promises and async/await Internals
+domain: js-runtime
+maturity_status: baseline-widely
+summary_tldr: "Avoid sequential await waterfalls and microtask starvation—async/await compiles to state-machine continuations that park the frame and resume on the Microtask Queue."
+relations:
+  - target_id: event-loop-tasks-microtasks
+    type: requires
+    note: "Promise fulfillment reactions always enqueue onto the Microtask Queue rather than the Task Queue."
+  - target_id: execution-context-call-stack
+    type: requires
+    note: "await pops the active Execution Context to a heap frame and restores it upon resumption."
+sources:
+  - "https://tc39.es/ecma262/#sec-await"
+  - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "promises"
+  - "async"
+  - "await"
+  - "microtasks"
+---
+
+## TL;DR
+
+An `async` function executes synchronously until its first `await`, then parks its [Execution Context](/concepts/execution-context-call-stack) on the heap and returns a pending `Promise`. Once the awaited value settles, the engine schedules resumption on the [Microtask Queue](/concepts/event-loop-tasks-microtasks), never skipping a turn even for `await 42`.
+
+## Interactive Lab
+
+Trace context suspension, caller continuation, and microtask resumption in `StepMachineLab`.
+
+## Under the Hood
+
+V8 compiles each `async` function into a resumable state machine: execution runs synchronously until `await`, which suspends the [Execution Context](/concepts/execution-context-call-stack) to the heap and schedules resumption on the [Microtask Queue](/concepts/event-loop-tasks-microtasks). Even `await 1` yields for at least one microtask tick.
+
+1. **Synchronous Prologue**: Calling `async fn()` runs straight on the Call Stack until an `await` expression.
+2. **Context Suspension**: `await` wraps the operand in `Promise.resolve()`, attaches a hidden resume reaction, and pops the frame off the Call Stack.
+3. **Microtask Continuation**: Even `await 1` yields at least one tick to the [Microtask Queue](/concepts/event-loop-tasks-microtasks) before restoring the local variables.
+4. **Zero-Cost Async Stack**: V8 reconstructs async stack traces by walking promise reaction links without keeping dead stack frames alive.
+
+```js
+// Sequential waterfall (slow) vs concurrent dispatch (fast)
+async function loadDashboard(ids) {
+  const requests = ids.map((id) => fetch(`/api/${id}`).then((r) => r.json()));
+  return Promise.all(requests);
+}
+```
+
+## Problem Genealogy
+
+- **2009 (Nested Callbacks)**: Deeply nested error-first callbacks ("callback hell") broke `try/catch` and stack traces.
+- **2015 (ES6 Promises)**: Standardized chainable state machines (`pending`, `fulfilled`, `rejected`) on the Microtask Queue.
+- **2017 (ES2017 `async`/`await`)**: Compiler-desugared coroutine syntax over Promises with synchronous `try/catch`.
+
+## Production Pitfalls
+
+- **Accidental Waterfalls**: Writing `await` inside a `for..of` loop serializes independent I/O calls that should run via `Promise.allSettled()`.
+- **Dangling Rejections**: Spawning a promise without attaching `.catch()` in the same microtask turn fires `unhandledrejection`.
+- **When not to use `Promise.all`**: Avoid `Promise.all` when partial results are acceptable, one rejection aborts the batch; use `Promise.allSettled()` instead.

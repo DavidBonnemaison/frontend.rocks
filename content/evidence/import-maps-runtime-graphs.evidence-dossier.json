@@ -1,0 +1,42 @@
+{
+  "concept_id": "import-maps-runtime-graphs",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/webappapis.html#import-maps",
+      "spec_section": "8.1.6.5 Import maps",
+      "quote": "An import map is a JSON object that allows authors to control how module specifiers are resolved when imported by JavaScript modules."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "89+",
+    "firefox": "108+",
+    "safari": "16.4+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Parse <script type='importmap'> into Document Module Map",
+      "Match Bare Specifier via Longest-Prefix Scopes & Imports",
+      "Verify Optional SRI Hash from Integrity Map",
+      "Fetch & Instantiate ES Module Graph"
+    ],
+    "mechanism_summary": "The HTML parser builds an in-memory specifier map before module execution, resolving bare imports and path-scoped overrides directly to hashed URLs."
+  },
+  "production_failures": [
+    {
+      "symptom": "LCP degrades by 400ms+ after switching from a single bundle to native ES modules with Import Maps",
+      "root_cause": "Transitive module imports are discovered sequentially as each parent module parses, creating a multi-RTT network waterfall.",
+      "mitigation": "Emit <link rel='modulepreload'> tags in the HTML head for critical transitive dependencies."
+    },
+    {
+      "symptom": "Bare specifier TypeError in production when an inline analytics module runs early",
+      "root_cause": "The <script type='importmap'> appeared after a <script type='module'> or was injected dynamically after module resolution began.",
+      "mitigation": "Place the importmap script in <head> strictly before any module script or modulepreload link."
+    }
+  ],
+  "sources": [
+    "https://html.spec.whatwg.org/multipage/webappapis.html#import-maps",
+    "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap"
+  ]
+}

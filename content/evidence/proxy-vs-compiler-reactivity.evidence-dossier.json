@@ -1,0 +1,42 @@
+{
+  "concept_id": "proxy-vs-compiler-reactivity",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://tc39.es/ecma262/#sec-proxy-objects",
+      "spec_section": "10.5 Proxy Object Internal Methods and Internal Slots",
+      "quote": "A Proxy exotic object delegates [[Get]] and [[Set]] internal methods to user-defined trap functions on the handler object before forwarding to [[ProxyTarget]]."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "49+",
+    "firefox": "18+",
+    "safari": "10+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Runtime Proxy Trap Interception ([[Get]] / [[Set]])",
+      "Build-Time AST Dependency Graph Extraction",
+      "Dirty-Flag / Subscriber Edge Propagation",
+      "Direct DOM Node Patching"
+    ],
+    "mechanism_summary": "Runtime proxies intercept property access dynamically via V8 exotic object traps, while static compilers transform assignments at build time into direct signal or bitmask updates."
+  },
+  "production_failures": [
+    {
+      "symptom": "Dropped frames and GC spikes when rendering large data tables",
+      "root_cause": "Deeply wrapping 10,000+ immutable API rows in ES6 Proxies allocates thousands of wrapper objects and defeats V8 inline caches.",
+      "mitigation": "Use shallow reactive containers or mark large read-only datasets raw so they bypass recursive Proxy wrapping."
+    },
+    {
+      "symptom": "UI stops updating after refactoring component props",
+      "root_cause": "Destructuring a reactive Proxy outside a tracked computation evaluates the [[Get]] trap once and holds a stale primitive.",
+      "mitigation": "Read reactive properties directly inside tracked expressions or compile-time getter wrappers."
+    }
+  ],
+  "sources": [
+    "https://tc39.es/ecma262/#sec-proxy-objects",
+    "https://svelte.dev/docs/svelte/what-are-runes"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "type": "step-machine",
+  "id": "css-cascade-layers",
+  "title": "CSS Cascade Resolution with @layer",
+  "description": "Observe evaluation order across origins, named layers, and specificity.",
+  "steps": [
+    {
+      "label": "1. Declaring Layer Order",
+      "description": "@layer reset, base, components; locks in the hierarchy on the first line of CSS.",
+      "codeHighlight": "@layer reset, base, components;",
+      "state": {
+        "layerOrder": ["reset", "base", "components", "(unlayered)"],
+        "winner": "Pending"
+      }
+    },
+    {
+      "label": "2. Cross-Layer Comparison",
+      "description": "An #app .btn (0,2,0) selector inside @layer base loses to .btn (0,1,0) inside @layer components.",
+      "codeHighlight": "@layer base { #app .btn { color: red; } }\n@layer components { .btn { color: blue; } }",
+      "state": {
+        "layerBase": "spec (0,2,0) -> overridden",
+        "layerComponents": "spec (0,1,0) -> WINNER",
+        "computedColor": "blue"
+      }
+    },
+    {
+      "label": "3. Unlayered Rules",
+      "description": "Any rule outside @layer lands in the final anonymous layer and beats all named layers.",
+      "codeHighlight": ".btn { color: green; } /* unlayered */",
+      "state": {
+        "layerOrder": "unlayered > components > base > reset",
+        "computedColor": "green"
+      }
+    }
+  ]
+}

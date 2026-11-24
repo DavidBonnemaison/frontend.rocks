@@ -1,0 +1,48 @@
+{
+  "concept_id": "normalized-vs-document-caches",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://www.apollographql.com/docs/react/caching/overview",
+      "spec_section": "Normalized Cache Architecture",
+      "quote": "A normalized cache splits nested response trees into flat entity records keyed by __typename and id, replacing nested objects with references."
+    },
+    {
+      "source_url": "https://tanstack.com/query/latest/docs/framework/react/guides/caching",
+      "spec_section": "Document-Keyed Query Caching",
+      "quote": "Document caches store serialized query responses directly under deterministic query keys and reconcile updates via prefix invalidation and background refetching."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+ (JS Map / Object Cache)",
+    "firefox": "1+ (JS Map / Object Cache)",
+    "safari": "1+ (JS Map / Object Cache)"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Response Tree Walk / Key Hashing",
+      "Entity Extraction (__typename + id) vs Raw Document Storage",
+      "Selector / Reference Resolution",
+      "Prefix Invalidation or Garbage Collection"
+    ],
+    "mechanism_summary": "Contrasts O(1) request-keyed document storage with normalized entity tables that deduplicate shared records via pointer references across views."
+  },
+  "production_failures": [
+    {
+      "symptom": "User renames a project in the header, but the sidebar list still shows the old name",
+      "root_cause": "Document-keyed cache stored separate copies under ['project', 12] and ['projects', 'sidebar'] without invalidating the sidebar key on mutation.",
+      "mitigation": "Invalidate the ['projects'] prefix on mutation success, or normalize Project:12 in a shared entity table."
+    },
+    {
+      "symptom": "Deleted or archived item remains visible in filtered list despite normalized cache update",
+      "root_cause": "Normalized cache updated Item:99.archived = true, but the cached ['items', { archived: false }] query ref array still contained 'Item:99'.",
+      "mitigation": "Evict or filter the list query reference array explicitly on mutation, or invalidate the filtered query key."
+    }
+  ],
+  "sources": [
+    "https://tanstack.com/query/latest/docs/framework/react/guides/caching",
+    "https://www.apollographql.com/docs/react/caching/overview",
+    "https://redux-toolkit.js.org/rtk-query/usage/cache-behavior"
+  ]
+}

@@ -1,0 +1,64 @@
+---
+id: undo-redo-structural-sharing
+title: "Undo/Redo & Structural Sharing"
+domain: state-architecture
+maturity_status: baseline-widely
+summary_tldr: "Implements O(1) undo/redo stacks without deep-cloning megabytes of state by copy-on-write cloning only the modified ancestor path and reusing untouched subtree pointers."
+relations:
+  - target_id: virtual-dom-reconciliation
+    type: under_the_hood
+    note: "Structural sharing keeps unchanged subtrees === equal so memoized components skip re-diffing."
+  - target_id: v8-hidden-classes-ic
+    type: under_the_hood
+    note: "Consistent object shapes in cloned path nodes preserve V8 hidden-class inline caches."
+sources:
+  - "https://immerjs.github.io/immer/structural-sharing/"
+  - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "undo-redo"
+  - "structural-sharing"
+  - "copy-on-write"
+  - "immutability"
+  - "immer"
+---
+
+## TL;DR
+
+Deep-cloning a 5 MB document on every edit (`structuredClone`) crashes tabs with Out-of-Memory errors. Structural sharing clones only the ancestor spine from the mutated leaf up to the root, letting `past`, `present`, and `future` stacks share 99% of unchanged objects by reference.
+
+## Interactive Lab
+
+Step through copy-on-write spine cloning, undo pointer swaps, and `future` stack truncation using `StepMachineLab`.
+
+## Under the Hood
+
+Structural sharing works like Git commits: editing one file creates new tree nodes only along its parent folders, while sibling folders share the exact same pointers. Keeping unchanged subtrees `===` identical lets [Virtual DOM](/concepts/virtual-dom-reconciliation) bail out in $O(1)$ and preserves [V8 Hidden Classes](/concepts/v8-hidden-classes-ic).
+
+1. Store history as `{ past: State[], present: State, future: State[] }`.
+2. On edit, copy only the modified path (`{ ...state, nodes: { ...state.nodes, [id]: nextNode } }`), push `present` onto `past`, and reset `future = []`.
+3. On `undo()`, pop `past` into `present` and push old `present` onto `future`, zero object cloning required.
+
+```js
+function commitEdit(history, nextPresent) {
+  return {
+    past: [...history.past.slice(-99), history.present], // Cap stack at 100
+    present: nextPresent,
+    future: [], // Clear redo branch on new timeline
+  };
+}
+```
+
+## Problem Genealogy
+
+- **1990s (Command Pattern `execute()` / `unexecute()`)**: Saved memory by storing inverse deltas, but writing bug-free `unexecute()` methods for every action was notoriously fragile.
+- **2015 (Persistent Data Structures, Immutable.js)**: Brought Clojure-style HAMT structural sharing to JS, at the cost of non-plain `.getIn()` APIs.
+- **2018+ (ES6 Proxy Copy-on-Write, Immer)**: Let developers write plain mutations inside a `produce()` draft while emitting structurally shared immutable trees or compact JSON patches.
+
+## Production Pitfalls
+
+- **Pushing every `mousemove` or keystroke**: Recording 60 undo steps per second during a drag floods the stack and forces users to hit `Cmd+Z` 60 times to undo one drag; commit only on `pointerup` or debounce typing bursts.
+- **Forgetting to cap `past.length`**: An unbounded undo array leaks memory over hours-long editor sessions; slice to a fixed ring buffer (e.g., 100 entries) or switch to inverse JSON patches.
+- **When not to use Structural Sharing**: For 2D pixel buffers or 100k-row typed arrays, copy-on-write still duplicates large `Uint8Array` chunks, store compact inverse command deltas instead.

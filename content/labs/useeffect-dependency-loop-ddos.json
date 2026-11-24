@@ -1,0 +1,98 @@
+{
+  "type": "step-machine",
+  "id": "useeffect-dependency-loop-ddos",
+  "title": "useEffect Dependency Loop: Object Reference Churn vs Primitive URL Derivation",
+  "description": "Trace how allocating { status: \"open\" } per render fails Object.is(), saturates HTTP connections with uncancelled GET /api/items requests, and triggers 429 rate limits.",
+  "steps": [
+    {
+      "label": "1. Fresh Heap Allocation per Render (t = 0 ms)",
+      "description": "The filter component executes and builds const filter = { status: searchParams.get('status') ?? 'open' }. V8 allocates a brand-new object reference @0x7f1a04 on the heap.",
+      "codeHighlight": "const filter = { status: params.get('status') ?? 'open' }; // V8 heap @0x7f1a04",
+      "state": {
+        "renderCount": 1,
+        "heapRef": "@0x7f1a04",
+        "objectIsResult": "n/a (mount)",
+        "inFlightGets": 1,
+        "httpStatus": "200 OK"
+      },
+      "visualNodes": [
+        { "id": "v8", "label": "Heap @0x7f1a04", "status": "active" },
+        { "id": "closure", "label": "State Sync (Desync)", "status": "idle" },
+        { "id": "reconcile", "label": "useEffect Mount", "status": "active" },
+        { "id": "api", "label": "GET /api/items (1)", "status": "done" }
+      ]
+    },
+    {
+      "label": "2. Bidirectional URL-State Sync Desynchronizes Closures (t = 14 ms)",
+      "description": "The effect writes setFilterState(filter) and updates URLSearchParams. Two renders capture stale closures of searchParams and filterState across concurrent commit cycles.",
+      "codeHighlight": "setFilterState({ ...filter }); // commits state, schedules render #2",
+      "state": {
+        "renderCount": 2,
+        "heapRef": "@0x7f1b88",
+        "objectIsResult": false,
+        "inFlightGets": 2,
+        "httpStatus": "200 OK"
+      },
+      "visualNodes": [
+        { "id": "v8", "label": "Heap @0x7f1b88", "status": "error" },
+        { "id": "closure", "label": "Stale Closure #2", "status": "error" },
+        { "id": "reconcile", "label": "Object.is === false", "status": "active" },
+        { "id": "api", "label": "GET /api/items (2)", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Object.is() Fails on Dependency Array (t = 28 ms)",
+      "description": "During reconciliation, React compares Object.is(@0x7f1a04, @0x7f1b88) and evaluates false even though both objects serialize to { status: \"open\" }. The effect re-queues unconditionally.",
+      "codeHighlight": "useEffect(() => { fetchItems(filter); }, [filter]); // Object.is === false",
+      "state": {
+        "renderCount": 18,
+        "heapRef": "@0x7f2c10",
+        "objectIsResult": false,
+        "inFlightGets": 18,
+        "httpStatus": "200 OK (queued)"
+      },
+      "visualNodes": [
+        { "id": "v8", "label": "Heap @0x7f2c10", "status": "error" },
+        { "id": "closure", "label": "Mirror Loop Active", "status": "error" },
+        { "id": "reconcile", "label": "Depth Warning (18)", "status": "error" },
+        { "id": "api", "label": "18 In-Flight GETs", "status": "active" }
+      ]
+    },
+    {
+      "label": "4. Uncancelled Fetches Saturate API & Trigger 429 (t = 420 ms)",
+      "description": "Without a server-state cache machine or AbortController cleanup, 47 uncancelled GET /api/items?status=open requests stack in flight. The edge rate limiter trips and returns HTTP 429.",
+      "codeHighlight": "fetch('/api/items?status=' + filter.status); // no cache key, no AbortSignal",
+      "state": {
+        "renderCount": 47,
+        "heapRef": "@0x7f9e40",
+        "objectIsResult": false,
+        "inFlightGets": 47,
+        "httpStatus": "429 Too Many Requests"
+      },
+      "visualNodes": [
+        { "id": "v8", "label": "GC Pressure Spike", "status": "error" },
+        { "id": "closure", "label": "Max Update Depth", "status": "error" },
+        { "id": "reconcile", "label": "47 Effect Runs", "status": "error" },
+        { "id": "api", "label": "HTTP 429 Burst", "status": "error" }
+      ]
+    },
+    {
+      "label": "5. Fixed: URL Primitive Key + AbortSignal (t = 0..420 ms)",
+      "description": "Removing mirror state eliminates the render cycle. Deriving a primitive string status = params.get('status') ?? 'open' stabilizes Object.is(), deduplicates the query key, and aborts superseded fetches.",
+      "codeHighlight": "useEffect(() => { const c = new AbortController(); fetch(url, { signal: c.signal }); return () => c.abort(); }, [status]);",
+      "state": {
+        "renderCount": 1,
+        "heapRef": "primitive ('open')",
+        "objectIsResult": true,
+        "inFlightGets": 1,
+        "httpStatus": "200 OK"
+      },
+      "visualNodes": [
+        { "id": "v8", "label": "Zero Object Churn", "status": "done" },
+        { "id": "closure", "label": "Single URL Truth", "status": "done" },
+        { "id": "reconcile", "label": "Object.is === true", "status": "done" },
+        { "id": "api", "label": "1 Deduplicated GET", "status": "done" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "type": "step-machine",
+  "id": "pointer-events-touch-action",
+  "title": "Pointer Events, touch-action, and setPointerCapture",
+  "description": "Trace compositor touch-action negotiation, pointer capture, and pointercancel prevention.",
+  "steps": [
+    {
+      "label": "1. Compositor Reads touch-action",
+      "description": "Before JS runs, compositor checks touch-action: pan-y on the slider track (horizontal drag owned by JS).",
+      "codeHighlight": ".slider-thumb { touch-action: pan-y; }",
+      "state": {
+        "touchAction": "pan-y",
+        "compositorOwns": "vertical scroll",
+        "jsOwns": "horizontal drag"
+      },
+      "visualNodes": [
+        { "id": "comp", "label": "Compositor Hit-Test", "status": "active" },
+        { "id": "dom", "label": "pointerdown", "status": "idle" },
+        { "id": "capture", "label": "Pointer Capture", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Capture Pointer on pointerdown",
+      "description": "Handler calls thumb.setPointerCapture(e.pointerId) so fast drags outside the thumb still deliver events.",
+      "codeHighlight": "thumb.setPointerCapture(e.pointerId);",
+      "state": {
+        "capturedBy": "thumb",
+        "pointerId": 1
+      },
+      "visualNodes": [
+        { "id": "comp", "label": "Compositor Hit-Test", "status": "done" },
+        { "id": "dom", "label": "pointerdown", "status": "done" },
+        { "id": "capture", "label": "Captured (pointerId=1)", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Continuous pointermove & Release",
+      "description": "pointermove streams without pointercancel; pointerup automatically releases capture.",
+      "codeHighlight": "// No window.addEventListener('pointermove') needed",
+      "state": {
+        "capturedBy": null,
+        "pointerCancel": false
+      },
+      "visualNodes": [
+        { "id": "comp", "label": "Compositor Hit-Test", "status": "done" },
+        { "id": "dom", "label": "pointerup", "status": "done" },
+        { "id": "capture", "label": "Capture Released", "status": "done" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+---
+id: normalized-vs-document-caches
+title: "Normalized Entity Graphs vs Document-Keyed Caches"
+domain: state-architecture
+maturity_status: baseline-widely
+summary_tldr: "Prevents stale duplicate records across overlapping views without 40 KB GraphQL client overhead by choosing between flat document-keyed caches and normalized entity graphs."
+relations:
+  - target_id: server-state-cache-machines
+    type: requires
+    note: "Both normalized graphs and document caches sit inside server-state cache machines to manage staleness and invalidation."
+sources:
+  - "https://tanstack.com/query/latest/docs/framework/react/guides/caching"
+  - "https://www.apollographql.com/docs/react/caching/overview"
+  - "https://redux-toolkit.js.org/rtk-query/usage/cache-behavior"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "normalized-cache"
+  - "document-cache"
+  - "entity-graph"
+  - "cache-invalidation"
+  - "graphql"
+---
+
+## TL;DR
+
+Document-keyed caches store each query response by its request key, leaving the same user record stale in `/feed` after `/profile` updates it. Normalized caches deduplicate entities by `(type, id)` so one write updates every subscriber, at the cost of schema-aware garbage collection.
+
+## Interactive Lab
+
+Compare document-keyed invalidation against normalized entity graph propagation in `PatternComparatorLab`.
+
+## Under the Hood
+
+A [Server State Cache Machine](/concepts/server-state-cache-machines) stores remote snapshots under one of two indexing topologies. The choice determines whether consistency happens by key invalidation or by graph pointer resolution.
+
+1. **Document-keyed cache**: Maps `hash(url, params)` directly to the raw JSON tree. Mutations call `invalidateQueries(['users'])` to trigger background refetches, keeping client code under ~12 KB.
+2. **Normalized entity graph**: Flattens nested payloads into `{ "User:42": { name: "Ada" } }` and replaces nested objects with `{ __ref: "User:42" }` pointers.
+3. **Graph updates & GC**: Updating `User:42` during [Optimistic UI](/concepts/optimistic-ui-rollback) patches every view synchronously, while reference counting sweeps unreferenced entities.
+
+```ts
+// Document-keyed: fast lookup, requires key invalidation on write
+const docCache = new Map([['GET:/team/7', { members: [{ id: 42, name: 'Ada' }] }]]);
+
+// Normalized: single source per entity, pointer-resolved on read
+const entityTable = new Map([['User:42', { id: 42, name: 'Ada' }]]);
+const queryRefs = new Map([['GET:/team/7', { members: ['User:42'] }]]);
+entityTable.set('User:42', { id: 42, name: 'Ada L.' }); // updates all views
+```
+
+## Problem Genealogy
+
+- **2015–2019 (Relay & Apollo Normalized Graphs)**: Solved cross-view GraphQL consistency by shipping 35–50 KB normalized store runtimes and requiring `__typename` on every selection set.
+- **2020+ (SWR & TanStack Query)**: Proved that 80% of REST/RPC apps need only document-keyed caches paired with coarse prefix invalidation.
+
+## Production Pitfalls
+
+- **Ghost rows in paginated lists**: Updating a normalized entity's `status` field updates its badge, yet fails to move it out of a cached `['tasks', { status: 'open' }]` page because list membership is still query-keyed.
+- **Silent cache misses on missing `__typename` or `id`**: Normalized clients fall back to unmerged object copies when a projection omits the primary key, causing partial UI drift.
+- **When not to use a normalized entity graph**: For REST/RPC APIs with flat payloads, paginated search feeds, or fewer than 3 overlapping entity views per screen, normalized graph normalization and custom cache-eviction rules add unnecessary bundle weight and stale-list bugs over document-keyed invalidation.

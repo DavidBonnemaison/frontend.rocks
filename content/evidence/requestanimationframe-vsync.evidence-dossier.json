@@ -1,0 +1,42 @@
+{
+  "concept_id": "requestanimationframe-vsync",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html#animation-frames",
+      "spec_section": "8.12 Animation frames",
+      "quote": "Animation frame callbacks are invoked during the update the rendering step of the event loop, receiving a high-resolution DOMHighResTimeStamp."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "24+",
+    "firefox": "23+",
+    "safari": "6.1+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "VSync Signal",
+      "Input Events",
+      "rAF Callbacks",
+      "Style -> Layout -> Paint -> Composite"
+    ],
+    "mechanism_summary": "Compositor ticks on display VSync (60Hz/120Hz), triggers BeginMainFrame, drains rAF callbacks, and commits the frame."
+  },
+  "production_failures": [
+    {
+      "symptom": "Animation runs twice as fast on 120Hz ProMotion displays compared to 60Hz monitors",
+      "root_cause": "Advancing position by a fixed step per rAF tick instead of multiplying by delta-time (timestamp - lastTimestamp).",
+      "mitigation": "Always compute animation progress from the DOMHighResTimeStamp argument passed to the rAF callback."
+    },
+    {
+      "symptom": "Janky frames despite using requestAnimationFrame",
+      "root_cause": "Long macrotasks or synchronous layout reads inside the rAF callback exceed the 16.6ms (or 8.3ms) VSync budget.",
+      "mitigation": "Batch DOM reads before writes, keep rAF work under 4ms, or offload animations to CSS/WAAPI."
+    }
+  ],
+  "sources": [
+    "https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html#animation-frames",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame"
+  ]
+}

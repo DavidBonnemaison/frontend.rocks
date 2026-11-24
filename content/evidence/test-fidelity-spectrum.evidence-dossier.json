@@ -1,0 +1,48 @@
+{
+  "concept_id": "test-fidelity-spectrum",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://vitest.dev/guide/browser/",
+      "spec_section": "Vitest Browser Mode Architecture",
+      "quote": "Browser mode executes component tests inside a real browser page, providing native layout, CSS, and event dispatch without booting a full backend."
+    },
+    {
+      "source_url": "https://playwright.dev/docs/best-practices",
+      "spec_section": "Testing Philosophy — Isolate & Test User-Visible Behavior",
+      "quote": "Each E2E test should run in an isolated browser context and focus on critical user journeys rather than unit-level permutations."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "Headless 112+",
+    "firefox": "Headless 56+",
+    "safari": "WebKit Playwright 16+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "V8 Isolate Execution (Pure Logic & Fake Timers)",
+      "Node Simulated DOM (Tree & ARIA Attributes)",
+      "Headless Browser Frame (Layout, Paint, Focus, Hit-Testing)",
+      "Full-Stack Context (HTTP, Cookies, Storage, Navigation)"
+    ],
+    "mechanism_summary": "The test fidelity spectrum maps each verification tier to the browser and backend subsystems it actually instantiates, balancing millisecond feedback against engine realism."
+  },
+  "production_failures": [
+    {
+      "symptom": "CI pipeline takes 52 minutes per commit and blocks deploys with 12% flake rate",
+      "root_cause": "Team wrote 600 full-stack E2E tests covering every input validation rule and button state instead of pushing logic to unit/component layers.",
+      "mitigation": "Move validation matrices to V8 unit tests and component states to headless browser component tests, keeping E2E under 30 critical journeys."
+    },
+    {
+      "symptom": "100% JSDOM unit coverage misses broken sticky header and unreadable contrast in production",
+      "root_cause": "No browser engine layer existed in CI to compute CSS layout, stacking contexts, or computed styles.",
+      "mitigation": "Add a browser component tier in Vitest Browser Mode or Playwright CT for layout-sensitive UI primitives."
+    }
+  ],
+  "sources": [
+    "https://vitest.dev/guide/browser/",
+    "https://playwright.dev/docs/best-practices",
+    "https://martinfowler.com/articles/practical-test-pyramid.html"
+  ]
+}

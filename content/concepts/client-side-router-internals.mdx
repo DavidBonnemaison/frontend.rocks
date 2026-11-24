@@ -1,0 +1,69 @@
+---
+id: client-side-router-internals
+title: "Client-Side Router & Radix Tree Matching"
+domain: framework-internals
+maturity_status: baseline-widely
+summary_tldr: "Linear regex arrays stall route matching on large apps and leak stale navigation fetches. Radix-tree routers resolve paths in O(path_length), abort superseded loaders, and integrate with browser navigation primitives."
+relations:
+  - target_id: url-as-state-store
+    type: requires
+    note: "Client routers serialize route params and search state into the History API and URLPattern."
+  - target_id: abortcontroller-cancellation
+    type: requires
+    note: "Rapid link clicks abort in-flight route data loaders via AbortSignal before committing the next tree."
+  - target_id: speculation-rules-prerender
+    type: requires
+    note: "Hover prefetching and Speculation Rules warm route chunks and loader data before navigation commits."
+sources:
+  - "https://html.spec.whatwg.org/multipage/nav-history-apis.html#navigation-api"
+  - "https://wicg.github.io/urlpattern/"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "client router"
+  - "radix tree"
+  - "route matching"
+  - "navigation api"
+---
+
+## TL;DR
+
+Client routers intercept link clicks, match paths against a compressed radix tree in O(k) character steps, and coordinate parallel data loaders with [AbortController](/concepts/abortcontroller-cancellation). They synchronize UI state with the [URL as State Store](/concepts/url-as-state-store) without full-document reloads.
+
+## Interactive Lab
+
+Trace radix-tree segment traversal, loader cancellation, and history commit in `StepMachineLab`.
+
+## Under the Hood
+
+A radix tree (compressed trie) merges shared path prefixes into single edges, avoiding O(N) regular-expression scans across hundreds of routes.
+
+1. **Prefix Compression**: Routes like `/users/:id/settings` and `/users/:id/billing` share the `/users/` static node and `:id` dynamic parameter node, branching only at the final segment.
+2. **Parallel Loader Dispatch**: Once the matched route branch is resolved, the router invokes all nested layout loaders concurrently with a shared `AbortSignal`.
+3. **Commit & Focus Restoration**: When loaders resolve, the router calls `history.pushState` (or `Navigation.intercept()`), updates the component tree, and moves focus to the active landmark.
+
+```ts
+function matchRadix(node: RouteNode, segments: string[], i = 0, params: Record<string, string> = {}) {
+  if (i === segments.length) return node.handler ? { handler: node.handler, params } : null;
+  const seg = segments[i];
+  const staticChild = node.staticChildren.get(seg);
+  if (staticChild) return matchRadix(staticChild, segments, i + 1, params);
+  if (node.paramChild) {
+    params[node.paramChild.paramName] = seg;
+    return matchRadix(node.paramChild, segments, i + 1, params);
+  }
+  return node.wildcardChild ? { handler: node.wildcardChild.handler, params } : null;
+}
+```
+
+## Problem Genealogy
+
+- **2014 (Linear Regex Tables)**: Early routers iterated through 300+ `path-to-regexp` entries per click, burning 4–8 ms of main-thread time on route transitions.
+- **2019 (Nested Radix Trees & Parallel Loaders)**: Routers compiled static/dynamic tries and decoupled data fetching from component render waterfalls.
+- **2024 (`URLPattern` & Navigation API)**: Browsers standardized native pattern matching and single-hook `navigate` interception, eliminating custom `popstate` shims.
+
+## Production Pitfalls
+
+- **Render-Then-Fetch Waterfalls**: Deferring data fetching until child route components mount serializes network round-trips across nested layouts.
+- **Out-of-Order Navigation Commits**: Failing to pass an `AbortSignal` to route loaders lets a slow response from `/items/1` overwrite `/items/2` after the URL changed.
+- **When not to use a client-side router**: Never ship a 20 KB SPA router for content-heavy marketing or documentation sites with low interactivity; MPA navigation paired with [Speculation Rules](/concepts/speculation-rules-prerender) delivers instant transitions with zero JS hydration cost.

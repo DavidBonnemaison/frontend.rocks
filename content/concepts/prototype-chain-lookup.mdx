@@ -1,0 +1,62 @@
+---
+id: prototype-chain-lookup
+title: Prototype Chain Lookup and Delegation
+domain: js-runtime
+maturity_status: baseline-widely
+summary_tldr: "Prevent V8 Inline Cache deoptimizations and prototype pollution bugs—property reads walk [[Prototype]] links until a descriptor matches or the chain hits null."
+relations:
+  - target_id: execution-context-call-stack
+    type: requires
+    note: "Method calls resolved on the prototype bind this to the original receiver in the new stack frame."
+  - target_id: v8-hidden-classes-ic
+    type: under_the_hood
+    note: "V8 Inline Caches bypass repeated prototype walks by validating prototype-chain Hidden Classes."
+sources:
+  - "https://tc39.es/ecma262/#sec-ordinaryget"
+  - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Inheritance_and_the_prototype_chain"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "prototype"
+  - "inheritance"
+  - "prototype pollution"
+  - "Object.create"
+---
+
+## TL;DR
+
+When an object lacks an own property, JavaScript walks its internal `[[Prototype]]` pointer chain until it finds the key or hits `null`. Methods keep `this` bound to the original receiver inside the new [Execution Context](/concepts/execution-context-call-stack), while [V8 Inline Caches](/concepts/v8-hidden-classes-ic) memorize stable chains.
+
+## Interactive Lab
+
+Trace own-property misses, prototype hops, and `null` termination in `StepMachineLab`.
+
+## Under the Hood
+
+When `[[Get]]` misses on an object's own property map, V8 walks its internal `[[Prototype]]` pointer chain until it finds a matching descriptor or reaches `null`. [V8 Hidden Classes](/concepts/v8-hidden-classes-ic) guard hot prototype lookups with validity cells, so mutating any ancestor prototype invalidates every downstream Inline Cache.
+
+1. **Own Descriptor Check**: `[[Get]]` inspects the receiver's own property map first.
+2. **Chain Traversal**: On a miss, the engine reads `[[GetPrototypeOf]]()` and repeats the lookup up to `Object.prototype`.
+3. **Prototype Validity Cells**: [V8 Hidden Classes](/concepts/v8-hidden-classes-ic) guard cached prototype lookups with validity cells; mutating any ancestor prototype invalidates every downstream IC.
+4. **Shadowing Trap**: Assigning `obj.x = 1` creates an own property on `obj` rather than mutating a prototype data property.
+
+```js
+const proto = { role: 'viewer' };
+const user = Object.create(proto);
+const dict = Object.create(null); // No Object.prototype
+
+console.log(user.role);     // 'viewer' (1 hop)
+console.log(dict.toString); // undefined (safe from pollution)
+```
+
+## Problem Genealogy
+
+- **1995 (`__proto__` & Constructor `.prototype`)**: Delegation bolted onto Java-like `new` syntax without a standard `Object.create`.
+- **2015 (ES6 `class` & `Reflect.getPrototypeOf`)**: Standardized syntax over the same `[[Prototype]]` delegation model.
+- **2022 (`Object.hasOwn`)**: Replaced the error-prone `Object.prototype.hasOwnProperty.call(obj, key)` boilerplate.
+
+## Production Pitfalls
+
+- **Runtime `Object.setPrototypeOf`**: Swapping prototypes on live objects destroys V8's prototype validity cells and forces slow dictionary lookups.
+- **Prototype Pollution**: Deep-merging untrusted JSON containing `"__proto__"` keys mutates `Object.prototype` across the entire realm.
+- **When not to use plain `{}` as a map**: Never index arbitrary user keys (like `"constructor"` or `"toString"`) on `{}`; use `Map` or `Object.create(null)`.

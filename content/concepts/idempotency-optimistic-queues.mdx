@@ -1,0 +1,70 @@
+---
+id: idempotency-optimistic-queues
+title: "Outbox Queues, Idempotency Keys & Causal Ordering"
+domain: state-architecture
+maturity_status: baseline-widely
+summary_tldr: "Prevents duplicate charges and out-of-order server overwrites on flaky networks by persisting mutations in an IndexedDB FIFO outbox with UUID idempotency keys."
+relations:
+  - target_id: optimistic-ui-rollback
+    type: requires
+    note: "Queued mutations apply optimistic UI updates immediately and reconcile or roll back when the outbox drains."
+  - target_id: indexeddb-transactions-quotas
+    type: requires
+    note: "Persisting the outbox inside IndexedDB readwrite transactions survives tab closes and offline periods."
+sources:
+  - "https://datatracker.ietf.org/doc/html/draft-ietf-httpapi-idempotency-key-header"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Crypto/randomUUID"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "outbox-queue"
+  - "idempotency-key"
+  - "causal-ordering"
+  - "offline-mutations"
+  - "retry"
+---
+
+## TL;DR
+
+Firing independent `fetch()` calls for rapid edits lets slow earlier requests overwrite newer ones and turns retries into duplicate server records. A persistent FIFO outbox in IndexedDB serializes mutations in causal order, attaching one `Idempotency-Key` UUID per intent so retries remain safe.
+
+## Interactive Lab
+
+Trace enqueueing, offline retry with a stable `Idempotency-Key`, and FIFO acknowledgment in `StepMachineLab`.
+
+## Under the Hood
+
+An outbox separates intent capture from network delivery. When a user triggers a mutation, the client writes an immutable command record into [IndexedDB](/concepts/indexeddb-transactions-quotas) and applies an [Optimistic UI](/concepts/optimistic-ui-rollback) patch synchronously.
+
+1. **Deterministic key**: Generate `crypto.randomUUID()` once at enqueue time and store it on the outbox record so every retry sends the identical `Idempotency-Key` header.
+2. **Causal FIFO drain**: Dispatch head-of-line mutations sequentially (or partitioned per entity ID) so `UPDATE` never overtakes `CREATE` on the wire.
+3. **Terminal vs transient errors**: Retry `5xx` or network timeouts with exponential backoff; dequeue and roll back on `4xx` validation rejections.
+
+```ts
+interface OutboxItem { id: string; key: string; payload: unknown }
+
+async function drainOutbox(queue: OutboxItem[]) {
+  for (const item of queue) {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Idempotency-Key': item.key, 'Content-Type': 'application/json' },
+      body: JSON.stringify(item.payload),
+    });
+    if (res.status >= 500) break; // Keep head-of-line order; retry later
+    await removeFromIdbOutbox(item.id);
+  }
+}
+```
+
+## Problem Genealogy
+
+- **2014–2018 (Fire-and-Forget Retries)**: Naive `fetch` retry wrappers regenerated request payloads on retry without keys, creating duplicate invoices when ACKs dropped on 3G networks.
+- **2019+ (Stripe & IETF `Idempotency-Key`)**: Standardized client-generated UUID keys cached server-side for 24 hours to replay original responses safely.
+- **2022+ (Local-First Outboxes)**: Combined IndexedDB persistence with causal queues so mutations survive full browser restarts.
+
+## Production Pitfalls
+
+- **Duplicate records after mobile tunnel drop**: Generating `crypto.randomUUID()` inside the retry loop instead of at enqueue time gives each attempt a fresh key, defeating server deduplication.
+- **Head-of-line blocking across unrelated entities**: Sending all mutations through one global FIFO queue stalls a user's profile edit behind a failing 10 MB attachment upload.
+- **When not to use a durable outbox**: For read-only telemetry, ephemeral typing indicators, or idempotent `PUT` autosaves where only the latest snapshot matters, overwrite a single debounced slot instead of maintaining a replay queue.

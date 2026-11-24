@@ -1,0 +1,42 @@
+{
+  "concept_id": "server-state-cache-machines",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://datatracker.ietf.org/doc/html/rfc5861",
+      "spec_section": "Section 3: stale-while-revalidate",
+      "quote": "The stale-while-revalidate HTTP Cache-Control extension allows a cache to immediately return a stale response while it revalidates it in the background."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "60+",
+    "firefox": "55+",
+    "safari": "11+"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Deterministic Query Key Serialization",
+      "In-Flight Promise Deduplication",
+      "Freshness Window Evaluation (staleTime)",
+      "Observer Reference Counting & GC Timer"
+    ],
+    "mechanism_summary": "A Map-backed finite state machine indexes async requests by canonical key, sharing single in-flight Promises across observers and reclaiming unsubscribed entries after gcTime."
+  },
+  "production_failures": [
+    {
+      "symptom": "Duplicate API bursts on tab focus and route transitions",
+      "root_cause": "Leaving staleTime at 0 ms forces every visibilitychange or observer mount to treat cached payloads as expired and trigger background fetches.",
+      "mitigation": "Configure explicit staleTime windows per resource volatility and dedupe concurrent mounts through a shared inflight Promise."
+    },
+    {
+      "symptom": "Retained heap growth in long-lived SPAs",
+      "root_cause": "Generating non-deterministic query keys or setting Infinity gcTime prevents observer-free entries from being evicted from the cache Map.",
+      "mitigation": "Normalize key serialization and enforce bounded gcTime eviction once observer count drops to zero."
+    }
+  ],
+  "sources": [
+    "https://datatracker.ietf.org/doc/html/rfc5861",
+    "https://tanstack.com/query/latest/docs/framework/react/guides/caching"
+  ]
+}

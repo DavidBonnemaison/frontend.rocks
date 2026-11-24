@@ -1,0 +1,38 @@
+{
+  "type": "step-machine",
+  "id": "performance-observer-rum",
+  "title": "RUM Telemetry: Buffered Observe to sendBeacon Flush",
+  "description": "Trace how PerformanceObserver captures retroactive entries and flushes on visibilitychange without blocking bfcache.",
+  "steps": [
+    {
+      "label": "1. Subscribe with buffered: true",
+      "description": "Observer attaches after hydration and reads LCP/longtask entries already recorded during boot.",
+      "codeHighlight": "obs.observe({ type: 'largest-contentful-paint', buffered: true });",
+      "state": {
+        "bufferedEntriesRead": 3,
+        "mainThreadBlocked": false,
+        "bfcacheEligible": true
+      }
+    },
+    {
+      "label": "2. Collect Attribution & LoAF",
+      "description": "Each entry exposes timing breakdown (element selector, script URL, startTime, duration).",
+      "codeHighlight": "const lcpElement = entry.element?.tagName;",
+      "state": {
+        "lcpMs": 1420,
+        "longAnimationFrames": 1,
+        "attributionCaptured": true
+      }
+    },
+    {
+      "label": "3. Flush on visibilitychange (hidden)",
+      "description": "User backgrounds tab. navigator.sendBeacon queues the JSON payload asynchronously and leaves bfcache intact.",
+      "codeHighlight": "navigator.sendBeacon('/rum', JSON.stringify(metrics));",
+      "state": {
+        "beaconQueued": true,
+        "unloadUsed": false,
+        "bfcacheEligible": true
+      }
+    }
+  ]
+}

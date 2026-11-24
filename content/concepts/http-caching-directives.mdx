@@ -1,0 +1,66 @@
+---
+id: http-caching-directives
+title: "HTTP Caching Directives"
+domain: network-perf
+maturity_status: baseline-widely
+summary_tldr: "Controls disk and shared cache reuse via Cache-Control, ETag, and Vary headers—separating immutable hashed assets from revalidated HTML documents."
+relations:
+  - target_id: bfcache-navigation
+    type: contrasts_with
+    note: "Disk cache stores raw HTTP bytes; no-store disables both disk cache and in-memory bfcache."
+  - target_id: http2-http3-multiplexing
+    type: requires
+    note: "Conditional 304 revalidations travel as lightweight header frames over multiplexed streams."
+  - target_id: cdn-edge-cache-keys
+    type: under_the_hood
+    note: "Cache-Control, s-maxage, and Vary headers govern how CDN surrogates compute and partition edge cache keys."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching"
+  - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control"
+  - "https://www.rfc-editor.org/rfc/rfc9111"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "cache-control"
+  - "etag"
+  - "immutable"
+  - "stale-while-revalidate"
+  - "no-cache"
+---
+
+## TL;DR
+
+`Cache-Control` governs whether the browser reuses a stored response directly, revalidates it with `ETag` for a `304 Not Modified`, or skips storage entirely. Pair `no-cache` on HTML entrypoints with `max-age=31536000, immutable` on content-hashed static assets.
+
+## Interactive Lab
+
+Step through cache key lookup, freshness evaluation, and `304 Not Modified` revalidation using `StepMachineLab`.
+
+## Under the Hood
+
+The HTTP disk cache works like a warehouse inventory ledger: every stored response carries an expiration timestamp (`max-age`) and a content fingerprint (`ETag`). Unlike [bfcache](/concepts/bfcache-navigation), which snapshots live JS heaps in RAM, the HTTP cache only stores raw response bytes on disk.
+
+1. Before opening a stream over [HTTP/2 & HTTP/3](/concepts/http2-http3-multiplexing), the network stack computes a partitioned cache key (`top-level-site + url + Vary`).
+2. If the entry is fresh (`age < max-age`), the engine returns bytes from disk with zero network round-trips; `immutable` skips even user-triggered reload checks.
+3. If stale or marked `no-cache`, the client sends `If-None-Match: "<etag>"` and receives either `304 Not Modified` (0 body bytes) or a fresh `200`.
+
+```http
+# HTML document: store locally, always revalidate before reuse
+Cache-Control: no-cache
+ETag: "doc-8812a"
+
+# Content-hashed bundle: never revalidate for 1 year
+Cache-Control: public, max-age=31536000, immutable
+```
+
+## Problem Genealogy
+
+- **1997 (HTTP/1.0 `Expires` & `Pragma`)**: Relied on absolute wall-clock timestamps, breaking whenever client clocks drifted.
+- **1999 (RFC 2616 `Cache-Control`)**: Introduced relative `max-age` and `ETag` validation, though developers routinely confused `no-cache` with `no-store`.
+- **2017+ (`immutable` & Partitioned Caches)**: Eliminated unnecessary `304` checks on reloads and isolated third-party cache keys per top-level site to block cross-site tracking.
+
+## Production Pitfalls
+
+- **`no-cache` vs `no-store` confusion**: `no-cache` still caches the response and revalidates; `no-store` forbids all storage and kills bfcache site-wide.
+- **Missing `Vary` on content negotiation**: Serving WebP and JPEG at the same URL without `Vary: Accept` poisons [CDN Edge Cache Keys](/concepts/cdn-edge-cache-keys) for unsupported browsers.
+- **When not to use `immutable`**: Never attach `immutable` to unhashed URLs like `/app.js` or `/avatar.png`, users stay stuck on stale bytes until they clear site data.

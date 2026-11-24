@@ -1,0 +1,50 @@
+{
+  "type": "step-machine",
+  "id": "proxy-reflect-internals",
+  "title": "Proxy Trap Interception & Reflect Forwarding",
+  "description": "Trace [[Get]] interception, Receiver forwarding, and invariant enforcement.",
+  "steps": [
+    {
+      "label": "1. Exotic [[Get]] Dispatch",
+      "description": "Engine bypasses standard Inline Cache lookup because receiver is a Proxy exotic object.",
+      "codeHighlight": "proxy.count;",
+      "state": {
+        "trap": "get(target, 'count', receiver)",
+        "icBypassed": true
+      },
+      "visualNodes": [
+        { "id": "ic", "label": "IC Fast-Path (Skipped)", "status": "error" },
+        { "id": "trap", "label": "handler.get()", "status": "active" },
+        { "id": "target", "label": "Target Object", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Reflect.get With Receiver",
+      "description": "Trap delegates to Reflect.get(target, prop, receiver) so getters on target bind 'this' to proxy.",
+      "codeHighlight": "return Reflect.get(target, prop, receiver);",
+      "state": {
+        "forwarded": true,
+        "thisBinding": "proxy"
+      },
+      "visualNodes": [
+        { "id": "ic", "label": "IC Fast-Path (Skipped)", "status": "done" },
+        { "id": "trap", "label": "handler.get()", "status": "done" },
+        { "id": "target", "label": "Target Object", "status": "active" }
+      ]
+    },
+    {
+      "label": "3. Invariant Enforcement",
+      "description": "Engine verifies trap return value obeys non-writable, non-configurable property invariants before returning.",
+      "codeHighlight": "// Throws TypeError if invariant violated",
+      "state": {
+        "invariantChecked": true,
+        "status": "ok"
+      },
+      "visualNodes": [
+        { "id": "ic", "label": "IC Fast-Path (Skipped)", "status": "done" },
+        { "id": "trap", "label": "Invariant Check", "status": "active" },
+        { "id": "target", "label": "Target Object", "status": "done" }
+      ]
+    }
+  ]
+}

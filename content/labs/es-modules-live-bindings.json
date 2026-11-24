@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "es-modules-live-bindings",
+  "title": "CommonJS Value Copy vs ESM Live Binding",
+  "before": {
+    "label": "CommonJS (Value Snapshot)",
+    "code": "// counter.cjs\nlet count = 0;\nmodule.exports = { count, inc: () => ++count };\n// main.cjs\nconst { count, inc } = require('./counter.cjs');\ninc(); // count is still 0 (copied primitive)",
+    "metrics": {
+      "lines": 6,
+      "reflows": "Dynamic runtime require",
+      "dependencies": "Frozen at require() time"
+    },
+    "previewNote": "Destructured primitives go stale immediately after mutation."
+  },
+  "after": {
+    "label": "ES Modules (Live Read-Only Binding)",
+    "code": "// counter.mjs\nexport let count = 0;\nexport const inc = () => ++count;\n// main.mjs\nimport { count, inc } from './counter.mjs';\ninc(); // count reads 1 via live slot",
+    "metrics": {
+      "lines": 6,
+      "reflows": "Static pre-link graph",
+      "dependencies": "Zero-copy pointer slot"
+    },
+    "previewNote": "Importer always dereferences the exporter's live LexicalEnvironment slot."
+  }
+}

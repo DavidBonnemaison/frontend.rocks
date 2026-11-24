@@ -1,0 +1,25 @@
+{
+  "type": "constraint-simulator",
+  "id": "css-container-queries",
+  "title": "Component Adaptation: @container vs @media",
+  "description": "Shrink the parent container width to observe grid column behavior.",
+  "presetMode": "container-query",
+  "controls": [
+    {
+      "key": "containerWidth",
+      "label": "Parent container width",
+      "kind": "range",
+      "min": 220,
+      "max": 640,
+      "step": 20,
+      "defaultValue": 360,
+      "unit": "px"
+    },
+    {
+      "key": "useContainer",
+      "label": "Use @container (inline-size)",
+      "kind": "toggle",
+      "defaultValue": true
+    }
+  ]
+}

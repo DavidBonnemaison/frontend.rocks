@@ -1,0 +1,37 @@
+{
+  "concept_id": "v8-hidden-classes-ic",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://v8.dev/blog/fast-properties",
+      "spec_section": "Fast properties in V8",
+      "quote": "HiddenClasses (Maps) store property descriptors and offsets so property loads compile to direct memory offsets."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "V8",
+    "firefox": "SpiderMonkey Shapes",
+    "safari": "JavaScriptCore Structures"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Shape Transition", "IC Feedback Vector", "TurboFan Specialization"],
+    "mechanism_summary": "Inline Caches specialize property accesses based on observed object Shapes."
+  },
+  "production_failures": [
+    {
+      "symptom": "10x slowdown in a parser or data grid engine",
+      "root_cause": "Properties added conditionally in varying order turning the IC megamorphic.",
+      "mitigation": "Initialize all properties in the constructor in a fixed order."
+    },
+    {
+      "symptom": "Throughput drop after using delete obj.key",
+      "root_cause": "Downgrading the object to dictionary mode (Slow Mode).",
+      "mitigation": "Assign obj.key = undefined instead of delete."
+    }
+  ],
+  "sources": [
+    "https://v8.dev/blog/fast-properties",
+    "https://mathiasbynens.be/notes/shapes-ics"
+  ]
+}

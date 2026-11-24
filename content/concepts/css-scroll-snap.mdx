@@ -1,0 +1,70 @@
+---
+id: css-scroll-snap
+title: "CSS Scroll Snap"
+domain: css-layout
+maturity_status: baseline-widely
+summary_tldr: "scroll-snap-type and scroll-snap-align lock scroll rest positions to child landmarks on the Compositor Thread without JS timers."
+relations:
+  - target_id: render-tree-layout
+    type: requires
+    note: "Scroll snap positions derive from laid-out child snap-area boxes and scroll-padding."
+  - target_id: dynamic-viewport-units
+    type: contrasts_with
+    note: "Scroll snap aligns scrollport rest positions, whereas dynamic viewport units resize snapports as mobile toolbars animate."
+sources:
+  - "https://drafts.csswg.org/css-scroll-snap-1/"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_scroll_snap"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "scroll-snap-type"
+  - "scroll-snap-align"
+  - "scroll-padding"
+  - "carousel"
+  - "compositor"
+web_feature_id: scroll-snap
+---
+
+## TL;DR
+
+CSS Scroll Snap (`scroll-snap-type` on the container, `scroll-snap-align` on children) lets the Compositor Thread handle carousel and section snapping natively. It respects touch inertia and keyboard navigation without JS `scroll` timers fighting the user's finger.
+
+## Interactive Lab
+
+Adjust `mandatory` vs `proximity`, `scroll-snap-stop`, and `scroll-padding` in `ConstraintSimulatorLab`.
+
+## Under the Hood
+
+A JS carousel hijacks the wheel and fights momentum; CSS Scroll Snap lets the native physics engine predict where a fling will land and gently magnetizes it to the nearest snap line.
+
+1. **Snap Area Registration**: During [Render Tree & Layout](/concepts/render-tree-layout), each child's `scroll-snap-align` (`start`, `center`, `end`) registers a target coordinate.
+2. **Strictness**: `mandatory` always snaps to a target after scrolling stops; `proximity` snaps only when the rest point lands near a target.
+3. **Padding Offset**: `scroll-padding-inline` insets the snapport so sticky headers or peek gutters never overlap the snapped card.
+
+```css
+.carousel {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 1rem;
+}
+.carousel > .slide {
+  flex: 0 0 85%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+```
+
+Works seamlessly with [Dynamic Viewport Units](/concepts/dynamic-viewport-units) and [CSS Logical Properties](/concepts/css-logical-properties).
+
+## Problem Genealogy
+
+- **2012–2018**: Heavy JS carousel libraries reimplemented touch physics, breaking trackpad inertia, accessibility focus, and `Ctrl+F` scrolling.
+- **2019+**: CSS Scroll Snap Level 1 unified snap behavior across Chromium, Gecko, and WebKit.
+
+## Production Pitfalls
+
+- **Trapping tall content with `mandatory`**: Using `y mandatory` on sections taller than the viewport prevents users from reading the bottom half of a section.
+- **Skipping slides on fast swipes**: Without `scroll-snap-stop: always`, a fast swipe jumps across multiple slides at once.
+- **When not to use `scroll-snap-type: y mandatory`**: Never apply `mandatory` vertical snapping to long-form articles or variable-height pages; use `proximity` or omit it.

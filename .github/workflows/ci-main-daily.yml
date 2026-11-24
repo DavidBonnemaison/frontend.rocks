@@ -1,0 +1,109 @@
+name: CI (main, daily) and deploy
+
+on:
+  schedule:
+    - cron: '30 3 * * *'
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Deploy even if the deployed commit is already HEAD (urgent fix)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: ci-main-daily
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      changed: ${{ steps.cmp.outputs.changed }}
+      deployed: ${{ steps.cmp.outputs.deployed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - id: cmp
+        env:
+          FORCE_DEPLOY: ${{ github.event.inputs.force_deploy }}
+        run: |
+          DEPLOYED=$(curl -fsS https://frontend.rocks/build-info.json 2>/dev/null | jq -r '.commit // ""' 2>/dev/null || echo "")
+          HEAD=$(git rev-parse HEAD)
+          echo "deployed=$DEPLOYED" >> "$GITHUB_OUTPUT"
+          if [ "$DEPLOYED" = "$HEAD" ] && [ "$FORCE_DEPLOY" != "true" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-and-test:
+    needs: check-changes
+    if: needs.check-changes.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # git diff from the deployed commit (IndexNow, EPIC-21)
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run validate:content
+      - name: Build
+        env:
+          DEPLOYED_COMMIT: ${{ needs.check-changes.outputs.deployed }}
+          DEPLOY_CONTEXT: production
+          # Public build-time variables (non-secret, repository variables):
+          NEXT_PUBLIC_GOATCOUNTER_ENDPOINT: ${{ vars.NEXT_PUBLIC_GOATCOUNTER_ENDPOINT }}
+          NEXT_PUBLIC_CROWD_REPORTS_ENABLED: ${{ vars.NEXT_PUBLIC_CROWD_REPORTS_ENABLED }}
+        run: npm run build-prod
+      - run: npx playwright install --with-deps chromium
+      # The E2E suite reads the lab preview PNGs that this step writes into public/ and dist/,
+      # and the deployed dist/ must contain them.
+      - run: npm run generate:lab-previews
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site-dist
+          path: dist/
+          retention-days: 3
+          if-no-files-found: error
+          include-hidden-files: true
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4 # netlify.toml, netlify/functions, netlify/edge-functions
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies for function bundling, without running any install script
+        run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@v4
+        with:
+          name: site-dist
+          path: dist
+      - name: Deploy to Netlify (production)
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: npx --yes netlify-cli@27.14.2 deploy --prod --no-build --dir dist --message "ci-main-daily ${GITHUB_SHA}"

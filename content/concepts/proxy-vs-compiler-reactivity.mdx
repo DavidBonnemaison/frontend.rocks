@@ -1,0 +1,68 @@
+---
+id: proxy-vs-compiler-reactivity
+title: "Runtime Proxy Reactivity vs Static Compiler Graphs"
+domain: framework-internals
+maturity_status: baseline-widely
+summary_tldr: "Deep Proxy wrapping adds per-property trap overhead and hidden-class polymorphism, whereas static compilers rewrite assignments into direct DOM patches. Choosing between them trades runtime flexibility for zero-allocation update paths."
+relations:
+  - target_id: proxy-reflect-internals
+    type: requires
+    note: "Runtime reactive stores intercept property reads and writes via ES6 Proxy get/set traps."
+  - target_id: fine-grained-signals
+    type: requires
+    note: "Both proxy stores and compiled reactivity build fine-grained dependency edges between state and DOM."
+sources:
+  - "https://tc39.es/ecma262/#sec-proxy-objects"
+  - "https://svelte.dev/docs/svelte/what-are-runes"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "proxy reactivity"
+  - "compiler reactivity"
+  - "fine-grained"
+  - "v8 traps"
+---
+
+## TL;DR
+
+Runtime reactivity intercepts reads and writes dynamically with [Proxy and Reflect](/concepts/proxy-reflect-internals) traps, tracking arbitrary nested objects at runtime. Static compiler reactivity parses AST assignments at build time to emit direct [Fine-Grained Signals](/concepts/fine-grained-signals) updates with zero proxy allocation.
+
+## Interactive Lab
+
+Compare runtime `Proxy` trap overhead against compiled AST dirty-bit flags in `StepMachineLab`.
+
+## Under the Hood
+
+Both models eliminate full-tree Virtual DOM diffing, but they pay their tracking cost in completely different phases.
+
+1. **Runtime Proxy Traps**: Wrapping an object in `new Proxy(target, handler)` allocates a proxy wrapper per nested object on access. Every `get` pushes a dependency edge onto the active effect stack; every `set` checks `Object.is` and schedules subscribers.
+2. **Compiler AST Rewriting**: A build-time compiler (Svelte, Solid JSX transform) statically analyzes component templates, converts reactive declarations into signal primitives or bitmask dirty checks, and emits direct `textContent` mutations.
+3. **V8 Optimization Boundary**: Proxy traps bypass V8 inline caches for dynamic shapes, whereas compiled signal reads compile down to monomorphic slot loads.
+
+```ts
+// Runtime Proxy: tracks any nested key read dynamically
+const reactive = <T extends object>(obj: T): T =>
+  new Proxy(obj, {
+    get(target, key, recv) {
+      track(target, key);
+      return Reflect.get(target, key, recv);
+    },
+    set(target, key, val, recv) {
+      const ok = Reflect.set(target, key, val, recv);
+      if (ok) trigger(target, key);
+      return ok;
+    },
+  });
+```
+
+## Problem Genealogy
+
+- **2013 (`Object.defineProperty` Walkers)**: Vue 2 recursively walked every object key at startup, failing to detect added properties and burning 15–40 ms on large JSON tables.
+- **2020 (Lazy ES6 `Proxy` Stores)**: Vue 3 and MobX switched to lazy `Proxy` wrapping, deferring wrapper allocation until nested objects are actually read.
+- **2023 (Hybrid Runes & Vapor Compilers)**: Frameworks combined fine-grained signal primitives with build-time template compilation to bypass proxy allocation in hot render paths.
+
+## Production Pitfalls
+
+- **Proxy Wrapping 10,000-Row Datasets**: Passing large immutable API tables through deep `Proxy` wrappers allocates thousands of short-lived proxy objects and degrades scroll frame times.
+- **Destructuring Breaks Tracking**: Extracting `const { count } = state` outside a tracked getter reads the primitive value once and severs future `get` trap subscriptions.
+- **When not to use deep runtime `Proxy` reactivity**: Never wrap large static datasets (GeoJSON, analytics grids, binary-backed buffers) in deep proxies; use shallow signals or mark objects non-reactive (`markRaw` / `shallowRef`).

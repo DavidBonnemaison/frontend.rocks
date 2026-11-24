@@ -1,0 +1,48 @@
+{
+  "concept_id": "a11y-tree-queries-vs-dom-selectors",
+  "compiled_at": "2026-11-16",
+  "normative_extracts": [
+    {
+      "source_url": "https://www.w3.org/TR/accname-1.2/",
+      "spec_section": "4.3 Accessible Name and Description Computation",
+      "quote": "The accessible name is computed by traversing aria-labelledby, aria-label, native host language labeling elements, and descendant text content in priority order."
+    },
+    {
+      "source_url": "https://www.w3.org/TR/wai-aria-1.2/",
+      "spec_section": "5.1.1 Exclusion from the Accessibility Tree",
+      "quote": "Elements with aria-hidden='true' or CSS display: none are not exposed in the accessibility tree."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "All (ARIA 1.2 / AccName 1.2)",
+    "firefox": "All (ARIA 1.2 / AccName 1.2)",
+    "safari": "All (ARIA 1.2 / AccName 1.2)"
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Implicit/Explicit WAI-ARIA Role Resolution",
+      "Visibility & Inert Subtree Filtering",
+      "AccName 1.2 Priority Traversal",
+      "Locator Assertion & Actionability Check"
+    ],
+    "mechanism_summary": "Role queries compute WAI-ARIA roles and AccName 1.2 strings while pruning hidden or inert subtrees, verifying both interactive semantics and user-visible labeling."
+  },
+  "production_failures": [
+    {
+      "symptom": "Keyboard and screen-reader users cannot submit checkout form despite green E2E tests",
+      "root_cause": "Tests clicked [data-testid='checkout-btn'] on a <div onClick> with no role='button', tabindex, or Enter-key handler.",
+      "mitigation": "Replace data-testid with getByRole('button', { name: 'Checkout' }) so non-semantic divs fail in CI."
+    },
+    {
+      "symptom": "Component test suite slows to 45 seconds on a large data-grid test",
+      "root_cause": "Repeated getByRole('cell') queries in JSDOM re-traverse thousands of DOM nodes synchronously for AccName computation.",
+      "mitigation": "Virtualize rows, scope queries with within(row), or run large-DOM tests in a real browser."
+    }
+  ],
+  "sources": [
+    "https://www.w3.org/TR/accname-1.2/",
+    "https://www.w3.org/TR/wai-aria-1.2/",
+    "https://testing-library.com/docs/queries/byrole/"
+  ]
+}

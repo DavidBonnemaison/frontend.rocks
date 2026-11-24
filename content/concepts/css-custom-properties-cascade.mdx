@@ -1,0 +1,63 @@
+---
+id: css-custom-properties-cascade
+title: "CSS Custom Properties & Cascade"
+domain: css-layout
+maturity_status: baseline-widely
+summary_tldr: "Custom properties inherit through the DOM tree and resolve var() at computed-value time, enabling dynamic theming without preprocessor compilation."
+relations:
+  - target_id: css-specificity-inheritance
+    type: requires
+    note: "Custom properties participate in the standard cascade and inherit down DOM descendants."
+  - target_id: css-houdini-property
+    type: contrasts_with
+    note: "Untyped custom properties defer validation to var() substitution, whereas @property type-checks at parse time."
+sources:
+  - "https://drafts.csswg.org/css-variables-1/"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "CSS variables"
+  - "var()"
+  - "IACVT"
+  - "design tokens"
+  - "cascade"
+web_feature_id: custom-properties
+---
+
+## TL;DR
+
+CSS Custom Properties (`--token`) are live, inheriting cascade values resolved at computed-value time rather than compile time. Because `var()` bypasses parse-time type checks, a mismatched substitution triggers Invalid At Computed Value Time (IACVT), resetting the property to its initial value instead of an earlier CSS line.
+
+## Interactive Lab
+
+Step through parse-time acceptance, inheritance, and IACVT reset in `StepMachineLab`.
+
+## Under the Hood
+
+Sass variables are baked into concrete numbers before the browser ever sees them; CSS custom properties are live pointers evaluated inside [Specificity & Inheritance](/concepts/css-specificity-inheritance).
+
+1. **Parse-Time Optimism**: Any rule containing `var()` is assumed valid during parsing, so earlier fallback lines are thrown away.
+2. **Inheritance**: `--tokens` inherit down the DOM unless overridden by a closer ancestor or `@property` with `inherits: false`.
+3. **IACVT Reset**: If `var(--bg)` resolves to `12px` inside `background`, it becomes Invalid At Computed Value Time, falling back to `initial` (`transparent`), not the line above.
+
+```css
+.alert {
+  /* Use var() inline fallback, not a separate line above */
+  background: var(--alert-bg, #fef2f2);
+  color: var(--alert-fg, #991b1b);
+}
+```
+
+To add parse-time type safety and animation interpolation, upgrade key tokens with [CSS Houdini `@property`](/concepts/css-houdini-property).
+
+## Problem Genealogy
+
+- **2009–2015**: Sass/Less variables solved static theming but could not respond to media queries, `@container`, or runtime dark-mode toggles without duplicating CSS.
+- **2016+**: CSS Custom Properties shipped across browsers, turning design tokens into runtime cascade primitives.
+
+## Production Pitfalls
+
+- **Mutating `:root` variables on `scroll` or `mousemove`**: Updating `--x` on `document.documentElement` invalidates inherited styles across thousands of elements per frame.
+- **Space-toggle tricks**: Overly clever `--on: initial; --off: ;` hacks hurt readability and break minifiers; prefer explicit classes or container style queries.
+- **When not to use custom properties**: Avoid putting high-frequency per-frame animation coordinates on `:root`; animate `transform` or scope the variable to the single animated element.

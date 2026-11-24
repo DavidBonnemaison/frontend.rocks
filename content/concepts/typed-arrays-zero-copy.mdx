@@ -1,0 +1,66 @@
+---
+id: typed-arrays-zero-copy
+title: TypedArrays, ArrayBuffer, and Zero-Copy Transfers
+domain: js-runtime
+maturity_status: baseline-widely
+summary_tldr: "Contiguous binary buffers (ArrayBuffer) paired with unboxed numeric views (Uint8Array, Float32Array) that transfer across workers in O(1) via ownership handoff."
+relations:
+  - target_id: structured-clone-algorithm
+    type: requires
+    note: "Transferable ArrayBuffers use the Structured Clone transfer list to move ownership without copying."
+  - target_id: js-garbage-collection
+    type: requires
+    note: "Pre-allocated TypedArray views eliminate per-element heap boxing and Young Generation GC churn."
+  - target_id: web-crypto-subtle
+    type: contrasts_with
+    note: "TypedArrays transfer raw buffers to workers for custom math, whereas crypto.subtle processes ArrayBuffers natively off-thread."
+sources:
+  - "https://tc39.es/ecma262/#sec-typedarray-objects"
+  - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Typed_arrays"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "typedarray"
+  - "arraybuffer"
+  - "zero-copy"
+  - "dataview"
+web_feature_id: typed-arrays
+---
+
+## TL;DR
+
+An `ArrayBuffer` allocates a raw, contiguous byte block outside the boxed JS object heap, while `TypedArray` views (`Uint8Array`, `Float32Array`) read unboxed numbers straight from memory. Passing `buffer` in `postMessage`'s transfer list moves ownership in O(1) instead of copying via [Structured Clone](/concepts/structured-clone-algorithm).
+
+## Interactive Lab
+
+Compare boxed `Array` serialization against O(1) `ArrayBuffer` transfer in `PatternComparatorLab`.
+
+## Under the Hood
+
+Picture handing over the keys to a locked storage unit instead of unpacking every box into a second truck: the recipient gets instant access, and your copy of the key snaps in half (`detached`).
+
+1. **Buffer vs View**: `ArrayBuffer` holds raw bytes; `Uint8Array` or `Float32Array` slices a typed window (`byteOffset`, `byteLength`) over it.
+2. **Zero Boxing**: Unlike `Array`, elements never allocate heap wrappers or stress [Garbage Collection](/concepts/js-garbage-collection).
+3. **Transferable Move**: Listing `buffer` in `postMessage(msg, [buffer])` detaches the sender's view (`byteLength === 0`) and hands the pointer to the worker.
+
+```js
+const raw = new ArrayBuffer(16);
+const view = new DataView(raw);
+view.setUint32(0, 0xdeadbeef, false); // Explicit big-endian
+
+// Zero-copy handoff to worker
+worker.postMessage(raw, [raw]);
+console.log(raw.byteLength); // 0 (detached)
+```
+
+## Problem Genealogy
+
+- **2011 (WebGL TypedArrays)**: Introduced contiguous binary buffers so JavaScript could feed GPU vertex and texture memory without boxing.
+- **2015 (ES6 Standardization)**: Unified `ArrayBuffer`, `TypedArray`, and `DataView` into the core ECMAScript spec.
+- **2023 (`ArrayBuffer.prototype.transfer`)**: Added explicit in-place resize and detach semantics on the main thread.
+
+## Production Pitfalls
+
+- **Host Endianness Trap**: `Uint32Array` reads bytes in host CPU order (little-endian on x86/ARM), silently scrambling big-endian network headers.
+- **Use-After-Transfer Crash**: Reading a `TypedArray` after transferring its `ArrayBuffer` throws `TypeError` or returns empty slices.
+- **When not to use `TypedArray`**: Avoid `TypedArray` for small, sparse, or mixed-type lists, creating a backing `ArrayBuffer` costs more than a small literal `[1, 2, 3]`; for hashing or encryption over binary buffers, pass the `ArrayBuffer` directly to [Web Crypto (`SubtleCrypto`)](/concepts/web-crypto-subtle).

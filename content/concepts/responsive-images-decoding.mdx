@@ -1,0 +1,61 @@
+---
+id: responsive-images-decoding
+title: "Responsive Images & Decoding"
+domain: network-perf
+maturity_status: baseline-widely
+summary_tldr: "Pairs srcset/sizes, intrinsic width/height, fetchpriority, and decoding=async so the preload scanner fetches the right AVIF/WebP candidate and decodes it off the main thread."
+relations:
+  - target_id: preload-scanner-hints
+    type: requires
+    note: "The HTML preload scanner evaluates srcset, sizes, and fetchpriority before CSS layout runs."
+  - target_id: gpu-compositor-layers
+    type: under_the_hood
+    note: "Decoded image bitmaps are uploaded as GPU textures during compositing."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/HTML/Guides/Responsive_images"
+  - "https://web.dev/articles/optimize-lcp"
+  - "https://html.spec.whatwg.org/multipage/images.html"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "srcset"
+  - "sizes"
+  - "fetchpriority"
+  - "decoding-async"
+  - "lcp"
+---
+
+## TL;DR
+
+`srcset` and `sizes` let the browser pick the smallest sharp image before layout runs. Add `width` and `height` to reserve space against CLS, `fetchpriority="high"` on the hero LCP image, and `decoding="async"` on offscreen images to keep bitmap decompression off the main thread.
+
+## Interactive Lab
+
+Compare a naive `loading="lazy"` hero image against a prioritized responsive `<img>` using `PatternComparatorLab`.
+
+## Under the Hood
+
+Raw compressed bytes (AVIF, WebP, JPEG) cannot be painted directly to screen; the engine must decompress them into an uncompressed RGBA bitmap in RAM (a 2000×1500 image expands to 12 MB) and upload it to [GPU Compositor Layers](/concepts/gpu-compositor-layers).
+
+1. The [Preload Scanner](/concepts/preload-scanner-hints) reads `srcset`, `sizes`, and `devicePixelRatio` before CSS finishes parsing, queuing only the best-fitting candidate.
+2. `width` and `height` HTML attributes compute an intrinsic `aspect-ratio` box during initial layout, preventing CLS.
+3. `decoding="async"` moves bitmap decompression onto a background thread so scrolling never drops a frame.
+
+```html
+<picture>
+  <source type="image/avif" srcset="/hero-800.avif 800w, /hero-1600.avif 1600w" sizes="100vw" />
+  <img src="/hero-800.jpg" width="800" height="450" fetchpriority="high" decoding="sync" alt="Hero" />
+</picture>
+```
+
+## Problem Genealogy
+
+- **2014 (`<picture>` & `srcset`)**: Ended the era of shipping 4 MB desktop JPEGs to 320 px phones.
+- **2019 (`width`/`height` Aspect-Ratio Mapping)**: Browsers mapped HTML dimension attributes to CSS `aspect-ratio`, fixing responsive CLS.
+- **2022+ (`fetchpriority` & AVIF)**: Gave developers direct priority control over LCP images without abusing `<link rel="preload">`.
+
+## Production Pitfalls
+
+- **`loading="lazy"` on the hero image**: Lazy-loading above-the-fold images delays the LCP fetch until after layout and intersection checks complete, often adding 500+ ms to LCP.
+- **CSS `background-image` for LCP heroes**: Background images stay invisible to the preload scanner until CSS downloads and matches a DOM selector.
+- **When not to use `decoding="async"`**: On the primary above-the-fold LCP image, `decoding="sync"` (or omitting `async`) avoids a brief blank frame while the rest of the page paints.

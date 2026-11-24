@@ -1,0 +1,52 @@
+{
+  "type": "step-machine",
+  "id": "simulated-dom-vs-real-engines",
+  "title": "Simulated DOM vs Real Browser Engine Pipeline",
+  "description": "Trace where JSDOM stops versus where Blink computes layout geometry and hit-testing.",
+  "steps": [
+    {
+      "label": "1. Parse HTML & Construct DOM Tree",
+      "description": "Both JSDOM and Blink parse markup into Element nodes and attach event listeners.",
+      "codeHighlight": "document.body.innerHTML = '<div class=\"overlay\"></div><button>Pay</button>';",
+      "state": {
+        "jsdomNodes": 2,
+        "blinkNodes": 2,
+        "layoutComputed": false
+      },
+      "visualNodes": [
+        { "id": "dom", "label": "DOM Tree", "status": "done" },
+        { "id": "layout", "label": "Box Layout", "status": "idle" },
+        { "id": "hittest", "label": "Hit-Testing", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. Query Geometry (getBoundingClientRect)",
+      "description": "JSDOM returns { width: 0, height: 0 } because no box tree exists; Blink runs layout and returns real pixel bounds.",
+      "codeHighlight": "const rect = button.getBoundingClientRect(); // JSDOM: 0 vs Blink: 120x40",
+      "state": {
+        "jsdomRectWidth": 0,
+        "blinkRectWidth": 120,
+        "layoutComputed": true
+      },
+      "visualNodes": [
+        { "id": "dom", "label": "DOM Tree", "status": "done" },
+        { "id": "layout", "label": "Box Layout (Blink only)", "status": "active" },
+        { "id": "hittest", "label": "Hit-Testing", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Dispatch Pointer Click",
+      "description": "JSDOM dispatches click() straight to <button>; Blink hit-tests the stacking context and intercepts the click on .overlay.",
+      "codeHighlight": "await page.getByRole('button', { name: 'Pay' }).click(); // Blocked by .overlay",
+      "state": {
+        "jsdomClickDelivered": true,
+        "blinkClickInterceptedBy": ".overlay"
+      },
+      "visualNodes": [
+        { "id": "dom", "label": "DOM Tree", "status": "done" },
+        { "id": "layout", "label": "Box Layout (Blink only)", "status": "done" },
+        { "id": "hittest", "label": "Blocked by .overlay", "status": "error" }
+      ]
+    }
+  ]
+}

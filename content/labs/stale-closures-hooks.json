@@ -1,0 +1,38 @@
+{
+  "type": "step-machine",
+  "id": "stale-closures-hooks",
+  "title": "Stale Closure Lifecycle Across Renders",
+  "description": "Trace how a timer registered in Render #1 stays bound to Render #1's lexical environment while Render #2 creates new state.",
+  "steps": [
+    {
+      "label": "1. Render #1 Creates Closure (count = 0)",
+      "description": "useEffect(..., []) registers setInterval. Its callback captures LexicalEnv#1 where count === 0.",
+      "codeHighlight": "setInterval(() => setCount(count + 1), 1000); // count = 0",
+      "state": {
+        "renderCount": 1,
+        "uiCount": 0,
+        "timerClosureCount": 0
+      }
+    },
+    {
+      "label": "2. Render #2 Updates State (count = 1)",
+      "description": "First tick sets count = 1. Component re-renders with LexicalEnv#2, but the old interval still holds LexicalEnv#1.",
+      "codeHighlight": "// UI shows 1, but interval callback still sees count === 0",
+      "state": {
+        "renderCount": 2,
+        "uiCount": 1,
+        "timerClosureCount": 0
+      }
+    },
+    {
+      "label": "3. Fix: Functional Updater / Ref",
+      "description": "setCount(c => c + 1) reads the latest queued state inside the runtime instead of the closed-over primitive.",
+      "codeHighlight": "setInterval(() => setCount((c) => c + 1), 1000);",
+      "state": {
+        "renderCount": 3,
+        "uiCount": 2,
+        "staleRead": false
+      }
+    }
+  ]
+}

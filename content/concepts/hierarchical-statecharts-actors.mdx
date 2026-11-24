@@ -1,0 +1,66 @@
+---
+id: hierarchical-statecharts-actors
+title: "Hierarchical Statecharts & UI Actor Model"
+domain: state-architecture
+maturity_status: baseline-widely
+summary_tldr: "Stops state explosion in multi-step wizards and parallel media players by nesting child states, running orthogonal regions, and isolating async work inside spawned UI actors."
+relations:
+  - target_id: finite-state-machines-ui
+    type: requires
+    note: "Hierarchical statecharts extend flat (state, event) transition tables with nested compound states and orthogonal regions."
+sources:
+  - "https://www.w3.org/TR/scxml/"
+  - "https://stately.ai/docs/statecharts"
+  - "https://stately.ai/docs/actors"
+last_verified_at: "2026-11-16"
+proof_status: unverified
+keywords:
+  - "statecharts"
+  - "hierarchical-states"
+  - "actor-model"
+  - "orthogonal-regions"
+  - "scxml"
+---
+
+## TL;DR
+
+Flat [Finite State Machines](/concepts/finite-state-machines-ui) suffer combinatorial explosion when independent UI modes multiply (e.g., 4 upload phases times 3 network modes = 12 duplicated states). Hierarchical statecharts nest child states, run orthogonal regions in parallel, and isolate async work inside spawned actors that cancel automatically on state exit.
+
+## Interactive Lab
+
+Trace parent transitions, orthogonal regions, and automatic actor teardown in `StepMachineLab`.
+
+## Under the Hood
+
+W3C SCXML evaluates transitions from the deepest active leaf state upward to the root. If a parent state handles an event (such as `CANCEL`), every active child state exits cleanly in reverse entry order before the parent transitions.
+
+1. **Compound states**: Group shared transitions (`RESET`, `ABORT`) on a parent node so child states (`validating`, `submitting`) inherit them without duplication.
+2. **Orthogonal regions**: Execute independent state machines side by side (e.g., `playback: playing | paused` alongside `captions: on | off`) without Cartesian product states.
+3. **Actor isolation**: Spawn child actors with their own mailbox and [AbortController](/concepts/abortcontroller-cancellation) so exiting a parent state terminates in-flight sockets deterministically.
+
+```ts
+const wizardChart = {
+  id: 'checkout',
+  initial: 'editing',
+  states: {
+    editing: {
+      initial: 'shipping',
+      states: { shipping: { on: { NEXT: 'payment' } }, payment: {} },
+      on: { ABORT: 'cancelled' } // inherited by shipping & payment
+    },
+    cancelled: { type: 'final' }
+  }
+};
+```
+
+## Problem Genealogy
+
+- **1987 (Harel Statecharts)**: Introduced depth (AND/OR states) and history pseudo-states to collapse flat FSMs that grew exponentially with each feature.
+- **2014 (W3C SCXML)**: Standardized deterministic event-queue microsteps, exit/entry action ordering, and parallel `<parallel>` regions.
+- **2020+ (UI Actor Runtimes)**: Paired hierarchical charts with message-passing actors so each async fetch or WebSocket owns an isolated lifecycle.
+
+## Production Pitfalls
+
+- **Orphaned async callbacks after parent exit**: Spawning a raw `fetch()` inside a transition without binding its lifetime to the state node writes stale responses after the user leaves the wizard.
+- **Infinite microstep loops**: Transient (`always`) transitions that update context and re-enter the same guard freeze the main thread in a synchronous loop.
+- **When not to use hierarchical statecharts**: For linear 2-step forms or single-resource fetch lifecycles, a flat discriminated union avoids ~12–30 KB of statechart interpreter runtime and indirection.

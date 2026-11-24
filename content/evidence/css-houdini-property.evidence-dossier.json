@@ -1,0 +1,42 @@
+{
+  "concept_id": "css-houdini-property",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://drafts.css-houdini.org/css-properties-values-api/",
+      "spec_section": "2. Registering custom properties",
+      "quote": "Registering a custom property with a syntax other than * enables the user agent to type-check values and interpolate them in animations and transitions."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-newly",
+    "chrome": "85+",
+    "firefox": "128+",
+    "safari": "15.4+",
+    "notes": "Baseline Newly Available (July 2024). Untyped custom properties remain opaque token streams."
+  },
+  "engine_internals": {
+    "pipeline_phases": [
+      "Parse-Time Type Checking",
+      "Inheritance Control",
+      "Keyframe Interpolation"
+    ],
+    "mechanism_summary": "Typed custom properties parse into CSSOM value types instead of raw token strings, unlocking interpolation and disabling inheritance when inherits: false."
+  },
+  "production_failures": [
+    {
+      "symptom": "Animating a CSS gradient using --stop-color snaps abruptly at 50% instead of fading",
+      "root_cause": "Unregistered custom properties are treated as untyped token sequences that cannot be interpolated.",
+      "mitigation": "Register the variable with @property --stop-color { syntax: \"<color>\"; inherits: false; initial-value: #000; }."
+    },
+    {
+      "symptom": "@property rule is silently ignored by the browser",
+      "root_cause": "Omitting initial-value when syntax is not \"*\" makes the entire @property at-rule invalid per spec.",
+      "mitigation": "Always provide all three descriptors (syntax, inherits, initial-value) for typed properties."
+    }
+  ],
+  "sources": [
+    "https://drafts.css-houdini.org/css-properties-values-api/",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/@property"
+  ]
+}

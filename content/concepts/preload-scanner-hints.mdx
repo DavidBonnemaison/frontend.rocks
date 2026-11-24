@@ -1,0 +1,65 @@
+---
+id: preload-scanner-hints
+title: Preload Scanner and fetchpriority Attribute
+domain: network-perf
+maturity_status: baseline-newly
+summary_tldr: "Speculative HTML scanner discovering critical resources before JS execution, paired with fetchpriority to reorder the HTTP/2-HTTP/3 queue."
+relations:
+  - target_id: browser-rendering-pipeline
+    type: under_the_hood
+    note: "Governs availability of critical resources (CSS, fonts, LCP hero image) prior to first Paint."
+  - target_id: speculation-rules-prerender
+    type: contrasts_with
+    note: "Preload scanner prioritizes current-page subresources, while Speculation Rules prerender next-page navigations."
+sources:
+  - "https://web.dev/articles/fetch-priority"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/fetchPriority"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "LCP"
+  - "fetchpriority"
+  - "preload scanner"
+  - "HTTP/2"
+web_feature_id: fetch-priority
+---
+
+## TL;DR
+
+The *Preload Scanner* scans raw HTML bytes in parallel with the main parser to start network fetches early. `fetchpriority="high"` elevates an LCP image above non-blocking scripts in the transfer queue.
+
+## Interactive Lab
+
+Compare loading order of an LCP image with and without `fetchpriority="high"` in `PatternComparatorLab`.
+
+## Under the Hood
+
+Treat the Preload Scanner as an airport baggage advance scout: while the main HTML parser is stuck at security behind a blocking `<script>`, the scanner sprints ahead through the raw byte stream and puts critical luggage on the conveyor belt early.
+
+1. As soon as the first HTML packets arrive, a dedicated thread (Preload Scanner) extracts `<link>`, `<script>`, and `<img>` tags before DOM construction completes for the [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline).
+2. By default, Blink queues images at `Low` priority and only promotes in-viewport images to `High` after the first Layout pass.
+3. `fetchpriority="high"` assigns `High` priority in the HTTP/2 or HTTP/3 queue immediately upon HTML discovery, while `fetchpriority="low"` demotes carousel slides out of the way.
+
+```html
+<!-- Discovered in the first TCP window; queued ahead of deferred scripts -->
+<img
+  src="/hero-banner.avif"
+  width="1200"
+  height="640"
+  fetchpriority="high"
+  decoding="async"
+  alt="Dashboard overview"
+/>
+```
+
+## Problem Genealogy
+
+- **2008 (Preload Scanner)**: Workaround for synchronous `<script>` tags stalling downstream resource discovery.
+- **2016 (`<link rel="preload">`)**: Early discovery for resources hidden inside CSS/JS, frequently abused by pasting 12 preload tags in `<head>` and saturating the connection.
+- **2023+ (`fetchpriority` Baseline)**: Fine-grained relative priority control without duplicating preload tags.
+
+## Production Pitfalls
+
+- **Client-injected LCP images**: The Preload Scanner cannot see images mounted dynamically by React/SPA bundles until an [Event Loop](/concepts/event-loop-tasks-microtasks) task executes JS, by which time your LCP budget is already half-spent.
+- **Overusing `fetchpriority="high"`**: Marking 10 images as `high` cancels prioritization benefits and delays critical stylesheets.
+- **When not to use `fetchpriority="high"`**: Never apply it to below-the-fold images or secondary web fonts; for cross-page navigation speedups, use [Speculation Rules](/concepts/speculation-rules-prerender) instead.

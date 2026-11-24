@@ -1,0 +1,64 @@
+---
+id: css-has-selector
+title: "CSS :has() Relational Selector"
+domain: css-layout
+maturity_status: baseline-newly
+summary_tldr: ":has() matches an element based on its descendants or following siblings, eliminating JS parent-class toggling."
+relations:
+  - target_id: css-specificity-inheritance
+    type: requires
+    note: ":has() inherits the highest specificity among its relative selector arguments."
+  - target_id: browser-rendering-pipeline
+    type: under_the_hood
+    note: "Uses ancestor invalidation bitmasks and bloom filters during Recalc Style to avoid O(n^2) matching."
+sources:
+  - "https://drafts.csswg.org/selectors-4/#relational"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/:has"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - ":has()"
+  - "parent selector"
+  - "relational pseudo-class"
+  - "style invalidation"
+web_feature_id: has
+---
+
+## TL;DR
+
+`:has()` is a relational pseudo-class that styles a parent or preceding sibling based on what it contains or precedes. It eliminates `MutationObserver` hacks and manual `.has-error` class toggling while staying reactive to live DOM state.
+
+## Interactive Lab
+
+Compare imperative JS parent-class toggling against native `:has()` in `PatternComparatorLab`.
+
+## Under the Hood
+
+For twenty years CSS only looked downward and forward because engines feared O(n^2) re-evaluations during the [Browser Rendering Pipeline](/concepts/browser-rendering-pipeline). Modern engines solved this with bloom-filter fast-rejects and targeted invalidation flags.
+
+1. **Right-to-Left Anchoring**: When a child changes (e.g., a checkbox becomes `:checked`), the engine checks an ancestor bitmask to see if any parent listens to `:has()`.
+2. **Specificity**: Like `:is()`, `:has()` adopts the highest [Specificity](/concepts/css-specificity-inheritance) in its argument list unless wrapped in `:where()`.
+3. **Sibling Lookahead**: `.tab:has(+ .tab:hover)` styles the element *before* the hovered sibling.
+
+```css
+/* Highlight form field label when its input is invalid and touched */
+.field:has(input:user-invalid) > label {
+  color: #dc2626;
+}
+
+/* Lock page scroll when a modal checkbox or dialog is open */
+body:has(dialog[open]) {
+  overflow: hidden;
+}
+```
+
+## Problem Genealogy
+
+- **2000–2021**: Rejected repeatedly due to layout-engine invalidation cost; developers toggled parent classes in JS or React state.
+- **2022–2023**: Safari, Chrome, and Firefox shipped optimized `:has()` with invalidation bitmasks, reaching Baseline Newly Available.
+
+## Production Pitfalls
+
+- **`:root:has(...)` over-invalidation**: Attaching `:has()` to `:root` or `body` with broad selectors like `:has(*:hover)` triggers wide style recalculations on pointer moves.
+- **Nesting `:has(:has(...))`**: Nested `:has()` is disallowed by the spec and silently ignored.
+- **When not to use `:has()`**: Avoid `:has()` on `:root` for high-frequency hover/scroll states; scope it to small local components like `.field` or `.card`.

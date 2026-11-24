@@ -1,0 +1,67 @@
+---
+id: css-specificity-inheritance
+title: "CSS Specificity & Inheritance"
+domain: css-layout
+maturity_status: baseline-widely
+summary_tldr: "Cascade resolves Origin, @layer, (A,B,C) specificity, and source order; inherited properties propagate down only when no rule matches."
+relations:
+  - target_id: css-cascade-layers
+    type: under_the_hood
+    note: "Cascade Layers evaluate before selector specificity (A, B, C) tuples."
+  - target_id: css-custom-properties-cascade
+    type: contrasts_with
+    note: "Selector specificity arbitrates competing rule declarations, whereas custom properties inherit down the DOM tree."
+  - target_id: css-has-selector
+    type: contrasts_with
+    note: ":has() adopts the highest specificity of its relative selector list instead of summing combinators."
+sources:
+  - "https://drafts.csswg.org/selectors-4/#specificity-rules"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "specificity"
+  - "inheritance"
+  - "cascade"
+  - ":where()"
+  - ":is()"
+  - "!important"
+---
+
+## TL;DR
+
+CSS does not merge rules by file proximity; it sorts matched declarations by Origin, [Cascade Layers](/concepts/css-cascade-layers), `(A, B, C)` specificity, and source order. Inheritance only kicks in when zero rules match a property on the element itself.
+
+## Interactive Lab
+
+Trace the exact precedence steps from `@layer` through `(A, B, C)` to inheritance in `StepMachineLab`.
+
+## Under the Hood
+
+Specificity is a three-digit odometer `(IDs, Classes, Tags)` where ten `Classes` never roll over to beat one `ID`.
+
+1. **Layer Gate**: Declarations inside a lower `@layer` lose to higher layers or unlayered rules before specificity is even compared.
+2. **Tuple Comparison**: `A` counts `#id` selectors; `B` counts `.class`, `[attr]`, and `:hover`; `C` counts `div` and `::before`. `:where()` contributes `(0, 0, 0)`, while `:is()`, `:not()`, and [:has()](/concepts/css-has-selector) take the highest specificity in their argument list.
+3. **Inheritance**: Properties like `color`, `font-family`, and [CSS Custom Properties](/concepts/css-custom-properties-cascade) copy from the parent's `ComputedStyle` only if no rule (not even a user-agent rule) targets the element.
+
+```css
+/* Zero specificity reset: trivial to override anywhere */
+:where(button, input, select) {
+  font: inherit;
+  color: inherit;
+}
+
+/* Specificity (0, 1, 0) beats (0, 0, 1) regardless of order */
+.btn-primary { background: #2563eb; }
+```
+
+## Problem Genealogy
+
+- **1998–2018**: Escalating `#id .class` selectors and `!important` wars turned large stylesheets into append-only deadlocks.
+- **2020–2022**: `:where()` (zero specificity) and `@layer` gave design systems deterministic override boundaries.
+
+## Production Pitfalls
+
+- **`:is()` specificity surprise**: `:is(#header, .nav) a` gives **all** matches (even `.nav a`) the `#header` specificity of `(1, 0, 1)`.
+- **Form control inheritance**: `<button>` and `<input>` have user-agent `font` and `color` rules, blocking `<body>` inheritance unless `inherit` is set.
+- **When not to use `#id` selectors in CSS**: Never style with `#id` selectors in reusable components; reserve `#id` for DOM anchors and ARIA `labelledby` targets.

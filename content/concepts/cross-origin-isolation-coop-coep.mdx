@@ -1,0 +1,57 @@
+---
+id: cross-origin-isolation-coop-coep
+title: Cross-Origin Isolation with COOP and COEP
+domain: security-a11y
+maturity_status: baseline-widely
+summary_tldr: "Process-level browser isolation enabled by Cross-Origin-Opener-Policy and Cross-Origin-Embedder-Policy headers, unlocking SharedArrayBuffer and high-resolution timers by blocking unverified cross-origin bytes."
+relations:
+  - target_id: cors-preflight-samesite
+    type: requires
+    note: "COEP relies on CORS or Cross-Origin-Resource-Policy opt-ins before loading cross-origin subresources."
+  - target_id: shared-array-buffer-atomics
+    type: under_the_hood
+    note: "Browsers gate SharedArrayBuffer and microsecond performance.now() precision behind crossOriginIsolated."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Window/crossOriginIsolated"
+  - "https://html.spec.whatwg.org/multipage/browsers.html#cross-origin-opener-policies"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "COOP"
+  - "COEP"
+  - "crossOriginIsolated"
+  - "Spectre mitigation"
+---
+
+## TL;DR
+
+Serving both `Cross-Origin-Opener-Policy: same-origin` (COOP) and `Cross-Origin-Embedder-Policy: require-corp` (COEP) places a document into an isolated OS process (`self.crossOriginIsolated === true`). That boundary prevents Spectre memory-reading attacks, unlocking `SharedArrayBuffer`, `Atomics`, and high-resolution `performance.now()` timers.
+
+## Interactive Lab
+
+Toggle COOP, COEP, and subresource `CORP`/`CORS` headers to test isolation eligibility.
+
+## Under the Hood
+
+COOP and COEP work like a cleanroom airlock: COOP locks the side door so cross-origin popups cannot share your process, and COEP inspects every incoming crate so no uninvited cross-origin bytes enter your memory space.
+
+1. **COOP (`same-origin`)**: Severs `window.opener` references to cross-origin windows, forcing separate browsing context groups and OS processes.
+2. **COEP (`require-corp`)**: Blocks any cross-origin image, script, iframe, or [CORS](/concepts/cors-preflight-samesite) fetch that lacks `Cross-Origin-Resource-Policy: cross-origin` or valid CORS headers.
+3. **Unlocked Primitives**: Once `crossOriginIsolated` is `true`, the engine exposes [SharedArrayBuffer](/concepts/shared-array-buffer-atomics) and sub-millisecond `performance.now()` precision.
+
+```http
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp
+```
+
+## Problem Genealogy
+
+- **2018 (Spectre CPU Side-Channel)**: Any attacker `<iframe>` sharing a renderer process could read secrets from cross-origin images or scripts in memory using high-resolution timers.
+- **2020 (COOP + COEP Shipping)**: Browsers tied `SharedArrayBuffer` to explicit opt-in process isolation.
+- **2022+ (`COEP: credentialless`)**: Added a softer mode in Chromium and Firefox that strips cookies from cross-origin fetches instead of requiring `CORP` headers everywhere.
+
+## Production Pitfalls
+
+- **Breaking third-party embeds**: Payment widgets, YouTube iframes, and CDN avatars without `CORP` or `CORS` fail to load under `require-corp`; scope COOP/COEP to heavy Wasm/editor routes rather than the entire marketing site.
+- **OAuth popup `window.opener === null`**: `COOP: same-origin` breaks popup-based OAuth `opener.postMessage()`; handle OAuth on a same-origin redirect page and signal the main tab via [BroadcastChannel](/concepts/broadcast-channel-web-locks).
+- **When not to use Cross-Origin Isolation**: Standard CRUD apps that do not run multi-threaded Wasm (`SharedArrayBuffer`) gain little from COOP/COEP while paying steep third-party embed compatibility costs.

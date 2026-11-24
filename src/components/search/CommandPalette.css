@@ -1,0 +1,5 @@
+@media (hover: none) {
+  .cmd-kbd-hint {
+    display: none;
+  }
+}

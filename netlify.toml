@@ -1,0 +1,19 @@
+[build]
+  publish = "dist"
+  command = "npm run build-prod"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+[[edge_functions]]
+  path = "/concepts/*"
+  function = "markdown-negotiation"
+
+[[edge_functions]]
+  path = "/autopsies/*"
+  function = "markdown-negotiation"
+
+[[edge_functions]]
+  path = "/vs/*"
+  function = "markdown-negotiation"
+

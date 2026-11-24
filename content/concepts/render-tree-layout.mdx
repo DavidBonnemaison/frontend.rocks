@@ -1,0 +1,65 @@
+---
+id: render-tree-layout
+title: "Render Tree & Layout"
+domain: rendering-pipeline
+maturity_status: baseline-widely
+summary_tldr: "Cut layout thrashing and oversized DOM reflow costs—the Render Tree prunes display: none subtrees before Layout computes exact box geometry."
+relations:
+  - target_id: dom-cssom-construction
+    type: requires
+    note: "Render Tree construction cannot begin until DOM nodes and CSSOM rules exist."
+  - target_id: browser-rendering-pipeline
+    type: requires
+    note: "Layout is the geometry-solving stage inside the main-thread frame pipeline."
+  - target_id: virtualized-lists-windowing
+    type: contrasts_with
+    note: "Full-list DOM rendering forces layout over thousands of off-screen boxes, whereas virtualization caps active layout nodes to the viewport."
+sources:
+  - "https://drafts.csswg.org/css-display-3/"
+  - "https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/Critical_rendering_path"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "render tree"
+  - "layout"
+  - "reflow"
+  - "LayoutObject"
+  - "box model"
+---
+
+## TL;DR
+
+The Render Tree combines visible DOM nodes with their resolved CSSOM styles, omitting `display: none` subtrees while keeping `visibility: hidden` boxes. The Layout phase then computes the exact width, height, and `(x, y)` coordinates of every remaining box.
+
+## Interactive Lab
+
+Trace how `display: none` and `visibility: hidden` diverge during Render Tree pruning in `StepMachineLab`.
+
+## Under the Hood
+
+Blink constructs the Render Tree by pairing visible DOM nodes with resolved `ComputedStyle` structs, omitting `display: none` subtrees while keeping `visibility: hidden` boxes in flow. Like a carpenter's cut-list, anything marked `display: none` is crossed off before Layout measures widths, heights, and coordinates.
+
+1. **Style Recalc**: The engine resolves cascade rules for every DOM element into a `ComputedStyle` struct.
+2. **Box Generation**: Visible elements generate one or more layout boxes (including anonymous boxes for bare text runs and `::before` pseudo-elements).
+3. **Geometry Solving**: Layout traverses the box tree to compute intrinsic sizes, line breaks, and viewport-relative coordinates.
+
+```css
+/* Omitted from Render Tree: 0 layout cost, no box generated */
+.collapsed-panel { display: none; }
+
+/* Kept in Render Tree: reserves space and participates in Layout */
+.invisible-placeholder { visibility: hidden; }
+```
+
+Once [DOM & CSSOM Construction](/concepts/dom-cssom-construction) finishes, reading geometry properties like `offsetWidth` prematurely triggers [Layout Thrashing](/concepts/layout-thrashing).
+
+## Problem Genealogy
+
+- **1999–2015**: Legacy layout engines mixed inline, block, and table state in mutable trees, causing O(n^2) reflow bugs.
+- **2019+ (Blink LayoutNG / Gecko)**: Engines moved to immutable fragment trees, isolating layout inputs from outputs for predictable caching.
+
+## Production Pitfalls
+
+- **Toggling `display: none` on complex widgets**: Destroying and rebuilding layout boxes discards cached line-breaking and intrinsic-size state.
+- **Unbounded DOM depth**: Deeply nested flex or grid containers multiply layout passes when parent and child constraints depend on each other; cap long feeds with [Virtualized Lists & Windowing](/concepts/virtualized-lists-windowing).
+- **When not to use `display: none`**: Avoid `display: none` for elements toggled every frame or holding measured scroll positions; use `visibility: hidden` or `content-visibility: hidden` instead.

@@ -1,0 +1,68 @@
+---
+id: shared-array-buffer-atomics
+title: SharedArrayBuffer and Atomics Synchronization
+domain: web-apis
+maturity_status: baseline-widely
+summary_tldr: "Shared linear memory pages mapped across multiple JS threads, synchronized with hardware atomic operations and futex wait/notify queues."
+relations:
+  - target_id: dedicated-web-workers
+    type: requires
+    note: "SharedArrayBuffer exists to share raw binary memory concurrently with Web Workers."
+  - target_id: cross-origin-isolation-coop-coep
+    type: under_the_hood
+    note: "Browsers gate SharedArrayBuffer behind crossOriginIsolated to mitigate Spectre timing attacks."
+  - target_id: typed-arrays-zero-copy
+    type: contrasts_with
+    note: "SharedArrayBuffer shares memory concurrently across threads, whereas ArrayBuffer transferables move exclusive ownership."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer"
+  - "https://tc39.es/ecma262/#sec-atomics-object"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "SharedArrayBuffer"
+  - "Atomics"
+  - "futex"
+  - "shared memory"
+web_feature_id: shared-memory
+---
+
+## TL;DR
+
+`SharedArrayBuffer` maps the same underlying physical memory pages into multiple JavaScript threads simultaneously. Instead of copying messages, threads coordinate reads and writes through `Atomics` CPU-level indivisible operations and `wait`/`notify` futex queues.
+
+## Interactive Lab
+
+Step through an atomic increment and `Atomics.notify` wakeup across shared memory.
+
+## Under the Hood
+
+`SharedArrayBuffer` turns separate [Dedicated Web Workers](/concepts/dedicated-web-workers) from isolated offices into surgeons sharing one operating table: without `Atomics` locks, two hands reaching for the same byte corrupt the state.
+
+1. **Isolation Gate**: Engines expose `SharedArrayBuffer` only when [Cross-Origin Isolation](/concepts/cross-origin-isolation-coop-coep) is active (`self.crossOriginIsolated === true`).
+2. **Memory Ordering**: Plain `TypedArray` writes may reorder across CPU cores; `Atomics.store`, `Atomics.load`, and `Atomics.compareExchange` emit hardware memory barriers.
+3. **Thread Parking**: `Atomics.wait(int32View, idx, expected)` suspends a worker thread at zero CPU cost until another agent calls `Atomics.notify`.
+
+```js
+// Worker thread: block until slot 0 changes from 0
+const view = new Int32Array(sharedBuffer);
+Atomics.wait(view, 0, 0);
+const payloadLength = Atomics.load(view, 1);
+
+// Main thread: write payload length, flip flag, wake worker
+Atomics.store(view, 1, 1024);
+Atomics.store(view, 0, 1);
+Atomics.notify(view, 0, 1);
+```
+
+## Problem Genealogy
+
+- **2017 (ES2017)**: Shipped `SharedArrayBuffer` and `Atomics` to enable multi-threaded C/C++/Rust Wasm ports (Pthreads).
+- **2018 (Spectre Fallout)**: Disabled globally after high-resolution timer side-channel disclosures turned shared memory into a timing oracle.
+- **2020+ (COOP/COEP Gating)**: Re-enabled behind process-level cross-origin isolation headers.
+
+## Production Pitfalls
+
+- **Calling `Atomics.wait()` on the main thread**: Throws a `TypeError` synchronously; use `Atomics.waitAsync()` if the UI thread must observe a shared slot.
+- **Data races on non-atomic views**: Mixing plain `view[0] = 1` with `Atomics.load(view, 0)` causes torn reads on 64-bit values or stale CPU cache lines.
+- **When not to use `SharedArrayBuffer`**: Standard request/response worker tasks work cleanly with [TypedArrays & Zero-Copy Transfers](/concepts/typed-arrays-zero-copy) via `postMessage` and avoid COOP/COEP deployment constraints on third-party embeds.

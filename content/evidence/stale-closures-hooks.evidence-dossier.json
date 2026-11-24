@@ -1,0 +1,43 @@
+{
+  "concept_id": "stale-closures-hooks",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://react.dev/reference/react/useEffect#specifying-reactive-dependencies",
+      "spec_section": "React Docs: Reactive Dependencies & Closures",
+      "quote": "Every render has its own props, state, and event handlers. Functions created during a render capture the values from that specific render snapshot."
+    },
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures",
+      "spec_section": "MDN JavaScript Closures",
+      "quote": "A closure gives a function access to its outer lexical environment from the time the function was created."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "1+ (ECMAScript Lexical Scoping)",
+    "firefox": "1+ (ECMAScript Lexical Scoping)",
+    "safari": "1+ (ECMAScript Lexical Scoping)"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Lexical Environment Capture", "Effect/Timer Registration", "Subsequent Re-render (New Frame)", "Stale Snapshot Read"],
+    "mechanism_summary": "Captures immutable primitive values inside a render's lexical closure; async callbacks or omitted dependency arrays read outdated snapshots unless bridged via refs or functional updaters."
+  },
+  "production_failures": [
+    {
+      "symptom": "setInterval counter increments from 0 to 1 and stays stuck at 1 forever",
+      "root_cause": "useEffect(..., []) captured count = 0 in its closure on mount, so setCount(count + 1) repeatedly wrote 0 + 1.",
+      "mitigation": "Use functional state updates setCount(c => c + 1) or include all reactive dependencies in the dependency array with cleanup."
+    },
+    {
+      "symptom": "WebSocket message handler sends updates with an outdated userId or filter state",
+      "root_cause": "The WebSocket onmessage callback was registered once on mount and closed over initial filter values.",
+      "mitigation": "Store latest mutable values in a ref (useRef) or dispatch actions to a reducer/store rather than reading closed-over primitives."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures",
+    "https://react.dev/reference/react/useEffect",
+    "https://react.dev/learn/separating-events-from-effects"
+  ]
+}

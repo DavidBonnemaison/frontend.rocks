@@ -1,0 +1,66 @@
+---
+id: flexbox-intrinsic-sizing
+title: "Flexbox & Intrinsic Sizing"
+domain: css-layout
+maturity_status: baseline-widely
+summary_tldr: "Flex items default to min-width: auto, preventing shrink below their min-content size unless min-width: 0 or overflow is set."
+relations:
+  - target_id: block-formatting-context
+    type: requires
+    note: "Flexbox replaces block flow with main/cross axis sizing inside a flex formatting context."
+  - target_id: css-grid-track-sizing
+    type: contrasts_with
+    note: "Flexbox negotiates 1D space from item intrinsic sizes, whereas CSS Grid sizes 2D tracks first."
+sources:
+  - "https://drafts.csswg.org/css-flexbox-1/#min-size-auto"
+  - "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_flexible_box_layout"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "flexbox"
+  - "min-width: 0"
+  - "flex-shrink"
+  - "flex-basis"
+  - "intrinsic sizing"
+web_feature_id: flexbox
+---
+
+## TL;DR
+
+Flex items do not shrink below their `min-content` width by default because `min-width: auto` acts as a hard floor. Setting `min-width: 0` (or `overflow: hidden`) removes that floor so `flex-shrink` and `text-overflow: ellipsis` actually work.
+
+## Interactive Lab
+
+Toggle `min-width: 0` against wide unbreakable content in `ConstraintSimulatorLab`.
+
+## Under the Hood
+
+Flexbox runs a two-pass negotiation: first it measures every child's intrinsic content size, then it distributes surplus or deficit space along the main axis.
+
+1. **Hypothetical Base Size**: The engine resolves `flex-basis` (falling back to `width`/`height`, then `max-content`).
+2. **The `min-width: auto` Clamp**: Unless the item is a scroll container, its minimum main size defaults to its `min-content` width, blocking `flex-shrink: 1` from crushing text or images.
+3. **Space Distribution**: Free space is allocated proportionally by `flex-grow` or subtracted by `flex-shrink * flex-basis`.
+
+```css
+/* Without min-width: 0, long tokens push the flex row off-screen */
+.sidebar-label {
+  flex: 1 1 0%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+```
+
+Compare this single-axis negotiation with [CSS Grid Track Sizing](/concepts/css-grid-track-sizing), where tracks also clamp at `minmax(auto, 1fr)` unless written as `minmax(0, 1fr)`, and [Block Formatting Context](/concepts/block-formatting-context) flow.
+
+## Problem Genealogy
+
+- **2012–2014**: Early Flexbox drafts used `min-width: 0` by default, causing text to overlap or vanish inside narrow columns; CSSWG changed the default to `min-width: auto`.
+- **2015+**: `min-width: 0` became the universal escape hatch for truncating text and embedding scrollable panes inside flex layouts.
+
+## Production Pitfalls
+
+- **Truncated text refuses to ellipsis**: `text-overflow: ellipsis` inside a flex child fails silently until `min-width: 0` is set on every intermediate flex item up the chain.
+- **Misunderstanding `flex: 1` vs `flex: auto`**: `flex: 1` sets `flex-basis: 0%` (equal columns); `flex: auto` sets `flex-basis: auto` (wider content gets a wider column).
+- **When not to use Flexbox**: Avoid Flexbox for strict two-dimensional card alignments where row tracks must line up across columns; use CSS Grid instead.

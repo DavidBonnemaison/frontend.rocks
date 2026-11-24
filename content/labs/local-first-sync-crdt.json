@@ -1,0 +1,26 @@
+{
+  "type": "pattern-comparator",
+  "id": "local-first-sync-crdt",
+  "title": "Sync Architecture: Server-First LWW vs Local-First CRDT",
+  "description": "Compare naive timestamp Last-Write-Wins overwrites against commutative CRDT state convergence.",
+  "before": {
+    "label": "Server-First + Wall-Clock LWW",
+    "code": "// Offline client B overwrites client A's edits on reconnect\nawait fetch('/doc/1', {\n  method: 'PUT',\n  body: JSON.stringify({ content: fullText, updatedAt: Date.now() })\n});",
+    "metrics": {
+      "lines": 5,
+      "reflows": "Silent offline data loss",
+      "dependencies": "Clock skew breaks ordering"
+    },
+    "previewNote": "Whichever laptop reconnects last wipes out the other user's offline paragraphs."
+  },
+  "after": {
+    "label": "Local-First CRDT (IndexedDB + Delta Merge)",
+    "code": "// Every edit writes locally at 0ms with a unique (clientId, lamportClock)\nydoc.transact(() => ytext.insert(cursor, 'hello'));\n// Reconnect exchanges stateVector diffs; both peers converge identically",
+    "metrics": {
+      "lines": 3,
+      "reflows": "0ms local read/write latency",
+      "dependencies": "Commutative + idempotent merge"
+    },
+    "previewNote": "Concurrent offline edits merge deterministically in any arrival order."
+  }
+}

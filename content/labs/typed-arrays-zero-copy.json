@@ -1,0 +1,25 @@
+{
+  "type": "pattern-comparator",
+  "id": "typed-arrays-zero-copy",
+  "title": "Boxed JS Array Copy vs Zero-Copy Transferable ArrayBuffer",
+  "before": {
+    "label": "Boxed JS Array + Structured Copy",
+    "code": "const pixels = new Array(1_000_000).fill(0);\nworker.postMessage(pixels);\n// Serializes 1M boxed numbers on main thread (~45ms)",
+    "metrics": {
+      "lines": 3,
+      "reflows": "O(N) copy + GC pressure",
+      "dependencies": "Boxed heap elements"
+    },
+    "previewNote": "Duplicates megabytes of memory and blocks the sender thread."
+  },
+  "after": {
+    "label": "Uint8ClampedArray + Zero-Copy Transfer",
+    "code": "const pixels = new Uint8ClampedArray(1_000_000);\nworker.postMessage(pixels.buffer, [pixels.buffer]);\n// Pointer handoff in O(1); sender byteLength becomes 0",
+    "metrics": {
+      "lines": 3,
+      "reflows": "O(1) pointer move",
+      "dependencies": "Contiguous C++ buffer"
+    },
+    "previewNote": "Transfers ownership to the worker in microseconds with zero copy."
+  }
+}

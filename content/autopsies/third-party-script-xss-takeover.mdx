@@ -1,0 +1,98 @@
+---
+id: third-party-script-xss-takeover
+case_number: 11
+title: "Autopsy #11: The Chat Bubble That Left With the Session Tokens"
+symptom: "Compromised third-party widget injects an inline script via an innerHTML sink and exfiltrates session tokens."
+failure_mode: silent-data-corruption
+format: narrative
+case_type: composite
+cast:
+  - thomas
+  - marc
+  - julie
+traversed_concepts:
+  - concept_id: dom-xss-trusted-types
+    step_order: 1
+    role_in_chain: "Enforces TrustedHTML objects on innerHTML sinks so raw attacker strings throw a TypeError."
+  - concept_id: csp-nonces-strict-dynamic
+    step_order: 2
+    role_in_chain: "Blocks injected inline scripts and restricts execution to nonce-authenticated bundles."
+  - concept_id: prototype-chain-lookup
+    step_order: 3
+    role_in_chain: "Prevents prototype pollution gadgets on Object.prototype from forging sanitization bypass flags."
+  - concept_id: cross-origin-isolation-coop-coep
+    step_order: 4
+    role_in_chain: "Isolates browsing context groups and restricts cross-origin resource loading via CORP/COEP."
+  - concept_id: runtime-boundary-validation
+    step_order: 5
+    role_in_chain: "Validates third-party postMessage and JSON payloads with strict schemas before state or DOM updates."
+case_file:
+  trigger: "Embedded a one-line third-party support chat `<script>` directly in the authenticated dashboard layout"
+  symptom: "WAF flagged `POST` beacons exfiltrating `localStorage` tokens from 3.8% of active sessions after a vendor CDN breach"
+  root_cause: "Vendor script ran in our origin, trusted `postMessage` without schema checks, and assigned HTML strings to `innerHTML`"
+  bad_fixes:
+    - label: "`html.replace(/<script/gi, '')` + `'unsafe-inline'` CSP"
+      outcome: "Blocked `<script>alert(1)</script>` in staging; `<img src=x onerror=...>` kept exfiltrating tokens in production"
+  fix: "Sandbox the widget in a cross-origin `<iframe>`, validate `postMessage`, switch CSP to nonces + `'strict-dynamic'`, and enforce Trusted Types"
+  how_to_spot: "Check DevTools Network for third-party `<script>` tags running in your first-party origin with access to `localStorage`"
+  deleted: "First-party `<script>` embed for support chat, regex `<script>` stripper, `'unsafe-inline'` in CSP"
+reading_time_min: 7
+sources:
+  - "https://w3c.github.io/trusted-types/dist/spec/"
+  - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src"
+  - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Opener-Policy"
+last_verified_at: "2026-11-17"
+proof_status: unverified
+---
+
+## One line before lunch
+
+Thomas asked us to drop a one-line third-party support chat snippet into the authenticated dashboard layout so enterprise customers could reach support without leaving the app. Julie pasted the `<script>` tag into the root shell, verified the little blue bubble showed up in the bottom-right corner with zero console errors, and shipped it before lunch.
+
+Six minutes after an upstream incident on the chat vendor's CDN, Marc got a WAF alert. Authenticated browsers from 3.8% of active sessions were firing `POST` requests to an unfamiliar external domain, carrying session tokens and CSRF nonces straight out of `localStorage`. We rotated signing keys, invalidated active sessions, and pulled the vendor snippet within eleven minutes, while security began auditing what the script had actually done inside the browser.
+
+There was no server breach. The vendor script was running inside our first-party origin, listening to `postMessage`, and writing incoming message HTML directly into `widgetRoot.innerHTML` without sanitizing anything. Every browser running our dashboard was executing attacker-controlled markup inside our authenticated session, with full read access to `localStorage`, DOM inputs, and authenticated `fetch()` cookies.
+
+## Regex versus HTML
+
+In a hurry, someone shipped an emergency regex filter before `innerHTML` (`html.replace(/<script/gi, '')`) while leaving `script-src 'self' 'unsafe-inline'` in our Content Security Policy so legacy inline snippets would keep working.
+
+In staging, `<script>alert(1)</script>` was stripped cleanly and the team breathed out for about ninety seconds.
+
+In production, token exfiltration did not slow down by a single millisecond. The attacker's payload was `<img src=x onerror="fetch(...)">`, which does not contain the string `<script` anywhere in it and which `'unsafe-inline'` happily executes the moment the DOM parses the `<img>` tag and fails to load `x`. Even if we had blocked `<img>`, HTML offers dozens of event-handler attributes (`<svg onload=...>`, `<details ontoggle=...>`) that execute JavaScript without ever writing `<script>`.
+
+## Isolating the widget from our origin
+
+<CausalChainStepper />
+
+When a third-party `<script>` runs in your origin, it shares your DOM, your cookies, and your `localStorage`. We moved the support chat out of the root shell into a cross-origin `<iframe sandbox="allow-scripts">` (omitting `allow-same-origin` so it gets an opaque origin) served from a separate domain. Because our dashboard also enables [cross-origin isolation](/concepts/cross-origin-isolation-coop-coep) via `Cross-Origin-Opener-Policy: same-origin` (for top-level `window.opener` isolation) and `Cross-Origin-Embedder-Policy: require-corp`, the vendor iframe response must send `Cross-Origin-Resource-Policy: cross-origin`, or be embedded with `credentialless`, so the browser loads it without leaking our origin's storage or DOM.
+
+For the tiny bridge that passes the user's support ticket ID into the iframe, we added [runtime boundary validation](/concepts/runtime-boundary-validation) on `window.addEventListener('message', ...)`, checking `event.origin` against an exact allowlist and parsing payloads with a strict Zod schema. Any message whose origin, shape, or ticket format fails validation is dropped before touching application state. We also guarded against [prototype chain pollution](/concepts/prototype-chain-lookup) (`Object.hasOwn`) so an untrusted payload can never forge an inherited bypass flag on `Object.prototype`.
+
+## Nonces and Trusted Types
+
+Next, we removed `'unsafe-inline'` from `script-src` and switched to [CSP nonces with `'strict-dynamic'`](/concepts/csp-nonces-strict-dynamic), so only scripts carrying a per-request cryptographic nonce from our server can execute. Any injected `<img onerror=...>` or inline `<script>` without the current request's nonce is blocked by the browser before a single instruction runs, and `'strict-dynamic'` lets our own authenticated entrypoint load its split chunks without maintaining a brittle domain allowlist.
+
+Then we enabled `require-trusted-types-for 'script'` so [DOM XSS Trusted Types](/concepts/dom-xss-trusted-types) block any raw string assignment to `innerHTML`, `outerHTML`, or `insertAdjacentHTML` at the browser engine level, throwing a `TypeError` before the HTML parser even touches the string. Even if a future developer accidentally introduces an unescaped sink, the browser refuses to parse it.
+
+<FailureSimulator />
+
+## Breaking our own Markdown preview
+
+First try: we flipped `require-trusted-types-for 'script'` straight into `Content-Security-Policy` enforce mode and deployed to production.
+
+Within two minutes, an internal Markdown preview component started throwing `TypeError: This document requires 'TrustedHTML' assignment`. It was assigning sanitized HTML strings directly to `element.innerHTML` without going through a `TrustedTypePolicy`, which broke release-note previews for every logged-in customer.
+
+```http
+Content-Security-Policy-Report-Only: require-trusted-types-for 'script'; report-uri /csp-reports
+```
+
+We switched the header to `Content-Security-Policy-Report-Only` for 24 hours, caught the two forgotten internal sinks from the violation reports, wrapped them in a `DOMPurify` Trusted Types policy, and then flipped enforcement back on cleanly. We also added a Playwright check that asserts zero CSP violation reports across all authenticated routes.
+
+## What stayed in the codebase
+
+<CaseFile />
+
+A `<script src="https://...">` tag is not a UI component; it is a blank-check lease on your origin.
+
+The little blue chat bubble now lives inside its own sandboxed iframe, where there is nothing left for it to steal. Marc still checks the CSP report endpoint every Monday morning, and it has stayed empty for three months across every authenticated route we run in production and staging. Third-party widgets are now treated like untrusted network peers by default.

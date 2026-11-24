@@ -1,0 +1,43 @@
+{
+  "concept_id": "performance-observer-rum",
+  "compiled_at": "2026-11-15",
+  "normative_extracts": [
+    {
+      "source_url": "https://w3c.github.io/performance-timeline/#dom-performanceobserver",
+      "spec_section": "W3C Performance Timeline: PerformanceObserver",
+      "quote": "The PerformanceObserver interface is used to observe performance measurement events and be notified of new performance entries as they are recorded."
+    },
+    {
+      "source_url": "https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver/observe",
+      "spec_section": "MDN PerformanceObserver.observe()",
+      "quote": "Setting buffered: true includes entries that were recorded before the observer was constructed."
+    }
+  ],
+  "browser_support": {
+    "baseline_status": "baseline-widely",
+    "chrome": "52+",
+    "firefox": "57+",
+    "safari": "11+"
+  },
+  "engine_internals": {
+    "pipeline_phases": ["Buffered Entry Recording", "Microtask/Idle Observer Callback", "Attribution Metadata Extraction", "sendBeacon Flush on pagehide"],
+    "mechanism_summary": "Subscribes asynchronously to browser performance timelines with buffered: true and flushes aggregated telemetry via navigator.sendBeacon on visibilitychange/pagehide."
+  },
+  "production_failures": [
+    {
+      "symptom": "RUM dashboard reports 0% of LCP entries on fast pages",
+      "root_cause": "PerformanceObserver({ type: 'largest-contentful-paint' }) was registered after initial paint without buffered: true.",
+      "mitigation": "Always pass { type: 'largest-contentful-paint', buffered: true } when observing load-time metrics."
+    },
+    {
+      "symptom": "Telemetry beacons abort on mobile tab switch or disable bfcache",
+      "root_cause": "Code flushed metrics in an unload listener using synchronous XHR or un-keepalive fetch().",
+      "mitigation": "Flush RUM payloads on visibilitychange (when hidden) or pagehide using navigator.sendBeacon() or fetch(..., { keepalive: true })."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver",
+    "https://w3c.github.io/performance-timeline/",
+    "https://web.dev/articles/debug-performance-in-the-field"
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "type": "step-machine",
+  "id": "roving-tabindex-focus-order",
+  "title": "Roving Tabindex State Machine in a Tablist",
+  "description": "Watch tabindex='0' and focus() migrate across tabs on ArrowRight while Tab exits the widget in a single stop.",
+  "steps": [
+    {
+      "label": "1. Tab Enters Widget at Active Item",
+      "description": "Pressing Tab lands on Tab 1 (the sole item with tabindex='0'). Tabs 2 and 3 have tabindex='-1' so Tab skips them.",
+      "codeHighlight": "<button role=\"tab\" tabindex=\"0\">Overview</button>",
+      "state": {
+        "activeIndex": 0,
+        "tab0Tabindex": 0,
+        "tab1Tabindex": -1,
+        "tab2Tabindex": -1
+      },
+      "visualNodes": [
+        { "id": "t0", "label": "Tab 1 (tabindex=0, FOCUSED)", "status": "active" },
+        { "id": "t1", "label": "Tab 2 (tabindex=-1)", "status": "idle" },
+        { "id": "t2", "label": "Tab 3 (tabindex=-1)", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. ArrowRight Shifts Roving Pointer",
+      "description": "Keydown ArrowRight sets Tab 1 to tabindex='-1', Tab 2 to tabindex='0', and calls tab2.focus().",
+      "codeHighlight": "items[prev].tabIndex = -1; items[next].tabIndex = 0; items[next].focus();",
+      "state": {
+        "activeIndex": 1,
+        "tab0Tabindex": -1,
+        "tab1Tabindex": 0,
+        "tab2Tabindex": -1
+      },
+      "visualNodes": [
+        { "id": "t0", "label": "Tab 1 (tabindex=-1)", "status": "done" },
+        { "id": "t1", "label": "Tab 2 (tabindex=0, FOCUSED)", "status": "active" },
+        { "id": "t2", "label": "Tab 3 (tabindex=-1)", "status": "idle" }
+      ]
+    },
+    {
+      "label": "3. Next Tab Exits Widget Cleanly",
+      "description": "Pressing Tab again leaves the entire tablist immediately and focuses the active tabpanel content.",
+      "codeHighlight": "// Tab exits composite widget in 1 keystroke",
+      "state": {
+        "activeIndex": 1,
+        "focusLocation": "TABPANEL_CONTENT",
+        "tabStopsForWidget": 1
+      },
+      "visualNodes": [
+        { "id": "t1", "label": "Tab 2 (tabindex=0)", "status": "done" },
+        { "id": "panel", "label": "Tabpanel Content (FOCUSED)", "status": "active" }
+      ]
+    }
+  ]
+}

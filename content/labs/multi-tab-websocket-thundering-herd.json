@@ -1,0 +1,72 @@
+{
+  "type": "step-machine",
+  "id": "multi-tab-websocket-thundering-herd",
+  "title": "Multi-Tab WebSocket Storm vs Leader-Elected Backpressure",
+  "description": "Trace how 8 open tabs amplify a 400 msg/s burst into main-thread stalls and reconnect storms, and how Web Locks + Worker Streams + Full Jitter isolate it.",
+  "steps": [
+    {
+      "label": "1. Naive 8-Tab Fan-Out",
+      "description": "Each tab opens its own WebSocket. At 10k active users with 8 tabs each, the gateway holds 80,000 concurrent sockets.",
+      "codeHighlight": "const ws = new WebSocket('wss://rt.example.com/feed'); // x8 per browser",
+      "state": {
+        "openTabs": 8,
+        "socketsPerUser": 8,
+        "gatewayConnections": 80000,
+        "mainThreadBlockedMs": 14
+      },
+      "visualNodes": [
+        { "id": "gateway", "label": "RT Gateway (80k)", "status": "active" },
+        { "id": "tabs", "label": "8 Tabs (8 Sockets)", "status": "active" },
+        { "id": "main", "label": "Main Thread", "status": "idle" }
+      ]
+    },
+    {
+      "label": "2. 400 msg/s Burst & Main-Thread Freeze",
+      "description": "All 8 tabs parse identical JSON payloads on the main thread, spiking INP past 1,800 ms and stalling TransformStream readers.",
+      "codeHighlight": "ws.onmessage = (e) => setState(JSON.parse(e.data)); // 3,200 parses/sec",
+      "state": {
+        "inboundMsgPerSec": 400,
+        "totalMainThreadParsesPerSec": 3200,
+        "inpMs": 1840,
+        "queuedFrames": 14200
+      },
+      "visualNodes": [
+        { "id": "gateway", "label": "RT Gateway (80k)", "status": "error" },
+        { "id": "tabs", "label": "8 Tabs (Stalled)", "status": "error" },
+        { "id": "main", "label": "Main Thread (1.8s INP)", "status": "error" }
+      ]
+    },
+    {
+      "label": "3. Gateway Drop & Reconnect Storm",
+      "description": "Fixed 1,000 ms retry timers fire in lockstep across 80,000 sockets, saturating TLS handshakes and keeping the gateway down.",
+      "codeHighlight": "setTimeout(() => connect(), 1000); // synchronized thundering herd",
+      "state": {
+        "reconnectWaveSockets": 80000,
+        "retryDelayMs": 1000,
+        "tlsHandshakeQueue": "saturated"
+      },
+      "visualNodes": [
+        { "id": "gateway", "label": "RT Gateway (503)", "status": "error" },
+        { "id": "tabs", "label": "80k Synchronized Retries", "status": "error" },
+        { "id": "main", "label": "Main Thread", "status": "idle" }
+      ]
+    },
+    {
+      "label": "4. Leader Lock + Worker Stream + Full Jitter",
+      "description": "Web Locks elect 1 leader tab; a Dedicated Worker parses frames behind a bounded TransformStream and fans out snapshots over BroadcastChannel.",
+      "codeHighlight": "navigator.locks.request('ws-leader', () => startWorkerSocket());",
+      "state": {
+        "socketsPerUser": 1,
+        "gatewayConnections": 10000,
+        "mainThreadParsesPerSec": 0,
+        "inpMs": 28,
+        "jitterWindowMs": "0..min(30000, 500*2^n)"
+      },
+      "visualNodes": [
+        { "id": "gateway", "label": "RT Gateway (10k)", "status": "done" },
+        { "id": "tabs", "label": "1 Leader + Worker + BC", "status": "done" },
+        { "id": "main", "label": "Main Thread (28ms INP)", "status": "done" }
+      ]
+    }
+  ]
+}

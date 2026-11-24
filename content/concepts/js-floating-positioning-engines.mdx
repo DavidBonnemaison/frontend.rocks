@@ -1,0 +1,66 @@
+---
+id: js-floating-positioning-engines
+title: "JS Floating Positioning Engines (Floating UI)"
+domain: css-layout
+maturity_status: baseline-widely
+summary_tldr: "Floating positioning engines compute coordinates via getBoundingClientRect() and middleware pipelines (flip, shift, offset) synced to scroll and resize."
+relations:
+  - target_id: layout-thrashing
+    type: requires
+    note: "Positioning loops must batch DOM rect reads before style writes to avoid layout thrashing."
+  - target_id: js-resize-observer-pattern
+    type: requires
+    note: "Floating engines observe reference and floating element resizes to keep coordinates accurate."
+  - target_id: css-anchor-positioning
+    type: contrasts_with
+    note: "CSS Anchor Positioning moves collision flipping from JS measurement loops into native Layout."
+sources:
+  - "https://floating-ui.com/docs/computePosition"
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "Floating UI"
+  - "Popper"
+  - "computePosition"
+  - "flip"
+  - "shift"
+  - "tooltip positioning"
+---
+
+## TL;DR
+
+JS floating positioning engines (like Floating UI) bridge the gap where [CSS Anchor Positioning](/concepts/css-anchor-positioning) lacks full browser support. They read `getBoundingClientRect()`, run deterministic `offset`, `flip`, and `shift` middleware, and write GPU-friendly `transform` coordinates.
+
+## Interactive Lab
+
+Compare a naive `scroll` handler against Floating UI's `autoUpdate` + middleware pipeline in `PatternComparatorLab`.
+
+## Under the Hood
+
+A positioning engine acts like a surveyor taking one snapshot of two boxes, computing collision offsets in memory, and placing the overlay without triggering [Layout Thrashing](/concepts/layout-thrashing).
+
+1. **Ancestor Discovery**: `autoUpdate` walks up the DOM to attach passive scroll listeners to every scrollable ancestor plus a [ResizeObserver](/concepts/js-resize-observer-pattern).
+2. **Middleware Pipeline**: `offset(8)` adds gap, `flip()` checks overflow against the clipping boundary, and `shift()` nudges the overlay back inside the viewport.
+3. **Transform Output**: Writing `transform: translate3d(x, y, 0)` rounded to device pixels avoids re-running Layout and keeps text crisp.
+
+```js
+const { x, y } = await computePosition(trigger, popover, {
+  placement: 'bottom-start',
+  middleware: [offset(6), flip(), shift({ padding: 12 })],
+});
+Object.assign(popover.style, {
+  transform: `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`,
+});
+```
+
+## Problem Genealogy
+
+- **2010–2016**: jQuery UI Position and Tether mutated `top`/`left` directly, causing severe layout thrashing and subpixel blur.
+- **2017–2024**: Popper.js evolved into Floating UI, introducing pure-function middleware and `ResizeObserver`-backed `autoUpdate`.
+
+## Production Pitfalls
+
+- **Forgetting `cleanup()`**: Leaving `autoUpdate()` active after a popover closes leaks scroll and `ResizeObserver` listeners.
+- **Subpixel blur on odd dimensions**: Unrounded `x`/`y` values in `translate3d()` blur 1px borders and text; round to `Math.round(x)` or DPR multiples.
+- **When not to use a JS positioning engine**: For static centered modals, use [Native `<dialog>`](/concepts/native-dialog-element); in Chromium/Safari-only apps, prefer native [CSS Anchor Positioning](/concepts/css-anchor-positioning).

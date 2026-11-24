@@ -1,0 +1,63 @@
+---
+id: async-clipboard-activation
+title: Async Clipboard API and User Activation
+domain: web-apis
+maturity_status: baseline-widely
+summary_tldr: "Promise-based OS clipboard access gated by HTTPS, document focus, and transient user activation tokens, supporting deferred Blob resolution via ClipboardItem."
+relations:
+  - target_id: dom-event-propagation
+    type: requires
+    note: "Transient user activation is minted by trusted input events dispatching through the DOM."
+  - target_id: csp-nonces-strict-dynamic
+    type: contrasts_with
+    note: "Clipboard sanitization strips executable markup from pasted HTML rather than blocking scripts via CSP."
+sources:
+  - "https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API"
+  - "https://w3c.github.io/clipboard-apis/"
+last_verified_at: "2026-11-15"
+proof_status: unverified
+keywords:
+  - "Clipboard API"
+  - "ClipboardItem"
+  - "user activation"
+  - "NotAllowedError"
+web_feature_id: async-clipboard
+---
+
+## TL;DR
+
+`navigator.clipboard` replaces synchronous `document.execCommand('copy')` with an async, permission-gated OS pasteboard bridge. Writes and reads require HTTPS, document focus, and a live transient user activation token minted by a trusted user event.
+
+## Interactive Lab
+
+Compare an expired `await fetch()` copy handler against a Promise-backed `ClipboardItem`.
+
+## Under the Hood
+
+Transient user activation behaves like a stamped museum entry ticket that dissolves after a few seconds: if you call `navigator.clipboard.write()` while holding the ticket, the browser keeps the turnstile open while your `Promise<Blob>` resolves.
+
+1. **Activation Check**: Trusted pointer or keyboard events propagating through [DOM Event Propagation](/concepts/dom-event-propagation) set the frame's `transientActivation` timestamp.
+2. **Deferred `ClipboardItem`**: Passing a `Promise<Blob>` inside `new ClipboardItem({ 'text/plain': promise })` lets `write()` claim the gesture synchronously before network I/O completes.
+3. **Payload Sanitization**: Engines re-encode `image/png` and strip `<script>` tags from `text/html` on paste to neutralize OS-level parser exploits.
+
+```js
+button.addEventListener('click', () => {
+  const textBlob = fetch('/api/share-link')
+    .then((res) => res.text())
+    .then((url) => new Blob([url], { type: 'text/plain' }));
+
+  navigator.clipboard.write([new ClipboardItem({ 'text/plain': textBlob })]);
+});
+```
+
+## Problem Genealogy
+
+- **2000–2015 (`document.execCommand('copy')`)**: Required creating an off-screen `<textarea>`, mutating selection, and triggering [Layout Thrashing](/concepts/layout-thrashing).
+- **2018 (`navigator.clipboard.writeText`)**: Shipped async plain-text writes without DOM selection hacks.
+- **2020+ (Promise-backed `ClipboardItem`)**: Solved the async-fetch gesture-expiry trap across Safari, Chromium, and Firefox.
+
+## Production Pitfalls
+
+- **Awaiting before calling `write()`**: Even a 300ms `fetch()` before `navigator.clipboard.writeText()` triggers `NotAllowedError` in Safari; wrap the `fetch()` inside `ClipboardItem`.
+- **Unfocused document or iframe**: Calling clipboard methods inside an iframe without `allow="clipboard-write"` or while DevTools holds focus throws `NotAllowedError`.
+- **When not to use `navigator.clipboard.readText()`**: Never poll clipboard contents on focus; it triggers intrusive browser permission prompts and erodes user trust.
