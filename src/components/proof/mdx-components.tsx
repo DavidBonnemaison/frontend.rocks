@@ -1,8 +1,11 @@
 import React from 'react';
 import type { Claim } from '@/lib/proof/claim-schema';
 import type { SupportEvent } from '@/lib/proof/support/dates';
+import { Advice } from './Advice';
+import { Claim as ClaimComponent } from './Claim';
 import { SourceQuote } from './SourceQuote';
 import { SpecQuote } from './SpecQuote';
+import { Story } from './Story';
 import { Support } from './Support';
 import { SupportDate } from './SupportDate';
 
@@ -28,6 +31,13 @@ export function resolveClaimRef(ctx: ProofMdxContext, ref: string): Claim | unde
 
 export function createProofMdxComponents(ctx: ProofMdxContext): MdxComponentMap {
   return {
+    C: (props: { id: string; children: React.ReactNode }) => (
+      <ClaimComponent ctx={ctx} claimRef={props.id}>
+        {props.children}
+      </ClaimComponent>
+    ),
+    Advice: (props: { children: React.ReactNode }) => <Advice>{props.children}</Advice>,
+    Story: (props: { children: React.ReactNode }) => <Story>{props.children}</Story>,
     SpecQuote: (props: { claim: string }) => <SpecQuote ctx={ctx} claimSlug={props.claim} />,
     SourceQuote: (props: { claim: string }) => <SourceQuote ctx={ctx} claimRef={props.claim} />,
     Support: (props: {

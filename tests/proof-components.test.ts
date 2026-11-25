@@ -364,4 +364,108 @@ describe('Support and SupportDate components', () => {
   });
 });
 
+describe('Claim (<C>), Advice, and Story components', () => {
+  async function renderMdx(source: string, ctx: ProofMdxContext): Promise<string> {
+    const { default: MdxContent } = await evaluate(source, {
+      Fragment: jsxRuntime.Fragment,
+      jsx: jsxRuntime.jsx,
+      jsxs: jsxRuntime.jsxs,
+      development: false,
+    });
+    const components = createProofMdxComponents(ctx);
+    return renderToStaticMarkup(React.createElement(MdxContent, { components }));
+  }
+
+  const localClaim: Claim = {
+    id: 'microtasks/drains',
+    type: 'observable',
+    statement: 'Every queued microtask runs before the event loop picks the next task.',
+    proof: {
+      kind: 'experiment',
+      experimentId: 'microtask-order',
+      expectKeys: ['before-timer'],
+    },
+  };
+
+  const remoteClaim: Claim = {
+    id: 'other-page/slug',
+    type: 'normative',
+    statement: 'An @container rule applies when the container is wide enough regardless of viewport.',
+    proof: {
+      kind: 'spec-quote',
+      url: 'https://drafts.csswg.org/css-conditional-5/',
+      anchor: 'container-queries',
+      quote: 'Size container queries allow styling elements based on the size of a query container.',
+    },
+  };
+
+  const baseCtx: ProofMdxContext = {
+    pageId: 'microtasks',
+    claimsBySlug: buildClaimsBySlug([localClaim]),
+    claimsById: new Map([
+      [localClaim.id, localClaim],
+      [remoteClaim.id, remoteClaim],
+    ]),
+  };
+
+  it('renders a valid local <C id> with span.claim, data-claim-id, accessible marker, and #claim-<slug> href', async () => {
+    const html = await renderMdx(
+      '<C id="drains">Every queued microtask runs before the next task</C>.',
+      baseCtx
+    );
+    expect(html).toContain('<span class="claim" data-claim-id="microtasks/drains" data-claim-type="observable">');
+    expect(html).toContain('href="#claim-drains"');
+    expect(html).toContain('aria-label="Proof for this statement (observable)"');
+  });
+
+  it('renders a cross-page <C id="other-page/slug"> with permalink /claims/other-page/slug/', async () => {
+    const html = await renderMdx(
+      'The card uses the slot width. <C id="other-page/slug">An @container rule applies.</C>',
+      baseCtx
+    );
+    expect(html).toContain('data-claim-id="other-page/slug"');
+    expect(html).toContain('href="/claims/other-page/slug/"');
+    expect(html).toContain('aria-label="Proof for this statement (normative)"');
+  });
+
+  it('throws an error naming both page and reference for an unknown <C id>', async () => {
+    await expect(renderMdx('<C id="inconnu">Unknown fact.</C>', baseCtx)).rejects.toThrow(
+      /inconnu.*microtasks|microtasks.*inconnu/
+    );
+  });
+
+  it('throws "wraps a block" when <C> wraps a paragraph', async () => {
+    await expect(
+      renderMdx('<C id="drains">\n\nA whole paragraph inside C.\n\n</C>', baseCtx)
+    ).rejects.toThrow(/wraps a block/);
+  });
+
+  it('renders <Advice> inline as span.advice--inline and flow as aside.advice', async () => {
+    const inlineHtml = await renderMdx(
+      'Note: <Advice>Put container-type on the slot.</Advice>',
+      baseCtx
+    );
+    expect(inlineHtml).toContain('<span class="advice advice--inline">');
+
+    const flowHtml = await renderMdx(
+      '<Advice>\n\nPut container-type on the slot.\n\n</Advice>',
+      baseCtx
+    );
+    expect(flowHtml).toContain('<aside class="advice" role="note">');
+    expect(flowHtml).toContain('<span class="advice__label">Advice</span>');
+  });
+
+  it('renders <Story> inline as span.story and flow as div.story', async () => {
+    const inlineHtml = await renderMdx('Later, <Story>Nadia opened a ticket.</Story>', baseCtx);
+    expect(inlineHtml).toContain('<span class="story">');
+
+    const flowHtml = await renderMdx(
+      '<Story>\n\nForty minutes later, Nadia dropped a ticket.\n\n</Story>',
+      baseCtx
+    );
+    expect(flowHtml).toContain('<div class="story">');
+  });
+});
+
+
 
