@@ -55,3 +55,4 @@ yarn-error.log*
 /.proof-build
 /public/experiments/
 /dist-lab
+/dist-lab-dev

@@ -15,12 +15,15 @@ export {
 } from './compose';
 export { BASE_CSS, buildExperimentDocument, SHIM_ORIGINS, type DocumentOptions } from './document';
 export { evaluateCase, type CaseEvaluation, type Executor } from './evaluate';
+export { mountLabFrame } from './lab-frame';
+export { LAB_ORIGIN, LAB_ORIGIN_DEV, LAB_ORIGIN_PRODUCTION } from './lab-origin';
 export {
   mountExperimentFrame,
   type MountedFrame,
   type MountRequest,
   type ObserveOptions,
 } from './mount';
+export { mountForBundle } from './mount-any';
 export {
   CHANNEL,
   LOAD_TIMEOUT_MS,

@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { ExperimentBundle } from '@/lib/proof/experiment-schema';
 import {
-  mountExperimentFrame,
+  mountForBundle,
   notRunnableReason,
   type MountedFrame,
   type RunResult,
@@ -47,11 +47,7 @@ export function ExperimentFrame({
 
   const reason = useMemo(() => notRunnableReason(bundle), [bundle]);
   const staticBlockedReason: string | null =
-    bundle.host === 'origin'
-      ? 'host-origin'
-      : reason === 'network-server' || reason === 'engine-console'
-        ? reason
-        : null;
+    reason === 'network-server' || reason === 'engine-console' ? reason : null;
   const caveatReason: string | null =
     staticBlockedReason === null && reason !== null ? reason : null;
 
@@ -169,7 +165,7 @@ export function ExperimentFrame({
       setFrameState({ status: 'running', result: null, reason: caveatReason });
 
       const parsedParams = JSON.parse(paramsKey) as Record<string, number | boolean | string>;
-      mountExperimentFrame(host, {
+      mountForBundle(host, {
         bundle,
         variant,
         params: parsedParams,

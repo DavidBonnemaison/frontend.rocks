@@ -20,6 +20,8 @@ export default defineConfig([
     'content/.proof-cache/**',
     'content/.proof-results/**',
     '.proof-build/**',
+    'dist-lab/**',
+    'dist-lab-dev/**',
     'tests/fixtures/sources/**',
   ]),
   {
