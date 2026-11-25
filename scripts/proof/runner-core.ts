@@ -185,16 +185,22 @@ class ContextPool {
     try {
       const entry = await this.getHarnessContext(emulationKey);
       entry.engineConsole.length = 0;
+      const req = {
+        bundle: this.input.bundle,
+        variant,
+        params,
+        mutated,
+        timeoutMs,
+      };
       const result = await withTimeout(
         entry.page.evaluate(
-          (req) => window.__frHarness.run(req),
-          {
-            bundle: this.input.bundle,
-            variant,
-            params,
-            mutated,
-            timeoutMs,
-          }
+          (r: unknown) =>
+            (
+              window as unknown as {
+                __frHarness: { run(payload: unknown): Promise<RunResult> };
+              }
+            ).__frHarness.run(r),
+          req as unknown
         ),
         timeoutMs + 5000,
         `harness ${this.input.bundle.id}/${variant}`

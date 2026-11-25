@@ -19,7 +19,7 @@ Each claim has a type, and each type has its own check. The receipts are on [fro
 
 - `content/`: concepts, autopsies, claim files, and Experiments (`content/experiments/<id>/experiment.ts`), in MDX, JSON, and TypeScript.
 - `src/`: the Next.js site, the content schemas and the proof library.
-- `scripts/`: build, validation and proof scripts (`npm run proof:build` compiles Experiment bundles).
+- `scripts/`: build, validation and proof scripts (`npm run proof:build` compiles Experiment bundles and the proof harness; `npm run proof:run`, `proof:aggregate`, `proof:gate`, `proof:selftest`, and `proof:all` run the 3-engine Playwright proof suite and gate).
 - `tests/`: unit tests (Vitest) and end-to-end tests (Playwright).
 - `netlify/`: edge function and functions used in production (`mcp` and `deploy-succeeded`, which sends the IndexNow notification after each deploy).
 - `packages/`: the MCP server and the public audit skill.

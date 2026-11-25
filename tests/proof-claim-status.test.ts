@@ -310,8 +310,23 @@ describe('computeClaimResults', () => {
         quote: 'A normative quote long enough to satisfy the schema.',
       },
     };
-    const makeArtifact = (status: 'proven' | 'failed' | 'stale', includeClaim = true): Map<ArtifactKind, ProofArtifact> =>
-      new Map([
+    const makeArtifact = (
+      status: 'proven' | 'failed' | 'stale',
+      includeClaim = true
+    ): Map<ArtifactKind, ProofArtifact> => {
+      const claims: ProofArtifact['claims'] = includeClaim
+        ? {
+            'p/spec-1': {
+              claimId: 'p/spec-1',
+              status,
+              reason: status === 'proven' ? null : 'quote-not-found',
+              message: status === 'proven' ? null : 'missing',
+              details: {},
+              checkedAt: NOW,
+            },
+          }
+        : {};
+      return new Map<ArtifactKind, ProofArtifact>([
         [
           'spec-quotes',
           {
@@ -320,22 +335,12 @@ describe('computeClaimResults', () => {
             generatedAt: NOW,
             mode: 'online',
             tooling: {},
-            claims: includeClaim
-              ? {
-                  'p/spec-1': {
-                    claimId: 'p/spec-1',
-                    status,
-                    reason: status === 'proven' ? null : 'quote-not-found',
-                    message: status === 'proven' ? null : 'missing',
-                    details: {},
-                    checkedAt: NOW,
-                  },
-                }
-              : {},
+            claims,
             pages: {},
           },
         ],
       ]);
+    };
 
     expect(
       computeClaimResults(baseInput({ claims: [claim], verifierReports: makeArtifact('proven') }))[
