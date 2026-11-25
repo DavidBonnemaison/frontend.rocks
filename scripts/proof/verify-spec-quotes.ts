@@ -9,6 +9,7 @@ import type { ClaimCheckResult, PageCheckResult, ProofArtifact } from '../../src
 import { splitClaimId, type PageProofStatus } from '../../src/lib/proof/claim-schema';
 import { getAllClaims } from '../../src/lib/proof/claims-loader';
 import { getPageProofStatusMap } from '../../src/lib/proof/page-registry';
+import { buildSpecDriftReport } from '../../src/lib/proof/spec/drift';
 import { pruneSpecRecords, type SpecQuoteClaim } from '../../src/lib/proof/spec/record';
 import {
   computeExitCode,
@@ -174,6 +175,10 @@ async function main(): Promise<void> {
   const unavailablePath = sidecarPath(outPath, 'unavailable');
   fs.mkdirSync(path.dirname(unavailablePath), { recursive: true });
   fs.writeFileSync(unavailablePath, JSON.stringify(unavailable, null, 2) + '\n', 'utf-8');
+
+  const drift = buildSpecDriftReport(outcomes);
+  const driftPath = sidecarPath(outPath, 'drift');
+  fs.writeFileSync(driftPath, JSON.stringify(drift, null, 2) + '\n', 'utf-8');
 
   const results = Object.values(artifact.claims);
   const provenCount = results.filter((r) => r.status === 'proven').length;
