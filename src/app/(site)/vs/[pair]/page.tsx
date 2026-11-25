@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { ArrowUpRight, FlaskConical, Scale } from 'lucide-react';
-import { getAllAutopsies, getAllConcepts } from '@/lib/content-loader';
+import { getAllAutopsies, getAllConcepts, type LoadedConcept } from '@/lib/content-loader';
 import {
   buildVsJsonLd,
   formatVsTitle,
@@ -19,6 +19,22 @@ import {
 } from '@/lib/ui-strings';
 import { extractVsPairs, getVsPairBySlug } from '@/lib/vs-pairs';
 import { isPublished, robotsForStatus } from '@/lib/publication';
+import { Support } from '@/components/proof/Support';
+
+function getConceptSupportProps(
+  concept: LoadedConcept
+): { webFeature: string } | { feature: string } | null {
+  if (concept.frontmatter.web_feature_id) {
+    return { webFeature: concept.frontmatter.web_feature_id };
+  }
+  const supportClaim = concept.claims?.claims.find(
+    (c) => c.type === 'support' && c.proof.kind === 'bcd'
+  );
+  if (supportClaim && supportClaim.proof.kind === 'bcd') {
+    return { feature: supportClaim.proof.bcdKey };
+  }
+  return null;
+}
 
 export function generateStaticParams() {
   return extractVsPairs().map((p) => ({ pair: p.slug }));
@@ -231,6 +247,14 @@ export default async function VsComparisonPage({
                     {pFm.maturity_status ? '· ' : ''}
                     {formatDomainLabel(pFm.domain)}
                   </span>
+                  {(() => {
+                    const supportProps = getConceptSupportProps(primary);
+                    return supportProps ? (
+                      <div style={{ marginTop: '6px' }}>
+                        <Support {...supportProps} variant="badge" pageId={`vs-${pair.slug}`} />
+                      </div>
+                    ) : null;
+                  })()}
                 </td>
                 <td style={{ padding: '12px 14px', verticalAlign: 'top' }}>
                   {sFm.maturity_status && (
@@ -244,6 +268,14 @@ export default async function VsComparisonPage({
                     {sFm.maturity_status ? '· ' : ''}
                     {formatDomainLabel(sFm.domain)}
                   </span>
+                  {(() => {
+                    const supportProps = getConceptSupportProps(secondary);
+                    return supportProps ? (
+                      <div style={{ marginTop: '6px' }}>
+                        <Support {...supportProps} variant="badge" pageId={`vs-${pair.slug}`} />
+                      </div>
+                    ) : null;
+                  })()}
                 </td>
               </tr>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>

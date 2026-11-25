@@ -1,7 +1,10 @@
 import React from 'react';
 import type { Claim } from '@/lib/proof/claim-schema';
+import type { SupportEvent } from '@/lib/proof/support/dates';
 import { SourceQuote } from './SourceQuote';
 import { SpecQuote } from './SpecQuote';
+import { Support } from './Support';
+import { SupportDate } from './SupportDate';
 
 export interface ProofMdxContext {
   pageId: string;
@@ -27,5 +30,16 @@ export function createProofMdxComponents(ctx: ProofMdxContext): MdxComponentMap 
   return {
     SpecQuote: (props: { claim: string }) => <SpecQuote ctx={ctx} claimSlug={props.claim} />,
     SourceQuote: (props: { claim: string }) => <SourceQuote ctx={ctx} claimRef={props.claim} />,
+    Support: (props: {
+      feature?: string;
+      webFeature?: string;
+      variant?: 'badge' | 'table' | 'sentence';
+    }) => <Support pageId={ctx.pageId} {...props} />,
+    SupportDate: (props: {
+      feature?: string;
+      webFeature?: string;
+      event: SupportEvent;
+      format?: 'year' | 'date';
+    }) => <SupportDate pageId={ctx.pageId} {...props} />,
   };
 }

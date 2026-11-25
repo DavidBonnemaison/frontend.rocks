@@ -14,6 +14,15 @@ import {
   type ProofMdxContext,
 } from '@/components/proof/mdx-components';
 import { SourceQuote } from '@/components/proof/SourceQuote';
+import { buildSupportViewModel } from '@/components/proof/Support';
+import { buildSupportDateViewModel } from '@/components/proof/SupportDate';
+import {
+  __setBcdForTests,
+  __setWebFeaturesForTests,
+  getDataVersions,
+  type WebFeaturesMap,
+} from '@/lib/proof/support/data';
+import type { CompatData } from '@mdn/browser-compat-data';
 
 describe('proof MDX components', () => {
   const tempDirs: string[] = [];
@@ -207,4 +216,152 @@ describe('SourceQuote', () => {
     await expect(SourceQuote({ ctx, claimRef: 'missing' })).rejects.toThrow(/event-target/);
   });
 });
+
+describe('Support and SupportDate components', () => {
+  afterEach(() => {
+    __setBcdForTests(null);
+    __setWebFeaturesForTests(null);
+  });
+
+  async function renderMdx(source: string, pageId = 'css-container-queries'): Promise<string> {
+    const { default: MdxContent } = await evaluate(source, {
+      Fragment: jsxRuntime.Fragment,
+      jsx: jsxRuntime.jsx,
+      jsxs: jsxRuntime.jsxs,
+      development: false,
+    });
+    const components = createProofMdxComponents({
+      pageId,
+      claimsBySlug: new Map(),
+      claimsById: new Map(),
+    });
+    return renderToStaticMarkup(React.createElement(MdxContent, { components }));
+  }
+
+  it('renders <Support feature="css.at-rules.container" variant="table" /> with 7 browser rows and both data versions', async () => {
+    const html = await renderMdx('<Support feature="css.at-rules.container" variant="table" />');
+    const versions = getDataVersions();
+
+    expect(html).toContain('<table class="support-table">');
+    expect(html).toContain(versions.bcd);
+    expect(html).toContain(versions.webFeatures);
+    const bodyMatch = /<tbody>([\s\S]*?)<\/tbody>/.exec(html);
+    expect(bodyMatch).not.toBeNull();
+    const rowMatches = bodyMatch![1].match(/<tr>/g) ?? [];
+    expect(rowMatches).toHaveLength(7);
+  });
+
+  it('renders <SupportDate feature="css.at-rules.container" event="baseline-low" /> with ISO dateTime', async () => {
+    const html = await renderMdx(
+      '<SupportDate feature="css.at-rules.container" event="baseline-low" />'
+    );
+    expect(html).toMatch(/<time[^>]*dateTime="\d{4}-\d{2}-\d{2}"[^>]*>\d{4}<\/time>/);
+  });
+
+  it('throws an error naming the key and page when <Support> references an unknown BCD key', async () => {
+    await expect(renderMdx('<Support feature="css.does.not.exist" />', 'demo-page')).rejects.toThrow(
+      /css\.does\.not\.exist/
+    );
+    await expect(renderMdx('<Support feature="css.does.not.exist" />', 'demo-page')).rejects.toThrow(
+      /demo-page/
+    );
+  });
+
+  it('builds Support and SupportDate view models on synthetic data', () => {
+    __setBcdForTests({
+      __meta: { version: '0.0.0-test', timestamp: '2026-01-01T00:00:00Z' },
+      browsers: {
+        chrome: {
+          name: 'Chrome',
+          type: 'desktop',
+          accepts_flags: true,
+          accepts_webextensions: true,
+          releases: { '105': { index: 1, release_date: '2022-08-30', status: 'retired' } },
+        },
+        firefox: {
+          name: 'Firefox',
+          type: 'desktop',
+          accepts_flags: true,
+          accepts_webextensions: true,
+          releases: { '110': { index: 1, release_date: '2023-02-14', status: 'retired' } },
+        },
+        safari: {
+          name: 'Safari',
+          type: 'desktop',
+          accepts_flags: true,
+          accepts_webextensions: true,
+          releases: { '16': { index: 1, release_date: '2022-09-12', status: 'retired' } },
+        },
+      },
+      css: {
+        properties: {
+          solo_bcd: {
+            __compat: {
+              source_file: 'css/properties/solo_bcd.json',
+              support: {
+                chrome: { version_added: '105' },
+                firefox: { version_added: '110' },
+                safari: { version_added: '16' },
+              },
+            },
+          },
+        },
+      },
+    } as unknown as CompatData);
+
+    __setWebFeaturesForTests({
+      'synth-low': {
+        kind: 'feature',
+        name: 'Synthetic Feature',
+        description: 'Synth',
+        description_html: '<p>Synth</p>',
+        spec: 'https://example.org',
+        compat_features: [],
+        status: {
+          baseline: 'low',
+          baseline_low_date: '2024-03-05',
+          support: {
+            chrome: '105',
+            chrome_android: '105',
+            edge: '105',
+            firefox: '110',
+            firefox_android: '110',
+            safari: '16',
+            safari_ios: '16',
+          },
+        },
+      },
+      'synth-moved': {
+        kind: 'moved',
+        redirect_target: 'synth-low',
+      },
+    } as unknown as WebFeaturesMap);
+
+    // BCD key without a web-feature produces desktop summary and no Baseline tier
+    const bcdOnly = buildSupportViewModel('css.properties.solo_bcd', undefined, 'p');
+    expect(bcdOnly.baselineTier).toBeNull();
+    expect(bcdOnly.desktopSummary).toBe('Chrome 105 · Firefox 110 · Safari 16');
+
+    // webFeature produces Baseline badge and sentence
+    const wfVm = buildSupportViewModel(undefined, 'synth-low', 'p');
+    expect(wfVm.baselineTier).toBe('low');
+    expect(wfVm.badgeLabel).toBe('Baseline · Newly available');
+    expect(wfVm.sentence).toBe('Synthetic Feature is Baseline Newly available (since 2024-03-05).');
+
+    // SupportDate format="date"
+    expect(
+      buildSupportDateViewModel({
+        webFeature: 'synth-low',
+        event: 'baseline-low',
+        format: 'date',
+        pageId: 'p',
+      })
+    ).toEqual({ isoDate: '2024-03-05', display: 'Mar 5, 2024' });
+
+    // Moved web-feature throws naming page and key
+    expect(() => buildSupportViewModel(undefined, 'synth-moved', 'p')).toThrow(/synth-moved/);
+    expect(() => buildSupportViewModel('a', 'b', 'p')).toThrow(/exactly one/);
+  });
+});
+
 
