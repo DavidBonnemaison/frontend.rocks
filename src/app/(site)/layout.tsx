@@ -1,5 +1,5 @@
 import React from 'react';
-import Script from 'next/script';
+import { Analytics } from '@/components/layout/Analytics';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
@@ -26,16 +26,12 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             <a href="/graph.json">graph.json</a>
             <span aria-hidden="true">·</span>
             <a href="/rss.xml">RSS</a>
+            <span aria-hidden="true">·</span>
+            <a href="/privacy/">Privacy</a>
           </nav>
         </div>
       </footer>
-      {/* Cloudflare Web Analytics */}
-      <Script
-        type="module"
-        src="https://static.cloudflareinsights.com/beacon.min.js"
-        data-cf-beacon='{"token": "55e76ac3f88645ca9bb4d3fc8d2ac9f1"}'
-        strategy="afterInteractive"
-      />
+      <Analytics />
     </>
   );
 }

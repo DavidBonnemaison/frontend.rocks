@@ -233,6 +233,10 @@ ${rssItems}
       entry: { loc: `${SITE_URL}/agents/`, changefreq: 'weekly', priority: '0.8' },
       publishedCount: null,
     },
+    {
+      entry: { loc: `${SITE_URL}/privacy/`, changefreq: 'monthly', priority: '0.3' },
+      publishedCount: null,
+    },
   ];
 
   const sitemapEntries: SitemapEntry[] = [

@@ -316,7 +316,13 @@ export default async function AutopsyDetailPage({
           <ul>
             {frontmatter.sources.map((url) => (
               <li key={url}>
-                <a href={url} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-analytics-event="spec_link_click"
+                  data-analytics-target={frontmatter.id}
+                >
                   {url}
                 </a>
               </li>

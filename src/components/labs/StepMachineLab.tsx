@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import type { StepMachineLabConfig } from '@/lib/schemas';
 import { UI_STRINGS } from '@/lib/ui-strings';
+import { useTrackLabInteraction } from '@/lib/analytics-hooks';
 import './StepMachineLab.css';
 
 function formatCodeHighlight(raw: string): string {
@@ -106,10 +107,20 @@ export function StepMachineLab({
   const total = config.steps.length;
   const current = config.steps[stepIndex];
   const prevState = stepIndex > 0 ? config.steps[stepIndex - 1]?.state : undefined;
+  const trackInteract = useTrackLabInteraction(config.id);
 
-  const handleReset = () => setStepIndex(0);
-  const handlePrev = () => setStepIndex((i) => Math.max(0, i - 1));
-  const handleNext = () => setStepIndex((i) => Math.min(total - 1, i + 1));
+  const handleReset = () => {
+    setStepIndex(0);
+    trackInteract();
+  };
+  const handlePrev = () => {
+    setStepIndex((i) => Math.max(0, i - 1));
+    trackInteract();
+  };
+  const handleNext = () => {
+    setStepIndex((i) => Math.min(total - 1, i + 1));
+    trackInteract();
+  };
 
   return (
     <section
@@ -268,7 +279,10 @@ export function StepMachineLab({
               role="tab"
               aria-selected={idx === stepIndex}
               aria-label={`Step ${idx + 1}: ${s.label}`}
-              onClick={() => setStepIndex(idx)}
+              onClick={() => {
+                setStepIndex(idx);
+                trackInteract();
+              }}
               className={`step-dot ${idx === stepIndex ? 'active' : ''}`}
             />
           ))}

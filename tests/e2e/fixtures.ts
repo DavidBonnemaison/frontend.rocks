@@ -3,7 +3,6 @@ import { test as base, expect } from '@playwright/test';
 // Third-party scripts are never loaded in tests. They are answered with an empty script rather
 // than aborted: an aborted request logs a console error, and many specs assert there are none.
 const THIRD_PARTY = [
-  'https://static.cloudflareinsights.com/**',
   'https://gc.zgo.at/**',
   'https://*.goatcounter.com/**',
 ];

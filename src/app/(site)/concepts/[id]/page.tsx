@@ -737,6 +737,8 @@ export default async function ConceptPage({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1"
+                  data-analytics-event="spec_link_click"
+                  data-analytics-target={frontmatter.id}
                 >
                   <span>{url}</span>
                   <ArrowUpRight size={14} className="shrink-0" aria-hidden="true" />

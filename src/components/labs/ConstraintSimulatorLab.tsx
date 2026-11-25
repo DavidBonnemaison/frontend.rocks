@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import type { ConstraintSimulatorLabConfig } from '@/lib/schemas';
 import { UI_STRINGS } from '@/lib/ui-strings';
+import { useTrackLabInteraction } from '@/lib/analytics-hooks';
 
 type ControlValues = Record<string, number | boolean | string>;
 type SimStatus = 'ok' | 'warn' | 'danger';
@@ -504,6 +505,7 @@ export function ConstraintSimulatorLab({
   headerExtra?: React.ReactNode;
 }) {
   const [values, setValues] = useState<ControlValues>(() => getInitialValues(config));
+  const trackInteract = useTrackLabInteraction(config.id);
 
   const sim = useMemo(() => computeSimulation(config.presetMode, values), [config.presetMode, values]);
 
@@ -563,9 +565,10 @@ export function ConstraintSimulatorLab({
                     max={ctrl.max ?? 100}
                     step={ctrl.step ?? 1}
                     value={Number(val)}
-                    onChange={(e) =>
-                      setValues((prev) => ({ ...prev, [ctrl.key]: Number(e.target.value) }))
-                    }
+                    onChange={(e) => {
+                      trackInteract();
+                      setValues((prev) => ({ ...prev, [ctrl.key]: Number(e.target.value) }));
+                    }}
                     className="sim-range"
                   />
                 )}
@@ -578,9 +581,10 @@ export function ConstraintSimulatorLab({
                       type="button"
                       role="switch"
                       aria-checked={isOn}
-                      onClick={() =>
-                        setValues((prev) => ({ ...prev, [ctrl.key]: !Boolean(prev[ctrl.key]) }))
-                      }
+                      onClick={() => {
+                        trackInteract();
+                        setValues((prev) => ({ ...prev, [ctrl.key]: !Boolean(prev[ctrl.key]) }));
+                      }}
                       className={`sim-toggle ${isOn ? 'on' : 'off'}`}
                       style={{
                         display: 'inline-flex',
@@ -625,9 +629,10 @@ export function ConstraintSimulatorLab({
                   <select
                     id={inputId}
                     value={String(val)}
-                    onChange={(e) =>
-                      setValues((prev) => ({ ...prev, [ctrl.key]: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      trackInteract();
+                      setValues((prev) => ({ ...prev, [ctrl.key]: e.target.value }));
+                    }}
                     className="sim-select"
                   >
                     {ctrl.options.map((opt) => (

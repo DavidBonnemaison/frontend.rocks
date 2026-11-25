@@ -11,6 +11,7 @@ import {
   subscribeProgress,
   toggleConceptExplored,
 } from '@/lib/progress';
+import { track } from '@/lib/analytics';
 import './PathProgressBar.css';
 
 export interface PathProgressMeta {
@@ -34,6 +35,11 @@ function PathProgressBarInner({
 }: PathProgressBarProps) {
   const searchParams = useSearchParams();
   const pathParam = searchParams.get('path');
+
+  const activePath = pathParam
+    ? paths.find((p) => p.id === pathParam && p.concepts.includes(conceptId)) ?? null
+    : null;
+  const activePathId = activePath?.id ?? null;
 
   const [explored, setExplored] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
@@ -61,6 +67,9 @@ function PathProgressBarInner({
       if (manualToggleRef.current || autoMarkedRef.current) return;
       autoMarkedRef.current = true;
       markConceptExplored(conceptId);
+      if (activePathId) {
+        track('path_step_complete', `${activePathId}/${conceptId}`);
+      }
     };
 
     const handleScroll = () => {
@@ -93,18 +102,17 @@ function PathProgressBarInner({
       window.removeEventListener('scroll', handleScroll);
       observer?.disconnect();
     };
-  }, [conceptId, position]);
+  }, [activePathId, conceptId, position]);
 
   const isExplored = hydrated && explored.includes(conceptId);
 
   const handleToggleUnderstood = () => {
     manualToggleRef.current = true;
-    toggleConceptExplored(conceptId);
+    const nowExplored = toggleConceptExplored(conceptId);
+    if (nowExplored && activePathId) {
+      track('path_step_complete', `${activePathId}/${conceptId}`);
+    }
   };
-
-  const activePath = pathParam
-    ? paths.find((p) => p.id === pathParam && p.concepts.includes(conceptId)) ?? null
-    : null;
 
   if (!activePath) {
     if (position === 'top') return null;

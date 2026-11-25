@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Check, Code2 } from 'lucide-react';
 import type { InteractivePrimitiveConfig } from '@/lib/schemas';
+import { track } from '@/lib/analytics';
 import { StepMachineLab } from './StepMachineLab';
 import { PatternComparatorLab } from './PatternComparatorLab';
 import { ConstraintSimulatorLab } from './ConstraintSimulatorLab';
@@ -19,6 +20,7 @@ export function EmbedLabButton({ labId }: { labId: string }) {
     const snippet = getEmbedIframeSnippet(labId);
     try {
       await navigator.clipboard.writeText(snippet);
+      track('embed_copy', labId);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -28,7 +30,9 @@ export function EmbedLabButton({ labId }: { labId: string }) {
       textarea.style.opacity = '0';
       document.body.appendChild(textarea);
       textarea.select();
-      document.execCommand('copy');
+      if (document.execCommand('copy')) {
+        track('embed_copy', labId);
+      }
       document.body.removeChild(textarea);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
