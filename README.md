@@ -17,13 +17,13 @@ Each claim has a type, and each type has its own check. The receipts are on [fro
 
 ## Repository layout
 
-- `content/`: concepts, autopsies and their claim files, in MDX and JSON.
+- `content/`: concepts, autopsies, claim files, and Experiments (`content/experiments/<id>/experiment.ts`), in MDX, JSON, and TypeScript.
 - `src/`: the Next.js site, the content schemas and the proof library.
-- `scripts/`: build, validation and proof scripts.
+- `scripts/`: build, validation and proof scripts (`npm run proof:build` compiles Experiment bundles).
 - `tests/`: unit tests (Vitest) and end-to-end tests (Playwright).
 - `netlify/`: edge function and functions used in production (`mcp` and `deploy-succeeded`, which sends the IndexNow notification after each deploy).
 - `packages/`: the MCP server and the public audit skill.
-- `public/`: static files only (favicons and the IndexNow key). The build writes everything else there (`llms.txt`, `sitemap.xml`, `search-index.json`, Markdown twins, OG images, `build-info.json`...). None of it is tracked by git, and `tests/repo-hygiene.test.ts` fails if one gets committed.
+- `public/`: static files only (favicons and the IndexNow key). The build writes everything else there (`llms.txt`, `sitemap.xml`, `search-index.json`, Markdown twins, OG images, `build-info.json`, `experiments/`...). None of it is tracked by git, and `tests/repo-hygiene.test.ts` fails if one gets committed.
 
 ## Local setup
 

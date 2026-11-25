@@ -1,3 +1,10 @@
+export {
+  notRunnableReason,
+  runExperimentInBrowser,
+  type BrowserRunReport,
+  type BrowserRunStatus,
+  type NotRunnableReason,
+} from './browser';
 export { canonicalJson, jsonEqual } from './canonical-json';
 export {
   composeSources,
@@ -7,6 +14,7 @@ export {
   type ParamValues,
 } from './compose';
 export { BASE_CSS, buildExperimentDocument, SHIM_ORIGINS, type DocumentOptions } from './document';
+export { evaluateCase, type CaseEvaluation, type Executor } from './evaluate';
 export {
   mountExperimentFrame,
   type MountedFrame,
