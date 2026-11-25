@@ -51,5 +51,6 @@ yarn-error.log*
 /packages/public-skill/references/audit-catalog.md
 
 # Proof and lab build output
+/.cache/
 /.proof-build
 /dist-lab

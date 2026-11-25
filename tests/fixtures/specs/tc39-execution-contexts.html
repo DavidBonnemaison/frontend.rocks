@@ -1,0 +1,12 @@
+<!doctype html><html><head><title>ECMAScript 2026 Language Specification</title></head><body>
+<emu-clause id=sec-hostenqueuepromisejob type="host-defined abstract operation">
+  <h1><span class=secnum>9.5.1</span> HostEnqueuePromiseJob ( job, realm )</h1>
+  <p>The host-defined abstract operation HostEnqueuePromiseJob takes arguments <var>job</var> (a Job Abstract Closure) and <var>realm</var> (a Realm Record or null) and returns unused.</p>
+  <p>An implementation of HostEnqueuePromiseJob must schedule the execution of <var>job</var> after all currently running execution contexts have completed.</p>
+  <emu-note><p>Hosts are not required to preserve FIFO ordering across distinct realms in all cases.</p></emu-note>
+</emu-clause>
+<emu-clause id=sec-next-clause>
+  <h1><span class=secnum>9.5.2</span> Next Clause</h1>
+  <p>Unrelated clause text.</p>
+</emu-clause>
+</body></html>

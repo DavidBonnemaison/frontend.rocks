@@ -1,0 +1,18 @@
+<!doctype html><html><head><title>HTML Standard</title></head><body>
+<h1>HTML Standard</h1>
+<h5 id=event-loop-processing-model><span class=secno>8.1.7.3</span> Processing model<a href=#event-loop-processing-model class=self-link></a></h5>
+<div data-algorithm="">
+<p>An <a href=#event-loop>event loop</a> must continually run through the following steps for as long as it exists:</p>
+<ol id=step1><li><p>Let <var>oldestTask</var> and <var>taskStartTime</var> be null.</ol>
+</div>
+<hr>
+<div data-algorithm="">
+<p>When a user agent is to <dfn id=perform-a-microtask-checkpoint data-export="">perform a microtask checkpoint</dfn>:</p>
+<ol><li><p>If the <a href=#event-loop>event loop</a>'s <a href=#performing-a-microtask-checkpoint>performing a microtask checkpoint</a> is true, then return.<li><p>Set the <a href=#event-loop>event loop</a>'s <a href=#performing-a-microtask-checkpoint>performing a microtask checkpoint</a> to true.<li>
+<p>While the <a href=#event-loop>event loop</a>'s <a href=#microtask-queue>microtask queue</a> is not <a href=https://infra.spec.whatwg.org/#list-is-empty>empty</a>:</p>
+<ol><li><p>Let <var>oldestMicrotask</var> be the result of <a href=https://infra.spec.whatwg.org/#queue-dequeue>dequeuing</a>
+ from the <a href=#event-loop>event loop</a>'s <a href=#microtask-queue>microtask queue</a>.<li><p>Run <var>oldestMicrotask</var>.</p>
+<p class=note>This might involve invoking scripted callbacks, which eventually calls the clean up after running script steps.</p></ol></ol>
+</div>
+<h5 id=next-section>Next section</h5><p>Other text.</p>
+</body></html>

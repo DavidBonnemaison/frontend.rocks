@@ -15,7 +15,7 @@ import {
   validateAutopsyCastDiversity,
   validateAutopsyMdx,
 } from '../src/lib/validators/autopsy-validator';
-import { validateConceptMdx, verifySourceUrls } from '../src/lib/validators/concept-validator';
+import { validateConceptMdx } from '../src/lib/validators/concept-validator';
 import { validateConceptGraph } from '../src/lib/validators/dag';
 import { isPublished } from '../src/lib/publication';
 import { PRODUCTION_SYMPTOMS } from '../src/config/symptoms';
@@ -34,8 +34,7 @@ const EVIDENCE_DIR = path.join(CONTENT_DIR, 'evidence');
 const PATHS_FILE = path.join(CONTENT_DIR, 'paths.json');
 
 async function main(): Promise<void> {
-  const args = parseCliArgs(process.argv.slice(2), { 'check-urls': 'boolean' });
-  const checkUrls = args['check-urls'] === true;
+  parseCliArgs(process.argv.slice(2), {});
   const errors: string[] = [];
   const concepts: ConceptFrontmatter[] = [];
   let claimsStats: { files: number; claims: number } | null = null;
@@ -244,23 +243,6 @@ async function main(): Promise<void> {
   if (!seoResult.valid) {
     for (const e of seoResult.errors) {
       errors.push(e);
-    }
-  }
-
-  // Optional live URL verification
-  if (checkUrls && (concepts.length > 0 || autopsies.length > 0)) {
-    const allUrls = Array.from(
-      new Set([
-        ...concepts.flatMap((c) => c.sources),
-        ...autopsies.flatMap((a) => a.sources),
-      ])
-    );
-    console.log(`🔎 Checking ${allUrls.length} source URLs...`);
-    const urlResults = await verifySourceUrls(allUrls);
-    for (const r of urlResults) {
-      if (!r.ok) {
-        errors.push(`[URL] ${r.url} failed (${r.status ?? r.error})`);
-      }
     }
   }
 
