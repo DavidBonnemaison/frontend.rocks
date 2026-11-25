@@ -22,6 +22,7 @@
     "test": "vitest run",
     "validate:content": "tsx scripts/validate-content.ts",
     "proof:migrate-evidence": "tsx scripts/proof/migrate-evidence-to-claims.ts",
+    "proof:verify-specs": "tsx scripts/proof/verify-spec-quotes.ts",
     "check:all": "npm run typecheck && npm run lint && npm run test && npm run validate:content"
   },
   "dependencies": {
