@@ -1,4 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  parseClaimsFile,
+  readClaimsFileFromDisk,
+} from '@/lib/proof/claims-loader';
 import {
   ClaimSchema,
   ClaimsFileSchema,
@@ -288,3 +295,83 @@ describe('claim-schema', () => {
     expect(() => makeClaimId('a', 'Bad Slug')).toThrow();
   });
 });
+
+describe('claims-loader', () => {
+  const tempDirs: string[] = [];
+
+  function makeTempDir(): string {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'claims-'));
+    tempDirs.push(dir);
+    return dir;
+  }
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+    while (tempDirs.length > 0) {
+      const dir = tempDirs.pop()!;
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('throws with label and issue path when parseClaimsFile receives invalid input', () => {
+    const invalid = {
+      pageId: 'css-container-queries',
+      claims: [validClaim({ type: 'invalid-type' })],
+    };
+    expect(() => parseClaimsFile(invalid, 'content/claims/css-container-queries.claims.json')).toThrow(
+      /Invalid claims file content\/claims\/css-container-queries\.claims\.json:[\s\S]*claims\.0\.type/
+    );
+  });
+
+  it('throws when file name does not match pageId', () => {
+    const dir = makeTempDir();
+    const filePath = path.join(dir, 'foo.claims.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        pageId: 'bar',
+        claims: [validClaim({ id: 'bar/size-containment' })],
+      })
+    );
+    expect(() => readClaimsFileFromDisk(filePath)).toThrow(/foo\.claims\.json.*does not match file name/);
+  });
+
+  it('throws Cannot parse JSON on malformed JSON file', () => {
+    const dir = makeTempDir();
+    const filePath = path.join(dir, 'broken.claims.json');
+    fs.writeFileSync(filePath, '{ not valid json');
+    expect(() => readClaimsFileFromDisk(filePath)).toThrow(/Cannot parse JSON/);
+  });
+
+  it('loads, caches, looks up, and resets claims from a custom content directory', async () => {
+    const contentDir = makeTempDir();
+    vi.stubEnv('FRONTEND_ROCKS_CONTENT_DIR', contentDir);
+    vi.resetModules();
+
+    const loader = await import('@/lib/proof/claims-loader');
+    expect(loader.getAllClaimsFiles().size).toBe(0);
+    expect(loader.getClaimsForPage('sample-page')).toBeNull();
+
+    const claimsDir = path.join(contentDir, 'claims');
+    fs.mkdirSync(claimsDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(claimsDir, 'sample-page.claims.json'),
+      JSON.stringify({
+        pageId: 'sample-page',
+        claims: [validClaim({ id: 'sample-page/first-claim' })],
+      })
+    );
+
+    // Still cached as empty until resetClaimsCache is called.
+    expect(loader.getAllClaimsFiles().size).toBe(0);
+
+    loader.resetClaimsCache();
+    expect(loader.getAllClaimsFiles().size).toBe(1);
+    expect(loader.getClaimsForPage('sample-page')?.claims).toHaveLength(1);
+    expect(loader.getAllClaims().map((c) => c.id)).toEqual(['sample-page/first-claim']);
+    expect(loader.getClaimById('sample-page/first-claim')?.id).toBe('sample-page/first-claim');
+    expect(loader.getClaimById('sample-page/missing')).toBeNull();
+  });
+});
+

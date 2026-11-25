@@ -18,6 +18,8 @@ import {
 import { extractSectionText } from './mdx/sections';
 import { CONTENT_DIR } from './paths';
 import { extractAutopsyChapters } from './validators/autopsy-validator';
+import type { ClaimsFile } from './proof/claim-schema';
+import { getClaimsForPage } from './proof/claims-loader';
 
 const CONCEPTS_DIR = path.join(CONTENT_DIR, 'concepts');
 const AUTOPSIES_DIR = path.join(CONTENT_DIR, 'autopsies');
@@ -40,6 +42,7 @@ export interface LoadedConcept {
   sections: ConceptSections;
   lab: InteractivePrimitiveConfig | null;
   evidence: EvidenceDossier | null;
+  claims: ClaimsFile | null;
   filePath: string;
 }
 
@@ -110,6 +113,7 @@ export function getAllConcepts(): LoadedConcept[] {
     const labId = frontmatter.lab_id ?? frontmatter.id;
     const lab = getLabById(labId);
     const evidence = getEvidenceByConceptId(frontmatter.id);
+    const claims = getClaimsForPage(frontmatter.id);
 
     return {
       frontmatter,
@@ -117,6 +121,7 @@ export function getAllConcepts(): LoadedConcept[] {
       sections,
       lab,
       evidence,
+      claims,
       filePath,
     };
   });
@@ -170,6 +175,7 @@ export interface LoadedAutopsy {
   sections: AutopsySections;
   sectionHeadings: AutopsySectionHeadings;
   lab: InteractivePrimitiveConfig | null;
+  claims: ClaimsFile | null;
   filePath: string;
 }
 
@@ -240,6 +246,7 @@ export function getAllAutopsies(): LoadedAutopsy[] {
 
       const labId = frontmatter.lab_id ?? frontmatter.id;
       const lab = getLabById(labId);
+      const claims = getClaimsForPage(frontmatter.id);
 
       return {
         frontmatter,
@@ -247,6 +254,7 @@ export function getAllAutopsies(): LoadedAutopsy[] {
         sections,
         sectionHeadings,
         lab,
+        claims,
         filePath,
       };
     })
