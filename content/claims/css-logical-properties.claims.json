@@ -1,0 +1,16 @@
+{
+  "pageId": "css-logical-properties",
+  "claims": [
+    {
+      "id": "css-logical-properties/spec-2-flow-relative-values-and-properties-1",
+      "type": "normative",
+      "statement": "Flow-relative properties resolve to physical properties during computed-value resolution based on the element’s writing-mode and direction.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-logical-1/",
+        "anchor": "__unanchored__",
+        "quote": "Flow-relative properties resolve to physical properties during computed-value resolution based on the element’s writing-mode and direction."
+      }
+    }
+  ]
+}

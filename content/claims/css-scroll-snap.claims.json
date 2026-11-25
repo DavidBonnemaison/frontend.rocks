@@ -1,0 +1,16 @@
+{
+  "pageId": "css-scroll-snap",
+  "claims": [
+    {
+      "id": "css-scroll-snap/spec-4-scroll-snap-model-1",
+      "type": "normative",
+      "statement": "Scroll snap positions are offsets within the scroll container’s scrollable overflow area where scrolling is encouraged or required to come to rest.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-scroll-snap-1/",
+        "anchor": "__unanchored__",
+        "quote": "Scroll snap positions are offsets within the scroll container’s scrollable overflow area where scrolling is encouraged or required to come to rest."
+      }
+    }
+  ]
+}

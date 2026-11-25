@@ -1,0 +1,16 @@
+{
+  "pageId": "server-state-cache-machines",
+  "claims": [
+    {
+      "id": "server-state-cache-machines/spec-section-3-stale-while-revalidate-1",
+      "type": "normative",
+      "statement": "The stale-while-revalidate HTTP Cache-Control extension allows a cache to immediately return a stale response while it revalidates it in the background.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://datatracker.ietf.org/doc/html/rfc5861",
+        "anchor": "__unanchored__",
+        "quote": "The stale-while-revalidate HTTP Cache-Control extension allows a cache to immediately return a stale response while it revalidates it in the background."
+      }
+    }
+  ]
+}

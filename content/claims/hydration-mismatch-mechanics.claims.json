@@ -1,0 +1,16 @@
+{
+  "pageId": "hydration-mismatch-mechanics",
+  "claims": [
+    {
+      "id": "hydration-mismatch-mechanics/spec-hydrating-server-rendered-html-recoverin-1",
+      "type": "normative",
+      "statement": "If a hydration mismatch occurs inside a Suspense boundary, React discards the server HTML inside that boundary and re-renders it on the client.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://react.dev/reference/react-dom/client/hydrateRoot",
+        "anchor": "__unanchored__",
+        "quote": "If a hydration mismatch occurs inside a Suspense boundary, React discards the server HTML inside that boundary and re-renders it on the client."
+      }
+    }
+  ]
+}

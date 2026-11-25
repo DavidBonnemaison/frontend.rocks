@@ -1,0 +1,16 @@
+{
+  "pageId": "async-clipboard-activation",
+  "claims": [
+    {
+      "id": "async-clipboard-activation/spec-clipboard-api-and-events-6-2-1-writetext-1",
+      "type": "normative",
+      "statement": "Write operations require transient user activation or explicit clipboard-write permission in a secure context; readText() additionally requires focused document and user gesture or permission.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/clipboard-apis/",
+        "anchor": "dom-clipboard-writetext",
+        "quote": "Write operations require transient user activation or explicit clipboard-write permission in a secure context; readText() additionally requires focused document and user gesture or permission."
+      }
+    }
+  ]
+}

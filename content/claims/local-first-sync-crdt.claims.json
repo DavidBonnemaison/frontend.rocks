@@ -1,0 +1,27 @@
+{
+  "pageId": "local-first-sync-crdt",
+  "claims": [
+    {
+      "id": "local-first-sync-crdt/spec-crdt-specification-strong-eventual-consi-1",
+      "type": "normative",
+      "statement": "Conflict-free Replicated Data Types guarantee that any two replicas that have received the same set of updates converge deterministically to identical state without central coordination.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://crdt.tech/papers.html",
+        "anchor": "__unanchored__",
+        "quote": "Conflict-free Replicated Data Types guarantee that any two replicas that have received the same set of updates converge deterministically to identical state without central coordination."
+      }
+    },
+    {
+      "id": "local-first-sync-crdt/spec-mdn-indexeddb-api-2",
+      "type": "normative",
+      "statement": "IndexedDB is a transactional, asynchronous key-value and object store persisted locally in the browser for offline-capable applications.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API",
+        "anchor": "__unanchored__",
+        "quote": "IndexedDB is a transactional, asynchronous key-value and object store persisted locally in the browser for offline-capable applications."
+      }
+    }
+  ]
+}

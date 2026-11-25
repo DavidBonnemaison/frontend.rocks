@@ -1,0 +1,27 @@
+{
+  "pageId": "service-worker-lifecycle",
+  "claims": [
+    {
+      "id": "service-worker-lifecycle/spec-w3c-service-workers-lifecycle-1",
+      "type": "normative",
+      "statement": "A service worker has an associated state, which is one of parsed, installing, installed, activating, activated, or redundant.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/ServiceWorker/",
+        "anchor": "service-worker-lifecycle",
+        "quote": "A service worker has an associated state, which is one of parsed, installing, installed, activating, activated, or redundant."
+      }
+    },
+    {
+      "id": "service-worker-lifecycle/spec-mdn-service-worker-lifecycle-2",
+      "type": "normative",
+      "statement": "Until all pages controlled by the previous service worker are closed, the new worker remains in the waiting state unless skipWaiting() is invoked.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers",
+        "anchor": "__unanchored__",
+        "quote": "Until all pages controlled by the previous service worker are closed, the new worker remains in the waiting state unless skipWaiting() is invoked."
+      }
+    }
+  ]
+}

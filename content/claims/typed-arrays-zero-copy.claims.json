@@ -1,0 +1,16 @@
+{
+  "pageId": "typed-arrays-zero-copy",
+  "claims": [
+    {
+      "id": "typed-arrays-zero-copy/spec-23-2-typedarray-objects-1",
+      "type": "normative",
+      "statement": "A TypedArray presents an array-like view of an underlying binary data buffer (ArrayBuffer) with a fixed numeric element type.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://tc39.es/ecma262/",
+        "anchor": "sec-typedarray-objects",
+        "quote": "A TypedArray presents an array-like view of an underlying binary data buffer (ArrayBuffer) with a fixed numeric element type."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "mutation-observer",
+  "claims": [
+    {
+      "id": "mutation-observer/spec-4-3-mutation-observers-1",
+      "type": "normative",
+      "statement": "Queue a mutation observer microtask to notify each registered observer of its queued MutationRecord list.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://dom.spec.whatwg.org/",
+        "anchor": "mutation-observers",
+        "quote": "Queue a mutation observer microtask to notify each registered observer of its queued MutationRecord list."
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "pageId": "signal-graph-topological-sort",
+  "claims": [
+    {
+      "id": "signal-graph-topological-sort/spec-design-goals-glitch-free-push-pull-algor-1",
+      "type": "normative",
+      "statement": "Signals use a push-pull algorithm: writes eagerly push dirty state down the graph, while reads lazily pull and recompute only when an upstream dependency actually changed.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://github.com/tc39/proposal-signals",
+        "anchor": "__unanchored__",
+        "quote": "Signals use a push-pull algorithm: writes eagerly push dirty state down the graph, while reads lazily pull and recompute only when an upstream dependency actually changed."
+      }
+    },
+    {
+      "id": "signal-graph-topological-sort/spec-tri-state-coloring-clean-check-dirty-2",
+      "type": "normative",
+      "statement": "Direct children of a changed source are marked Dirty, while transitive descendants are marked Check so they verify upstream versions before recomputing.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://github.com/modderme123/reactively",
+        "anchor": "__unanchored__",
+        "quote": "Direct children of a changed source are marked Dirty, while transitive descendants are marked Check so they verify upstream versions before recomputing."
+      }
+    },
+    {
+      "id": "signal-graph-topological-sort/spec-doubly-linked-dependency-graphs-3",
+      "type": "normative",
+      "statement": "Replacing per-node Set allocations with doubly-linked list nodes cuts memory overhead and allows O(1) subscription addition and stale edge pruning.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://preactjs.com/blog/signal-boosting/",
+        "anchor": "__unanchored__",
+        "quote": "Replacing per-node Set allocations with doubly-linked list nodes cuts memory overhead and allows O(1) subscription addition and stale edge pruning."
+      }
+    }
+  ]
+}

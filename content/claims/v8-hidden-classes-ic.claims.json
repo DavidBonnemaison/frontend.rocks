@@ -1,0 +1,16 @@
+{
+  "pageId": "v8-hidden-classes-ic",
+  "claims": [
+    {
+      "id": "v8-hidden-classes-ic/spec-fast-properties-in-v8-1",
+      "type": "normative",
+      "statement": "HiddenClasses (Maps) store property descriptors and offsets so property loads compile to direct memory offsets.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://v8.dev/blog/fast-properties",
+        "anchor": "__unanchored__",
+        "quote": "HiddenClasses (Maps) store property descriptors and offsets so property loads compile to direct memory offsets."
+      }
+    }
+  ]
+}

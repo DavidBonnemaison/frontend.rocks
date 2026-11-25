@@ -1,0 +1,16 @@
+{
+  "pageId": "custom-elements-lifecycle",
+  "claims": [
+    {
+      "id": "custom-elements-lifecycle/spec-4-13-4-custom-element-reactions-1",
+      "type": "normative",
+      "statement": "Each custom element has an associated reaction queue processed synchronously before returning to user script or during microtask checkpoints.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/custom-elements.html",
+        "anchor": "custom-element-reactions",
+        "quote": "Each custom element has an associated reaction queue processed synchronously before returning to user script or during microtask checkpoints."
+      }
+    }
+  ]
+}

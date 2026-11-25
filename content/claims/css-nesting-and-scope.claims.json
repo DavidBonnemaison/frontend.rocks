@@ -1,0 +1,16 @@
+{
+  "pageId": "css-nesting-and-scope",
+  "claims": [
+    {
+      "id": "css-nesting-and-scope/spec-2-nesting-style-rules-1",
+      "type": "normative",
+      "statement": "The & nesting selector represents the elements matched by the parent rule, behaving with the specificity of :is() wrapping the parent selector list.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-nesting-1/",
+        "anchor": "__unanchored__",
+        "quote": "The & nesting selector represents the elements matched by the parent rule, behaving with the specificity of :is() wrapping the parent selector list."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "roving-tabindex-focus-order",
+  "claims": [
+    {
+      "id": "roving-tabindex-focus-order/spec-wai-aria-authoring-practices-guide-rovin-1",
+      "type": "normative",
+      "statement": "A composite widget places tabindex='0' on only its currently active descendant and tabindex='-1' on all other items, moving focus via Arrow keys so Tab exits the widget in one step.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/",
+        "anchor": "kbd_roving_tabindex",
+        "quote": "A composite widget places tabindex='0' on only its currently active descendant and tabindex='-1' on all other items, moving focus via Arrow keys so Tab exits the widget in one step."
+      }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "pageId": "client-storage-schema-migrations",
+  "claims": [
+    {
+      "id": "client-storage-schema-migrations/spec-w3c-indexeddb-3-0-upgrade-transaction-1",
+      "type": "normative",
+      "statement": "An upgrade transaction cannot start until all other open connections to the same database are closed; if any remain open, a blocked event is fired.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/IndexedDB/",
+        "anchor": "upgrade-transaction-steps",
+        "quote": "An upgrade transaction cannot start until all other open connections to the same database are closed; if any remain open, a blocked event is fired."
+      }
+    },
+    {
+      "id": "client-storage-schema-migrations/spec-idbdatabase-versionchange-event-2",
+      "type": "normative",
+      "statement": "The versionchange event is fired on open database connections when a new connection attempts to upgrade the database version.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase/versionchange_event",
+        "anchor": "__unanchored__",
+        "quote": "The versionchange event is fired on open database connections when a new connection attempts to upgrade the database version."
+      }
+    }
+  ]
+}

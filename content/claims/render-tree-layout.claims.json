@@ -1,0 +1,16 @@
+{
+  "pageId": "render-tree-layout",
+  "claims": [
+    {
+      "id": "render-tree-layout/spec-2-box-layout-modes-the-display-property-1",
+      "type": "normative",
+      "statement": "An element with display: none generates no boxes in the formatting structure, whereas visibility: hidden generates invisible boxes that still participate in layout.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-display-3/",
+        "anchor": "__unanchored__",
+        "quote": "An element with display: none generates no boxes in the formatting structure, whereas visibility: hidden generates invisible boxes that still participate in layout."
+      }
+    }
+  ]
+}

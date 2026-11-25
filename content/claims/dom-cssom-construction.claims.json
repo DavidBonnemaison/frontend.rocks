@@ -1,0 +1,16 @@
+{
+  "pageId": "dom-cssom-construction",
+  "claims": [
+    {
+      "id": "dom-cssom-construction/spec-13-2-parsing-html-documents-1",
+      "type": "normative",
+      "statement": "When a classic script element is encountered without async or defer, the HTML parser pauses until any pending style sheets finish loading and the script executes.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/parsing.html",
+        "anchor": "__unanchored__",
+        "quote": "When a classic script element is encountered without async or defer, the HTML parser pauses until any pending style sheets finish loading and the script executes."
+      }
+    }
+  ]
+}

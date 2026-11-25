@@ -1,0 +1,27 @@
+{
+  "pageId": "hierarchical-statecharts-actors",
+  "claims": [
+    {
+      "id": "hierarchical-statecharts-actors/spec-3-13-selecting-and-executing-transitions-1",
+      "type": "normative",
+      "statement": "Transitions are selected in document order starting from the innermost active atomic states; exiting a parent state exits all active descendant states.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://www.w3.org/TR/scxml/",
+        "anchor": "__unanchored__",
+        "quote": "Transitions are selected in document order starting from the innermost active atomic states; exiting a parent state exits all active descendant states."
+      }
+    },
+    {
+      "id": "hierarchical-statecharts-actors/spec-stately-docs-actor-model-2",
+      "type": "normative",
+      "statement": "An actor is a self-contained entity with its own private state that communicates with other actors exclusively by sending and receiving asynchronous events.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://stately.ai/docs/actors",
+        "anchor": "__unanchored__",
+        "quote": "An actor is a self-contained entity with its own private state that communicates with other actors exclusively by sending and receiving asynchronous events."
+      }
+    }
+  ]
+}

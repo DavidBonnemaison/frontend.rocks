@@ -1,0 +1,16 @@
+{
+  "pageId": "gpu-compositor-layers",
+  "claims": [
+    {
+      "id": "gpu-compositor-layers/spec-css-will-change-module-level-1-1",
+      "type": "normative",
+      "statement": "Using will-change excessively can cause excessive memory consumption and degrade rendering performance.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-will-change-1/",
+        "anchor": "__unanchored__",
+        "quote": "Using will-change excessively can cause excessive memory consumption and degrade rendering performance."
+      }
+    }
+  ]
+}

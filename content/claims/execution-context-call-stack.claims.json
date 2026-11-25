@@ -1,0 +1,16 @@
+{
+  "pageId": "execution-context-call-stack",
+  "claims": [
+    {
+      "id": "execution-context-call-stack/spec-9-4-execution-contexts-1",
+      "type": "normative",
+      "statement": "An execution context is a specification device that is used to track the runtime evaluation of code by an ECMAScript implementation.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://tc39.es/ecma262/",
+        "anchor": "sec-execution-contexts",
+        "quote": "An execution context is a specification device that is used to track the runtime evaluation of code by an ECMAScript implementation."
+      }
+    }
+  ]
+}

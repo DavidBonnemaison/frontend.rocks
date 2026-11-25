@@ -1,0 +1,27 @@
+{
+  "pageId": "undo-redo-structural-sharing",
+  "claims": [
+    {
+      "id": "undo-redo-structural-sharing/spec-immer-structural-sharing-copy-on-write-1",
+      "type": "normative",
+      "statement": "Only the modified path from root to leaf is cloned; unchanged sibling subtrees retain their exact object references across history snapshots.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://immerjs.github.io/immer/structural-sharing/",
+        "anchor": "__unanchored__",
+        "quote": "Only the modified path from root to leaf is cloned; unchanged sibling subtrees retain their exact object references across history snapshots."
+      }
+    },
+    {
+      "id": "undo-redo-structural-sharing/spec-mdn-structuredclone-2",
+      "type": "normative",
+      "statement": "structuredClone() creates a deep clone of a given value, allocating new memory for every nested object and array.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone",
+        "anchor": "__unanchored__",
+        "quote": "structuredClone() creates a deep clone of a given value, allocating new memory for every nested object and array."
+      }
+    }
+  ]
+}

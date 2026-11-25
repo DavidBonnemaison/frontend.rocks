@@ -1,0 +1,27 @@
+{
+  "pageId": "core-web-vitals-mechanics",
+  "claims": [
+    {
+      "id": "core-web-vitals-mechanics/spec-w3c-largest-contentful-paint-1",
+      "type": "normative",
+      "statement": "The Largest Contentful Paint API reports the render time of the largest image or text block visible within the viewport relative to navigation start.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/largest-contentful-paint/",
+        "anchor": "__unanchored__",
+        "quote": "The Largest Contentful Paint API reports the render time of the largest image or text block visible within the viewport relative to navigation start."
+      }
+    },
+    {
+      "id": "core-web-vitals-mechanics/spec-w3c-event-timing-interaction-to-next-pai-2",
+      "type": "normative",
+      "statement": "Interaction to Next Paint measures the latency from user input until the next frame is presented after all event handlers, layout, and paint complete.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/event-timing/",
+        "anchor": "sec-inp",
+        "quote": "Interaction to Next Paint measures the latency from user input until the next frame is presented after all event handlers, layout, and paint complete."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "shadow-dom-encapsulation",
+  "claims": [
+    {
+      "id": "shadow-dom-encapsulation/spec-4-8-shadow-trees-1",
+      "type": "normative",
+      "statement": "When an event is retargeted against a shadow root boundary, its target is adjusted to the shadow host for listeners outside the shadow tree.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://dom.spec.whatwg.org/",
+        "anchor": "shadow-trees",
+        "quote": "When an event is retargeted against a shadow root boundary, its target is adjusted to the shadow host for listeners outside the shadow tree."
+      }
+    }
+  ]
+}

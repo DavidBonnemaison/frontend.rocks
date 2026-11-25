@@ -1,0 +1,16 @@
+{
+  "pageId": "promises-async-await-internals",
+  "claims": [
+    {
+      "id": "promises-async-await-internals/spec-27-7-5-3-await-value-1",
+      "type": "normative",
+      "statement": "Perform PerformPromiseThen(promise, onFulfilled, onRejected) and suspend the running execution context.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://tc39.es/ecma262/",
+        "anchor": "sec-await",
+        "quote": "Perform PerformPromiseThen(promise, onFulfilled, onRejected) and suspend the running execution context."
+      }
+    }
+  ]
+}

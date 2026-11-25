@@ -1,0 +1,16 @@
+{
+  "pageId": "bfcache-navigation",
+  "claims": [
+    {
+      "id": "bfcache-navigation/spec-7-4-session-history-and-navigation-1",
+      "type": "normative",
+      "statement": "Persisted documents are thawed and pageshow is fired with persisted set to true.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/browsing-the-web.html",
+        "anchor": "history-traversal",
+        "quote": "Persisted documents are thawed and pageshow is fired with persisted set to true."
+      }
+    }
+  ]
+}

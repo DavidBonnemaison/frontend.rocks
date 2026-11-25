@@ -21,6 +21,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "validate:content": "tsx scripts/validate-content.ts",
+    "proof:migrate-evidence": "tsx scripts/proof/migrate-evidence-to-claims.ts",
     "check:all": "npm run typecheck && npm run lint && npm run test && npm run validate:content"
   },
   "dependencies": {

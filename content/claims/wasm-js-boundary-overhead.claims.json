@@ -1,0 +1,16 @@
+{
+  "pageId": "wasm-js-boundary-overhead",
+  "claims": [
+    {
+      "id": "wasm-js-boundary-overhead/spec-4-6-3-memory-prototype-grow-1",
+      "type": "normative",
+      "statement": "Growing a Memory detaches the previous ArrayBuffer and creates a new ArrayBuffer backed by the enlarged memory.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://webassembly.github.io/spec/js-api/",
+        "anchor": "__unanchored__",
+        "quote": "Growing a Memory detaches the previous ArrayBuffer and creates a new ArrayBuffer backed by the enlarged memory."
+      }
+    }
+  ]
+}

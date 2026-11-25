@@ -1,0 +1,27 @@
+{
+  "pageId": "debounce-throttle-raf-coalescing",
+  "claims": [
+    {
+      "id": "debounce-throttle-raf-coalescing/spec-whatwg-html-requestanimationframe-1",
+      "type": "normative",
+      "statement": "requestAnimationFrame schedules a callback to run immediately before the browser performs the next repaint for the active document.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html",
+        "anchor": "animation-frames",
+        "quote": "requestAnimationFrame schedules a callback to run immediately before the browser performs the next repaint for the active document."
+      }
+    },
+    {
+      "id": "debounce-throttle-raf-coalescing/spec-mdn-requestanimationframe-2",
+      "type": "normative",
+      "statement": "The callback frequency generally matches the display refresh rate (60Hz, 120Hz) and pauses automatically in background tabs.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame",
+        "anchor": "__unanchored__",
+        "quote": "The callback frequency generally matches the display refresh rate (60Hz, 120Hz) and pauses automatically in background tabs."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "js-resize-observer-pattern",
+  "claims": [
+    {
+      "id": "js-resize-observer-pattern/spec-resizeobserver-lifetime-1",
+      "type": "normative",
+      "statement": "ResizeObserver notifications are delivered after layout and before paint.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/resize-observer/",
+        "anchor": "__unanchored__",
+        "quote": "ResizeObserver notifications are delivered after layout and before paint."
+      }
+    }
+  ]
+}

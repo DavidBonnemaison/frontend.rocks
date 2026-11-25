@@ -1,0 +1,16 @@
+{
+  "pageId": "scheduler-api-yield",
+  "claims": [
+    {
+      "id": "scheduler-api-yield/spec-4-2-2-scheduler-yield-1",
+      "type": "normative",
+      "statement": "yield() returns a promise that resolves after yielding control to the event loop, preserving current task priority and inheritance.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://wicg.github.io/scheduling-apis/",
+        "anchor": "dom-scheduler-yield",
+        "quote": "yield() returns a promise that resolves after yielding control to the event loop, preserving current task priority and inheritance."
+      }
+    }
+  ]
+}

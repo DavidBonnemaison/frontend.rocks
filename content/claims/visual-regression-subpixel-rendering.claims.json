@@ -1,0 +1,27 @@
+{
+  "pageId": "visual-regression-subpixel-rendering",
+  "claims": [
+    {
+      "id": "visual-regression-subpixel-rendering/spec-4-2-fontfaceset-ready-1",
+      "type": "normative",
+      "statement": "The ready promise resolves once all currently loading FontFace objects have finished loading and layout has settled.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-font-loading/",
+        "anchor": "__unanchored__",
+        "quote": "The ready promise resolves once all currently loading FontFace objects have finished loading and layout has settled."
+      }
+    },
+    {
+      "id": "visual-regression-subpixel-rendering/spec-playwright-visual-comparisons-2",
+      "type": "normative",
+      "statement": "Screenshots depend on browser version, OS font rendering, and GPU drivers; generate and verify baselines inside the same Docker image.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://playwright.dev/docs/test-snapshots",
+        "anchor": "__unanchored__",
+        "quote": "Screenshots depend on browser version, OS font rendering, and GPU drivers; generate and verify baselines inside the same Docker image."
+      }
+    }
+  ]
+}

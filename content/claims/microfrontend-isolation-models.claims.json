@@ -1,0 +1,16 @@
+{
+  "pageId": "microfrontend-isolation-models",
+  "claims": [
+    {
+      "id": "microfrontend-isolation-models/spec-8-1-7-3-import-maps-1",
+      "type": "normative",
+      "statement": "An import map allows documents to control the resolution of bare module specifiers to URLs, enabling multiple scripts to share a single module instance in the module map.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/webappapis.html",
+        "anchor": "import-maps",
+        "quote": "An import map allows documents to control the resolution of bare module specifiers to URLs, enabling multiple scripts to share a single module instance in the module map."
+      }
+    }
+  ]
+}

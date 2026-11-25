@@ -1,0 +1,16 @@
+{
+  "pageId": "browser-rendering-pipeline",
+  "claims": [
+    {
+      "id": "browser-rendering-pipeline/spec-8-1-7-3-update-the-rendering-1",
+      "type": "normative",
+      "statement": "Run animation frame callbacks, recalculate styles, update layout, paint and composite.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/webappapis.html",
+        "anchor": "update-the-rendering",
+        "quote": "Run animation frame callbacks, recalculate styles, update layout, paint and composite."
+      }
+    }
+  ]
+}

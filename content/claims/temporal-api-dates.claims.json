@@ -1,0 +1,16 @@
+{
+  "pageId": "temporal-api-dates",
+  "claims": [
+    {
+      "id": "temporal-api-dates/spec-tc39-temporal-specification-1",
+      "type": "normative",
+      "statement": "Temporal provides separate classes for date-only, time-only, zoned date-time, and exact instant values, all immutable and calendar-aware.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://tc39.es/proposal-temporal/docs/",
+        "anchor": "__unanchored__",
+        "quote": "Temporal provides separate classes for date-only, time-only, zoned date-time, and exact instant values, all immutable and calendar-aware."
+      }
+    }
+  ]
+}

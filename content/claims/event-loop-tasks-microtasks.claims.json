@@ -1,0 +1,16 @@
+{
+  "pageId": "event-loop-tasks-microtasks",
+  "claims": [
+    {
+      "id": "event-loop-tasks-microtasks/spec-8-1-7-3-perform-a-microtask-checkpoint-1",
+      "type": "normative",
+      "statement": "While the microtask queue is not empty, pop the oldest microtask and run it.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/webappapis.html",
+        "anchor": "perform-a-microtask-checkpoint",
+        "quote": "While the microtask queue is not empty, pop the oldest microtask and run it."
+      }
+    }
+  ]
+}

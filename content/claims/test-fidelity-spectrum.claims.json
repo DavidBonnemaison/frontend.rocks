@@ -1,0 +1,27 @@
+{
+  "pageId": "test-fidelity-spectrum",
+  "claims": [
+    {
+      "id": "test-fidelity-spectrum/spec-vitest-browser-mode-architecture-1",
+      "type": "normative",
+      "statement": "Browser mode executes component tests inside a real browser page, providing native layout, CSS, and event dispatch without booting a full backend.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://vitest.dev/guide/browser/",
+        "anchor": "__unanchored__",
+        "quote": "Browser mode executes component tests inside a real browser page, providing native layout, CSS, and event dispatch without booting a full backend."
+      }
+    },
+    {
+      "id": "test-fidelity-spectrum/spec-testing-philosophy-isolate-test-user-vis-2",
+      "type": "normative",
+      "statement": "Each E2E test should run in an isolated browser context and focus on critical user journeys rather than unit-level permutations.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://playwright.dev/docs/best-practices",
+        "anchor": "__unanchored__",
+        "quote": "Each E2E test should run in an isolated browser context and focus on critical user journeys rather than unit-level permutations."
+      }
+    }
+  ]
+}

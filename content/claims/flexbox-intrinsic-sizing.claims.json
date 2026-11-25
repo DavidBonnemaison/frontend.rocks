@@ -1,0 +1,16 @@
+{
+  "pageId": "flexbox-intrinsic-sizing",
+  "claims": [
+    {
+      "id": "flexbox-intrinsic-sizing/spec-4-5-implied-minimum-size-of-flex-items-1",
+      "type": "normative",
+      "statement": "To provide a more reasonable default minimum size for flex items, the used value of a main axis automatic minimum size on a flex item that is not a scroll container is a content-based minimum size.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-flexbox-1/",
+        "anchor": "min-size-auto",
+        "quote": "To provide a more reasonable default minimum size for flex items, the used value of a main axis automatic minimum size on a flex item that is not a scroll container is a content-based minimum size."
+      }
+    }
+  ]
+}

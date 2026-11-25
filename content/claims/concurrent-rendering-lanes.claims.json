@@ -1,0 +1,16 @@
+{
+  "pageId": "concurrent-rendering-lanes",
+  "claims": [
+    {
+      "id": "concurrent-rendering-lanes/spec-section-4-the-prioritized-task-schedulin-1",
+      "type": "normative",
+      "statement": "scheduler.yield() allows a long-running task to yield control to the event loop so higher-priority user input and rendering tasks can execute before resuming.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://wicg.github.io/scheduling-apis/",
+        "anchor": "__unanchored__",
+        "quote": "scheduler.yield() allows a long-running task to yield control to the event loop so higher-priority user input and rendering tasks can execute before resuming."
+      }
+    }
+  ]
+}

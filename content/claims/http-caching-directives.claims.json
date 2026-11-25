@@ -1,0 +1,27 @@
+{
+  "pageId": "http-caching-directives",
+  "claims": [
+    {
+      "id": "http-caching-directives/spec-rfc-9111-section-5-2-cache-control-1",
+      "type": "normative",
+      "statement": "The Cache-Control header field is used to specify directives for caches along the request/response chain.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://www.rfc-editor.org/rfc/rfc9111",
+        "anchor": "section-5.2",
+        "quote": "The Cache-Control header field is used to specify directives for caches along the request/response chain."
+      }
+    },
+    {
+      "id": "http-caching-directives/spec-mdn-http-caching-directives-2",
+      "type": "normative",
+      "statement": "no-cache allows a response to be stored in a cache, but requires validation with the origin server before each reuse.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control",
+        "anchor": "__unanchored__",
+        "quote": "no-cache allows a response to be stored in a cache, but requires validation with the origin server before each reuse."
+      }
+    }
+  ]
+}

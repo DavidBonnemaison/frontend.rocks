@@ -1,0 +1,27 @@
+{
+  "pageId": "virtualized-lists-windowing",
+  "claims": [
+    {
+      "id": "virtualized-lists-windowing/spec-css-containment-level-2-content-visibili-1",
+      "type": "normative",
+      "statement": "The content-visibility property controls whether or not an element renders its contents at all, skipping layout and painting for offscreen subtrees.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/content-visibility",
+        "anchor": "__unanchored__",
+        "quote": "The content-visibility property controls whether or not an element renders its contents at all, skipping layout and painting for offscreen subtrees."
+      }
+    },
+    {
+      "id": "virtualized-lists-windowing/spec-web-dev-list-virtualization-windowing-2",
+      "type": "normative",
+      "statement": "Windowing renders only the small subset of rows visible within the scroll viewport plus a small overscan buffer, keeping DOM node count O(viewport).",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://web.dev/articles/virtualize-long-lists-react-window",
+        "anchor": "__unanchored__",
+        "quote": "Windowing renders only the small subset of rows visible within the scroll viewport plus a small overscan buffer, keeping DOM node count O(viewport)."
+      }
+    }
+  ]
+}

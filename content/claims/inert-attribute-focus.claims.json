@@ -1,0 +1,16 @@
+{
+  "pageId": "inert-attribute-focus",
+  "claims": [
+    {
+      "id": "inert-attribute-focus/spec-6-3-the-inert-attribute-1",
+      "type": "normative",
+      "statement": "When a node is inert, user agent ignore input events, focusability, find-in-page, and accessibility tree exposure for that node.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/interaction.html",
+        "anchor": "the-inert-attribute",
+        "quote": "When a node is inert, user agent ignore input events, focusability, find-in-page, and accessibility tree exposure for that node."
+      }
+    }
+  ]
+}

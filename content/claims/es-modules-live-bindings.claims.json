@@ -1,0 +1,16 @@
+{
+  "pageId": "es-modules-live-bindings",
+  "claims": [
+    {
+      "id": "es-modules-live-bindings/spec-16-2-1-6-3-resolveexport-1",
+      "type": "normative",
+      "statement": "A module namespace exotic object exposes indirect bindings to the Module Environment Record of the exporting module.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://tc39.es/ecma262/",
+        "anchor": "sec-resolveexport",
+        "quote": "A module namespace exotic object exposes indirect bindings to the Module Environment Record of the exporting module."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "dom-event-propagation",
+  "claims": [
+    {
+      "id": "dom-event-propagation/spec-2-9-dispatching-events-1",
+      "type": "normative",
+      "statement": "Events propagate through the event path in capturing, target, and bubbling phases.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://dom.spec.whatwg.org/",
+        "anchor": "dispatching-events",
+        "quote": "Events propagate through the event path in capturing, target, and bubbling phases."
+      }
+    }
+  ]
+}

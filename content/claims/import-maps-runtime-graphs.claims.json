@@ -1,0 +1,16 @@
+{
+  "pageId": "import-maps-runtime-graphs",
+  "claims": [
+    {
+      "id": "import-maps-runtime-graphs/spec-8-1-6-5-import-maps-1",
+      "type": "normative",
+      "statement": "An import map is a JSON object that allows authors to control how module specifiers are resolved when imported by JavaScript modules.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/webappapis.html",
+        "anchor": "import-maps",
+        "quote": "An import map is a JSON object that allows authors to control how module specifiers are resolved when imported by JavaScript modules."
+      }
+    }
+  ]
+}

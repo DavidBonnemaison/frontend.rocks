@@ -1,0 +1,27 @@
+{
+  "pageId": "state-topology-boundaries",
+  "claims": [
+    {
+      "id": "state-topology-boundaries/spec-7-4-2-the-history-interface-1",
+      "type": "normative",
+      "statement": "history.replaceState(data, unused, url) updates the current session history entry URL without triggering a document reload.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/nav-history-apis.html",
+        "anchor": "the-history-interface",
+        "quote": "history.replaceState(data, unused, url) updates the current session history entry URL without triggering a document reload."
+      }
+    },
+    {
+      "id": "state-topology-boundaries/spec-urlsearchparams-web-api-2",
+      "type": "normative",
+      "statement": "The URLSearchParams interface defines utility methods to work with the query string of a URL.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams",
+        "anchor": "__unanchored__",
+        "quote": "The URLSearchParams interface defines utility methods to work with the query string of a URL."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "accessibility-tree-aria",
+  "claims": [
+    {
+      "id": "accessibility-tree-aria/spec-wai-aria-1-2-1-2-accessibility-tree-1",
+      "type": "normative",
+      "statement": "The accessibility tree is a subset of the DOM tree exposed to platform accessibility APIs (UIA, NSAccessibility, ATK) containing each node's computed Role, Accessible Name, Description, and States.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/aria/",
+        "anchor": "intro_ria_accessibility_tree",
+        "quote": "The accessibility tree is a subset of the DOM tree exposed to platform accessibility APIs (UIA, NSAccessibility, ATK) containing each node's computed Role, Accessible Name, Description, and States."
+      }
+    }
+  ]
+}

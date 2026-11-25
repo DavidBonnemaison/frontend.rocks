@@ -1,0 +1,16 @@
+{
+  "pageId": "indexeddb-transactions-quotas",
+  "claims": [
+    {
+      "id": "indexeddb-transactions-quotas/spec-indexeddb-api-3-0-2-4-transactions-1",
+      "type": "normative",
+      "statement": "A transaction created using transaction() is active immediately upon creation, and auto-commits as soon as the event loop finishes executing requests and no new requests are placed against it.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/IndexedDB/",
+        "anchor": "transaction-lifetime-concept",
+        "quote": "A transaction created using transaction() is active immediately upon creation, and auto-commits as soon as the event loop finishes executing requests and no new requests are placed against it."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "popover-api-light-dismiss",
+  "claims": [
+    {
+      "id": "popover-api-light-dismiss/spec-6-11-the-popover-attribute-1",
+      "type": "normative",
+      "statement": "Auto popovers participate in light dismiss and close other unrelated auto popovers when shown.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/popover.html",
+        "anchor": "the-popover-attribute",
+        "quote": "Auto popovers participate in light dismiss and close other unrelated auto popovers when shown."
+      }
+    }
+  ]
+}

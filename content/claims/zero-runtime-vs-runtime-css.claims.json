@@ -1,0 +1,16 @@
+{
+  "pageId": "zero-runtime-vs-runtime-css",
+  "claims": [
+    {
+      "id": "zero-runtime-vs-runtime-css/spec-6-4-1-cssstylesheet-insertrule-1",
+      "type": "normative",
+      "statement": "Inserting a CSS rule into an active stylesheet invalidates the style engine's selector match cache and requires style recalculation before the next layout.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/cssom/",
+        "anchor": "dom-cssstylesheet-insertrule",
+        "quote": "Inserting a CSS rule into an active stylesheet invalidates the style engine's selector match cache and requires style recalculation before the next layout."
+      }
+    }
+  ]
+}

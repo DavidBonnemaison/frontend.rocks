@@ -1,0 +1,27 @@
+{
+  "pageId": "network-interception-har-replay",
+  "claims": [
+    {
+      "id": "network-interception-har-replay/spec-4-4-handle-fetch-1",
+      "type": "normative",
+      "statement": "A service worker intercepts fetch events for requests within its scope and may respond with a synthesized Response object via respondWith().",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/ServiceWorker/",
+        "anchor": "__unanchored__",
+        "quote": "A service worker intercepts fetch events for requests within its scope and may respond with a synthesized Response object via respondWith()."
+      }
+    },
+    {
+      "id": "network-interception-har-replay/spec-playwright-har-replay-2",
+      "type": "normative",
+      "statement": "page.routeFromHAR() matches outgoing browser requests against recorded HAR entries and fulfills them with the archived status, headers, and body.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://playwright.dev/docs/mock",
+        "anchor": "mocking-with-har-files",
+        "quote": "page.routeFromHAR() matches outgoing browser requests against recorded HAR entries and fulfills them with the archived status, headers, and body."
+      }
+    }
+  ]
+}

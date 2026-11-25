@@ -1,0 +1,27 @@
+{
+  "pageId": "responsive-images-decoding",
+  "claims": [
+    {
+      "id": "responsive-images-decoding/spec-whatwg-html-images-srcset-sizes-and-deco-1",
+      "type": "normative",
+      "statement": "The decoding attribute hints to the user agent whether to decode the image synchronously or asynchronously off the main thread.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/images.html",
+        "anchor": "updating-the-image-data",
+        "quote": "The decoding attribute hints to the user agent whether to decode the image synchronously or asynchronously off the main thread."
+      }
+    },
+    {
+      "id": "responsive-images-decoding/spec-whatwg-html-fetchpriority-loading-2",
+      "type": "normative",
+      "statement": "The loading attribute controls lazy loading of offscreen images, while fetchpriority hints relative network urgency for the LCP candidate.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/embedded-content.html",
+        "anchor": "attr-img-fetchpriority",
+        "quote": "The loading attribute controls lazy loading of offscreen images, while fetchpriority hints relative network urgency for the LCP candidate."
+      }
+    }
+  ]
+}

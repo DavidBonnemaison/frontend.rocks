@@ -1,0 +1,16 @@
+{
+  "pageId": "css-houdini-property",
+  "claims": [
+    {
+      "id": "css-houdini-property/spec-2-registering-custom-properties-1",
+      "type": "normative",
+      "statement": "Registering a custom property with a syntax other than * enables the user agent to type-check values and interpolate them in animations and transitions.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.css-houdini.org/css-properties-values-api/",
+        "anchor": "__unanchored__",
+        "quote": "Registering a custom property with a syntax other than * enables the user agent to type-check values and interpolate them in animations and transitions."
+      }
+    }
+  ]
+}

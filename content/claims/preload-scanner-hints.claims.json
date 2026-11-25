@@ -1,0 +1,16 @@
+{
+  "pageId": "preload-scanner-hints",
+  "claims": [
+    {
+      "id": "preload-scanner-hints/spec-2-6-8-fetch-priority-attributes-1",
+      "type": "normative",
+      "statement": "The fetchpriority attribute provides a hint to the user agent about the relative priority of the fetch.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/urls-and-fetching.html",
+        "anchor": "fetch-priority-attributes",
+        "quote": "The fetchpriority attribute provides a hint to the user agent about the relative priority of the fetch."
+      }
+    }
+  ]
+}
