@@ -1,0 +1,24 @@
+---
+id: fixture-page
+title: Fixture
+---
+
+## TL;DR
+
+<C id="drains">Every queued microtask runs before the next task</C>, so `Promise.then` beats `setTimeout(cb, 0)`. Use a microtask when order matters.
+
+The engine resolves container size first, e.g. during layout. It then evaluates the rules.
+
+<Advice>Prefer `queueMicrotask()` for this. <C id="qm-same-queue">It uses the same queue as promise reactions.</C></Advice>
+
+Call `obj.method(). then` chains. <C id="other-page/x">One sentence. Two sentences.</C> Three.
+
+<Story>
+Thomas shipped it on a Friday. Nobody noticed.
+</Story>
+
+| API | Behavior |
+| --- | --- |
+| `queueMicrotask` | Runs the callback in the microtask checkpoint |
+
+Shipped <SupportDate feature="api.queueMicrotask" event="baseline-high" />.
