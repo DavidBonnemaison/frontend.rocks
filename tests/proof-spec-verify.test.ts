@@ -28,7 +28,13 @@ import {
   verifySpecQuote,
   __resetParsedSpecCache,
 } from '@/lib/proof/spec/verify';
-import { buildSpecQuotesArtifact } from '../scripts/proof/verify-spec-quotes';
+import { findAnchorForQuote } from '@/lib/proof/spec/extract-section';
+import {
+  applyAnchorSuggestions,
+  buildLegacyReportMarkdown,
+  buildSpecQuotesArtifact,
+  suggestAnchorsForOutcomes,
+} from '../scripts/proof/verify-spec-quotes';
 
 const FIXTURES_DIR = path.resolve(__dirname, 'fixtures', 'specs');
 const loadFixture = (name: string) => fs.readFileSync(path.join(FIXTURES_DIR, name), 'utf-8');
@@ -614,5 +620,137 @@ describe('verifySpecQuote, records, and artifact', () => {
       }
     );
     expect(res.status).toBe(2);
+  });
+
+  it('suggests smallest matching anchor when quote is in another section and only writes with --write', async () => {
+    const root = makeTempDir('spec-suggest-');
+    const cacheDir = path.join(root, 'http-cache');
+    const recordDir = path.join(root, 'records');
+    const claimsDir = path.join(root, 'claims');
+    fs.mkdirSync(claimsDir, { recursive: true });
+
+    const rfc9110 = loadFixture('rfc-9110-excerpt.html');
+    expect(
+      findAnchorForQuote(
+        whatwg,
+        "While the event loop's microtask queue is not empty:"
+      )[0]
+    ).toBe('perform-a-microtask-checkpoint');
+    expect(
+      findAnchorForQuote(
+        rfc9110,
+        'Idempotent methods are distinguished because the request can be repeated automatically'
+      )
+    ).toContain('section-9.2.2');
+    expect(findAnchorForQuote(whatwg, 'nonexistent quote string here')).toEqual([]);
+
+    const wrongAnchorClaim = makeClaim({
+      id: 'event-loop-tasks-microtasks/wrong-anchor',
+      anchor: 'next-section',
+    });
+    const claimsFilePath = path.join(claimsDir, 'event-loop-tasks-microtasks.claims.json');
+    const initialClaimsJson =
+      JSON.stringify({ pageId: 'event-loop-tasks-microtasks', claims: [wrongAnchorClaim] }, null, 2) +
+      '\n';
+    fs.writeFileSync(claimsFilePath, initialClaimsJson, 'utf-8');
+
+    const fetchImpl = (async () =>
+      makeResponse(whatwg, { url: wrongAnchorClaim.proof.url })) as typeof fetch;
+
+    const outcome = await verifySpecQuote({
+      claim: wrongAnchorClaim,
+      maxAgeHours: 0,
+      recordDir,
+      fetchOptions: { fetchImpl, cacheDir, minIntervalMs: 0, sleep: async () => {} },
+    });
+    expect(outcome.kind === 'result' && outcome.result.reason).toBe('quote-not-found');
+
+    const suggestions = await suggestAnchorsForOutcomes(
+      [{ claim: wrongAnchorClaim, outcome }],
+      {
+        maxAgeHours: 0,
+        fetchOptions: { fetchImpl, cacheDir, minIntervalMs: 0, sleep: async () => {} },
+      }
+    );
+    expect(suggestions).toEqual([
+      {
+        claimId: wrongAnchorClaim.id,
+        suggestedAnchors: ['perform-a-microtask-checkpoint', 'event-loop-processing-model'],
+      },
+    ]);
+
+    // Without applyAnchorSuggestions (--write), claims file is untouched
+    expect(fs.readFileSync(claimsFilePath, 'utf-8')).toBe(initialClaimsJson);
+
+    // With applyAnchorSuggestions (--write), only anchor changes and quote stays identical
+    const applied = applyAnchorSuggestions(suggestions, claimsDir);
+    expect(applied).toEqual({ updatedFiles: 1, updatedClaims: 1 });
+    const updated = JSON.parse(fs.readFileSync(claimsFilePath, 'utf-8'));
+    expect(updated.claims[0].proof.anchor).toBe('perform-a-microtask-checkpoint');
+    expect(updated.claims[0].proof.quote).toBe(wrongAnchorClaim.proof.quote);
+  });
+
+  it('produces a legacy report whose table row counts sum to the total spec-quote claims', async () => {
+    const root = makeTempDir('spec-legacy-');
+    const cacheDir = path.join(root, 'http-cache');
+    const recordDir = path.join(root, 'records');
+
+    const verbatimAtAnchor = makeClaim({ id: 'event-loop-tasks-microtasks/at-anchor' });
+    const unanchoredElsewhere = makeClaim({
+      id: 'event-loop-tasks-microtasks/elsewhere',
+      anchor: UNANCHORED,
+    });
+    const inNote = makeClaim({
+      id: 'event-loop-tasks-microtasks/in-note',
+      quote: 'This might involve invoking scripted callbacks, which eventually calls the clean up after running script steps.',
+    });
+    const paraphrased = makeClaim({
+      id: 'event-loop-tasks-microtasks/paraphrased',
+      quote: 'While the microtask queue is not empty, pop the oldest microtask and run it.',
+    });
+    const rejectedSource = makeClaim({
+      id: 'event-loop-tasks-microtasks/mdn-source',
+      url: 'https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide',
+      anchor: 'tasks_vs_microtasks',
+    });
+
+    const claims = [verbatimAtAnchor, unanchoredElsewhere, inNote, paraphrased, rejectedSource];
+    const fetchImpl = (async () =>
+      makeResponse(whatwg, { url: verbatimAtAnchor.proof.url })) as typeof fetch;
+
+    const outcomes = [];
+    for (const claim of claims) {
+      const outcome = await verifySpecQuote({
+        claim,
+        maxAgeHours: 0,
+        recordDir,
+        fetchOptions: { fetchImpl, cacheDir, minIntervalMs: 0, sleep: async () => {} },
+      });
+      outcomes.push({ claim, outcome });
+    }
+
+    const { markdown, counts } = await buildLegacyReportMarkdown({
+      outcomes,
+      dateYmd: '2026-12-01',
+      maxAgeHours: 0,
+      fetchOptions: { fetchImpl, cacheDir, minIntervalMs: 0, sleep: async () => {} },
+    });
+
+    expect(counts).toEqual({
+      verbatimAtAnchor: 1,
+      verbatimElsewhere: 1,
+      nonNormativeOnly: 1,
+      notFound: 1,
+      sourceRejected: 1,
+    });
+
+    const rowCounts = markdown
+      .split('\n')
+      .filter((line) => /^\| (Found|Not found|Source rejected)/.test(line))
+      .map((line) => Number(line.split('|')[2].trim()));
+    expect(rowCounts).toHaveLength(5);
+    expect(rowCounts.reduce((a, b) => a + b, 0)).toBe(claims.length);
+    expect(markdown).toContain('# Legacy spec quotes report (2026-12-01)');
+    expect(markdown).toContain(paraphrased.id);
   });
 });
