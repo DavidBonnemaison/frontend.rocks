@@ -13,6 +13,7 @@ import {
   createProofMdxComponents,
   type ProofMdxContext,
 } from '@/components/proof/mdx-components';
+import { SourceQuote } from '@/components/proof/SourceQuote';
 
 describe('proof MDX components', () => {
   const tempDirs: string[] = [];
@@ -138,3 +139,72 @@ describe('proof MDX components', () => {
     );
   });
 });
+
+describe('SourceQuote', () => {
+  const commit = 'fc91aa8caa75fc01f57bc7525d1a78799d13294a';
+  const claim: Claim = {
+    id: 'event-target/x',
+    type: 'implementation',
+    statement: 'WebKit EventTarget checks script execution context validity before adding listeners.',
+    proof: {
+      kind: 'source-quote',
+      repo: 'WebKit/WebKit',
+      commit,
+      path: 'Source/WebCore/dom/EventTarget.cpp',
+      lines: [24, 25],
+      quote: 'if (!isScriptExecutionContextValid())\n    return false;',
+    },
+  };
+
+  it('renders figure.source-quote with GitHub blob link, short SHA, and highlighted code', async () => {
+    const ctx: ProofMdxContext = {
+      pageId: 'event-target',
+      claimsBySlug: buildClaimsBySlug([claim]),
+      claimsById: new Map([[claim.id, claim]]),
+    };
+
+    const el = await SourceQuote({ ctx, claimRef: 'x' });
+    const html = renderToStaticMarkup(el);
+
+    expect(html).toContain('<figure class="source-quote');
+    expect(html).toContain('data-claim-id="event-target/x"');
+    expect(html).toContain(
+      `href="https://github.com/WebKit/WebKit/blob/${commit}/Source/WebCore/dom/EventTarget.cpp#L24-L25"`
+    );
+    expect(html).toContain(`title="${commit}"`);
+    expect(html).toContain(`@${commit.slice(0, 7)}`);
+    expect(html).toContain('see file header');
+    expect(html).toContain('class="shiki ');
+    expect(html).toContain('<span style="color:');
+  });
+
+  it('resolves cross-page references via claimsById', async () => {
+    const remoteClaim: Claim = {
+      ...claim,
+      id: 'other-page/x',
+    };
+    const ctx: ProofMdxContext = {
+      pageId: 'current-page',
+      claimsBySlug: new Map(),
+      claimsById: new Map([[remoteClaim.id, remoteClaim]]),
+    };
+
+    const el = await SourceQuote({ ctx, claimRef: 'other-page/x' });
+    const html = renderToStaticMarkup(el);
+
+    expect(html).toContain('<figure class="source-quote');
+    expect(html).toContain('data-claim-id="other-page/x"');
+    expect(html).toContain(`https://github.com/WebKit/WebKit/blob/${commit}/Source/WebCore/dom/EventTarget.cpp#L24-L25`);
+  });
+
+  it('throws an error naming the page when the claim id is unknown', async () => {
+    const ctx: ProofMdxContext = {
+      pageId: 'event-target',
+      claimsBySlug: new Map(),
+      claimsById: new Map(),
+    };
+
+    await expect(SourceQuote({ ctx, claimRef: 'missing' })).rejects.toThrow(/event-target/);
+  });
+});
+

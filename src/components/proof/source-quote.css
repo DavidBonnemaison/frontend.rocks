@@ -1,0 +1,60 @@
+.source-quote {
+  margin: 1.25rem 0;
+}
+
+.source-quote__caption {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  min-width: 0;
+}
+
+.source-quote__repo {
+  font-weight: 600;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.source-quote__path {
+  font-family: var(--mono);
+  color: var(--accent);
+  text-decoration: none;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+  unicode-bidi: plaintext;
+}
+
+.source-quote__path:hover {
+  text-decoration: underline;
+}
+
+.source-quote__commit {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.source-quote__license {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .source-quote__caption {
+    gap: 0.4rem;
+  }
+
+  .source-quote__license {
+    display: none;
+  }
+}
