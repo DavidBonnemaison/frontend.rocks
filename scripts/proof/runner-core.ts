@@ -2,7 +2,8 @@ import type { Browser, BrowserContext, ConsoleMessage, Page } from '@playwright/
 import type { EngineId } from '../../src/lib/proof/claim-schema';
 import type { ConsoleEntry, RunVariant } from '../../src/lib/proof/define-experiment';
 import type { ExperimentBundle } from '../../src/lib/proof/experiment-schema';
-import type { CaseResult, VacuityResult } from '../../src/lib/proof/results-schema';
+import type { CaseResult, MeasuredObserved, VacuityResult } from '../../src/lib/proof/results-schema';
+import { mannWhitneyGreater, median } from '../../src/lib/proof/stats';
 import type { ParamValues } from '../../src/lib/proof/runtime/compose';
 import { jsonEqual } from '../../src/lib/proof/runtime/canonical-json';
 import { evaluateCase, type Executor } from '../../src/lib/proof/runtime/evaluate';
@@ -339,12 +340,194 @@ export async function runStandard(
   return { cases, vacuity };
 }
 
+function round(value: number, decimals: number): number {
+  const factor = 10 ** decimals;
+  return Math.round(value * factor) / factor;
+}
+
+function asNonNegativeNumber(res: RunResult, label: string): { ok: true; value: number } | { ok: false; error: string } {
+  if (!res.ok) return { ok: false, error: `${label}: ${res.error}` };
+  if (typeof res.value !== 'number' || !Number.isFinite(res.value) || res.value < 0) {
+    return {
+      ok: false,
+      error: `${label}: observe must return a non-negative finite number (got ${JSON.stringify(res.value)})`,
+    };
+  }
+  return { ok: true, value: res.value };
+}
+
+async function collectAlternatingSamples(
+  exec: Executor,
+  repeat: number,
+  params: ParamValues,
+  expectKey: string,
+  mutated: boolean
+): Promise<{ ok: true; treatment: number[]; control: number[] } | { ok: false; error: string }> {
+  const treatment: number[] = [];
+  const control: number[] = [];
+
+  for (let i = 0; i < repeat; i++) {
+    if (i % 2 === 0) {
+      const t = asNonNegativeNumber(
+        await exec('treatment', params, mutated, { expectKey }),
+        mutated ? 'mutated treatment' : 'treatment'
+      );
+      if (!t.ok) return t;
+      treatment.push(t.value);
+
+      const c = asNonNegativeNumber(
+        await exec('control', params, false, { expectKey }),
+        'control'
+      );
+      if (!c.ok) return c;
+      control.push(c.value);
+    } else {
+      const c = asNonNegativeNumber(
+        await exec('control', params, false, { expectKey }),
+        'control'
+      );
+      if (!c.ok) return c;
+      control.push(c.value);
+
+      const t = asNonNegativeNumber(
+        await exec('treatment', params, mutated, { expectKey }),
+        mutated ? 'mutated treatment' : 'treatment'
+      );
+      if (!t.ok) return t;
+      treatment.push(t.value);
+    }
+  }
+
+  return { ok: true, treatment, control };
+}
+
+export async function runMeasured(
+  bundle: ExperimentBundle,
+  exec: Executor,
+  opts?: { headed?: boolean }
+): Promise<EngineRunOutcome> {
+  if (!bundle.measured) {
+    throw new Error(`Experiment "${bundle.id}" has kind "measured" without a measured config`);
+  }
+  const { repeat, minRatio } = bundle.measured;
+  const cases: Record<string, CaseResult> = {};
+  const keys = Object.keys(bundle.expect).sort();
+  const okKeys: string[] = [];
+
+  for (const key of keys) {
+    const params = bundle.expect[key].params ?? {};
+    const collected = await collectAlternatingSamples(exec, repeat, params, key, false);
+    if (!collected.ok) {
+      cases[key] = {
+        status: 'error',
+        observed: { treatment: null, control: null },
+        presented: null,
+        error: collected.error,
+      };
+      continue;
+    }
+
+    if (opts?.headed) {
+      console.log(
+        `[measured ${bundle.id}/${key}] treatment=[${collected.treatment.map((v) => v.toFixed(2)).join(', ')}] control=[${collected.control.map((v) => v.toFixed(2)).join(', ')}]`
+      );
+    }
+
+    const tMed = median(collected.treatment);
+    const cMed = median(collected.control);
+    if (cMed < 1) {
+      cases[key] = {
+        status: 'error',
+        observed: {
+          treatment: { median: round(tMed, 3), n: collected.treatment.length },
+          control: { median: round(cMed, 3), n: collected.control.length },
+          ratio: cMed > 0 ? round(tMed / cMed, 3) : 0,
+          pValue: 1,
+        },
+        presented: null,
+        error: 'FR_MEASURE_TOO_SMALL: scale up the workload',
+      };
+      continue;
+    }
+
+    const ratio = tMed / cMed;
+    const { pValue } = mannWhitneyGreater(collected.treatment, collected.control);
+    const observed: MeasuredObserved = {
+      treatment: { median: round(tMed, 3), n: collected.treatment.length },
+      control: { median: round(cMed, 3), n: collected.control.length },
+      ratio: round(ratio, 3),
+      pValue: round(pValue, 6),
+    };
+    const pass = ratio >= minRatio && pValue < 0.01;
+    cases[key] = {
+      status: pass ? 'pass' : 'fail',
+      observed,
+      presented: null,
+      error: null,
+    };
+    okKeys.push(key);
+  }
+
+  let mutationChanges: boolean | null = null;
+  for (const key of okKeys) {
+    const params = bundle.expect[key].params ?? {};
+    const mutatedCollected = await collectAlternatingSamples(exec, repeat, params, key, true);
+    if (!mutatedCollected.ok) {
+      mutationChanges = true;
+      break;
+    }
+    const mtMed = median(mutatedCollected.treatment);
+    const mcMed = median(mutatedCollected.control);
+    const mRatio = mcMed > 0 ? mtMed / mcMed : 0;
+    const { pValue: mPValue } = mannWhitneyGreater(
+      mutatedCollected.treatment,
+      mutatedCollected.control
+    );
+    const disappeared = mRatio < minRatio || mPValue >= 0.01;
+    mutationChanges = disappeared;
+    if (disappeared) break;
+  }
+
+  let blankDiffers: boolean | null = null;
+  if (okKeys.length > 0) {
+    const blank = await exec('blank', {}, false, { expectKey: null });
+    blankDiffers =
+      !blank.ok ||
+      typeof blank.value !== 'number' ||
+      !Number.isFinite(blank.value);
+  }
+
+  const failures = [
+    mutationChanges === false &&
+      'removing mutation.remove from the treatment did not make the measured effect disappear',
+    blankDiffers === false && 'observe returned a finite number on a blank document',
+  ].filter(Boolean) as string[];
+
+  const vacuity: VacuityResult = {
+    ok: failures.length === 0,
+    checks: { differs: null, mutationChanges, blankDiffers },
+    detail: failures.length ? failures.join('; ') : null,
+  };
+
+  if (!vacuity.ok) {
+    for (const key of Object.keys(cases)) {
+      if (cases[key].status !== 'error') {
+        cases[key] = { ...cases[key], status: 'vacuous', error: vacuity.detail };
+      }
+    }
+  }
+
+  return { cases, vacuity };
+}
+
 export async function runExperimentInEngine(input: EngineRunInput): Promise<EngineRunOutcome> {
   const pool = new ContextPool(input);
   try {
     const exec: Executor = (variant, params, mutated, meta) =>
       pool.execute(variant, params, mutated, meta.expectKey);
-    return await runStandard(input.bundle, exec);
+    return input.bundle.kind === 'measured'
+      ? await runMeasured(input.bundle, exec, { headed: input.headed })
+      : await runStandard(input.bundle, exec);
   } finally {
     await pool.closeAll();
   }
