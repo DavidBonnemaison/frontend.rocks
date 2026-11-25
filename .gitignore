@@ -52,4 +52,5 @@ yarn-error.log*
 
 # Proof and lab build output
 /.proof-build
+/public/experiments/
 /dist-lab
