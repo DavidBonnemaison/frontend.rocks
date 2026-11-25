@@ -1,0 +1,27 @@
+{
+  "pageId": "font-loading-cls",
+  "claims": [
+    {
+      "id": "font-loading-cls/spec-css-fonts-module-level-4-font-display-1",
+      "type": "normative",
+      "statement": "The font-display descriptor determines how a font face is displayed based on whether and when it is downloaded and ready to use.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-fonts-4/",
+        "anchor": "font-display-desc",
+        "quote": "The font-display descriptor determines how a font face is displayed based on whether and when it is downloaded and ready to use."
+      }
+    },
+    {
+      "id": "font-loading-cls/spec-css-fonts-module-level-5-metric-override-2",
+      "type": "normative",
+      "statement": "size-adjust, ascent-override, descent-override, and line-gap-override align fallback system font metrics with the webfont.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-fonts-5/",
+        "anchor": "font-size-adjust-desc",
+        "quote": "size-adjust, ascent-override, descent-override, and line-gap-override align fallback system font metrics with the webfont."
+      }
+    }
+  ]
+}

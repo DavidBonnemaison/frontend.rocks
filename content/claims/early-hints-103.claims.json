@@ -1,0 +1,27 @@
+{
+  "pageId": "early-hints-103",
+  "claims": [
+    {
+      "id": "early-hints-103/spec-rfc-8297-section-2-http-status-code-103-1",
+      "type": "normative",
+      "statement": "The 103 (Early Hints) informational status code indicates to the client that the server is likely to send a final response with the header fields included in the informational response.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://www.rfc-editor.org/rfc/rfc8297",
+        "anchor": "__unanchored__",
+        "quote": "The 103 (Early Hints) informational status code indicates to the client that the server is likely to send a final response with the header fields included in the informational response."
+      }
+    },
+    {
+      "id": "early-hints-103/spec-whatwg-html-processing-link-headers-in-1-2",
+      "type": "normative",
+      "statement": "A 103 Early Hints response allows the user agent to start preloading or preconnecting to critical subresources while the final response is still being generated.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/links.html",
+        "anchor": "early-hints",
+        "quote": "A 103 Early Hints response allows the user agent to start preloading or preconnecting to critical subresources while the final response is still being generated."
+      }
+    }
+  ]
+}

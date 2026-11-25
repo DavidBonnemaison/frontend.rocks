@@ -1,0 +1,16 @@
+{
+  "pageId": "user-preference-media-queries",
+  "claims": [
+    {
+      "id": "user-preference-media-queries/spec-media-queries-level-5-11-user-preference-1",
+      "type": "normative",
+      "statement": "User preference media features (prefers-reduced-motion, prefers-color-scheme, prefers-contrast, forced-colors) expose OS-level accessibility and display settings to CSS and matchMedia().",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/mediaqueries-5/",
+        "anchor": "mf-user-preferences",
+        "quote": "User preference media features (prefers-reduced-motion, prefers-color-scheme, prefers-contrast, forced-colors) expose OS-level accessibility and display settings to CSS and matchMedia()."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "opfs-origin-private-fs",
+  "claims": [
+    {
+      "id": "opfs-origin-private-fs/spec-file-system-living-standard-5-origin-pri-1",
+      "type": "normative",
+      "statement": "The origin private file system is a storage endpoint private to the origin of the page, optimized for performance, with synchronous access handles available inside dedicated workers.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://fs.spec.whatwg.org/",
+        "anchor": "origin-private-file-system",
+        "quote": "The origin private file system is a storage endpoint private to the origin of the page, optimized for performance, with synchronous access handles available inside dedicated workers."
+      }
+    }
+  ]
+}

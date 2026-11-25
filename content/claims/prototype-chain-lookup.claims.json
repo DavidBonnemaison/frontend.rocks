@@ -1,0 +1,16 @@
+{
+  "pageId": "prototype-chain-lookup",
+  "claims": [
+    {
+      "id": "prototype-chain-lookup/spec-10-1-8-1-ordinaryget-o-p-receiver-1",
+      "type": "normative",
+      "statement": "Let parent be ? O.[[GetPrototypeOf]](). If parent is null, return undefined. Return ? parent.[[Get]](P, Receiver).",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://tc39.es/ecma262/",
+        "anchor": "sec-ordinaryget",
+        "quote": "Let parent be ? O.[[GetPrototypeOf]](). If parent is null, return undefined. Return ? parent.[[Get]](P, Receiver)."
+      }
+    }
+  ]
+}

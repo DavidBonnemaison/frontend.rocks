@@ -1,0 +1,16 @@
+{
+  "pageId": "regexp-backtracking-unicode",
+  "claims": [
+    {
+      "id": "regexp-backtracking-unicode/spec-22-2-regexp-regular-expression-objects-1",
+      "type": "normative",
+      "statement": "With the u or v flag enabled, patterns match full Unicode code points and support Unicode property escapes.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://tc39.es/ecma262/",
+        "anchor": "sec-regexp-regular-expression-objects",
+        "quote": "With the u or v flag enabled, patterns match full Unicode code points and support Unicode property escapes."
+      }
+    }
+  ]
+}

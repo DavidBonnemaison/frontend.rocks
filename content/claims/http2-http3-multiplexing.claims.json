@@ -1,0 +1,27 @@
+{
+  "pageId": "http2-http3-multiplexing",
+  "claims": [
+    {
+      "id": "http2-http3-multiplexing/spec-rfc-9113-section-5-streams-and-multiplex-1",
+      "type": "normative",
+      "statement": "A stream is an independent, bidirectional sequence of frames exchanged between the client and server within an HTTP/2 connection.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://www.rfc-editor.org/rfc/rfc9113",
+        "anchor": "section-5",
+        "quote": "A stream is an independent, bidirectional sequence of frames exchanged between the client and server within an HTTP/2 connection."
+      }
+    },
+    {
+      "id": "http2-http3-multiplexing/spec-rfc-9114-section-4-1-http-3-request-resp-2",
+      "type": "normative",
+      "statement": "HTTP/3 uses QUIC streams, preventing a lost packet on one stream from blocking delivery of data on other streams.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://www.rfc-editor.org/rfc/rfc9114",
+        "anchor": "section-4.1",
+        "quote": "HTTP/3 uses QUIC streams, preventing a lost packet on one stream from blocking delivery of data on other streams."
+      }
+    }
+  ]
+}

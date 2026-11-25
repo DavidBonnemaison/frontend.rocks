@@ -1,0 +1,27 @@
+{
+  "pageId": "streaming-ssr-flushing",
+  "claims": [
+    {
+      "id": "streaming-ssr-flushing/spec-whatwg-html-incremental-tree-constructio-1",
+      "type": "normative",
+      "statement": "The HTML parser processes bytes incrementally as they arrive over the network, constructing DOM nodes and discovering subresources before EOF.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/parsing.html",
+        "anchor": "tree-construction",
+        "quote": "The HTML parser processes bytes incrementally as they arrive over the network, constructing DOM nodes and discovering subresources before EOF."
+      }
+    },
+    {
+      "id": "streaming-ssr-flushing/spec-mdn-streams-api-readablestream-chunked-f-2",
+      "type": "normative",
+      "statement": "ReadableStream allows servers and workers to enqueue and flush HTML chunks progressively over HTTP/2 or HTTP/3.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/Streams_API/Using_readable_streams",
+        "anchor": "__unanchored__",
+        "quote": "ReadableStream allows servers and workers to enqueue and flush HTML chunks progressively over HTTP/2 or HTTP/3."
+      }
+    }
+  ]
+}

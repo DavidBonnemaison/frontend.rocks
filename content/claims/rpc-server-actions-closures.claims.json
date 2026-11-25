@@ -1,0 +1,16 @@
+{
+  "pageId": "rpc-server-actions-closures",
+  "claims": [
+    {
+      "id": "rpc-server-actions-closures/spec-server-functions-security-1",
+      "type": "normative",
+      "statement": "Server Functions create public HTTP endpoints and should be treated with the same security assumptions as any public API route, validating both authentication and arguments.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://react.dev/reference/rsc/server-actions",
+        "anchor": "__unanchored__",
+        "quote": "Server Functions create public HTTP endpoints and should be treated with the same security assumptions as any public API route, validating both authentication and arguments."
+      }
+    }
+  ]
+}

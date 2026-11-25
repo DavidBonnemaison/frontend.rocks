@@ -1,0 +1,27 @@
+{
+  "pageId": "finite-state-machines-ui",
+  "claims": [
+    {
+      "id": "finite-state-machines-ui/spec-w3c-scxml-state-chart-xml-1",
+      "type": "normative",
+      "statement": "A state machine defines a finite set of states and explicit transitions triggered by events, ensuring only valid state-event pairs execute.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://www.w3.org/TR/scxml/",
+        "anchor": "__unanchored__",
+        "quote": "A state machine defines a finite set of states and explicit transitions triggered by events, ensuring only valid state-event pairs execute."
+      }
+    },
+    {
+      "id": "finite-state-machines-ui/spec-stately-xstate-finite-state-machines-2",
+      "type": "normative",
+      "statement": "Modeling UI flows as finite states eliminates impossible boolean flag combinations such as isLoading && isError.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://stately.ai/docs/state-machines-and-statecharts",
+        "anchor": "__unanchored__",
+        "quote": "Modeling UI flows as finite states eliminates impossible boolean flag combinations such as isLoading && isError."
+      }
+    }
+  ]
+}

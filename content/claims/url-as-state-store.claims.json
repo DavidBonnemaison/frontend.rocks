@@ -1,0 +1,27 @@
+{
+  "pageId": "url-as-state-store",
+  "claims": [
+    {
+      "id": "url-as-state-store/spec-whatwg-url-standard-urlsearchparams-1",
+      "type": "normative",
+      "statement": "The URLSearchParams interface defines utility methods to work with the query string of a URL.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams",
+        "anchor": "__unanchored__",
+        "quote": "The URLSearchParams interface defines utility methods to work with the query string of a URL."
+      }
+    },
+    {
+      "id": "url-as-state-store/spec-whatwg-html-history-pushstate-vs-replace-2",
+      "type": "normative",
+      "statement": "pushState() adds a new entry to the browser's session history stack, while replaceState() modifies the current history entry without creating a new Back step.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/History/pushState",
+        "anchor": "__unanchored__",
+        "quote": "pushState() adds a new entry to the browser's session history stack, while replaceState() modifies the current history entry without creating a new Back step."
+      }
+    }
+  ]
+}

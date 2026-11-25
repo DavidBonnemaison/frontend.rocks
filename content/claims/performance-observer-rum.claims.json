@@ -1,0 +1,27 @@
+{
+  "pageId": "performance-observer-rum",
+  "claims": [
+    {
+      "id": "performance-observer-rum/spec-w3c-performance-timeline-performanceobse-1",
+      "type": "normative",
+      "statement": "The PerformanceObserver interface is used to observe performance measurement events and be notified of new performance entries as they are recorded.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/performance-timeline/",
+        "anchor": "dom-performanceobserver",
+        "quote": "The PerformanceObserver interface is used to observe performance measurement events and be notified of new performance entries as they are recorded."
+      }
+    },
+    {
+      "id": "performance-observer-rum/spec-mdn-performanceobserver-observe-2",
+      "type": "normative",
+      "statement": "Setting buffered: true includes entries that were recorded before the observer was constructed.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver/observe",
+        "anchor": "__unanchored__",
+        "quote": "Setting buffered: true includes entries that were recorded before the observer was constructed."
+      }
+    }
+  ]
+}

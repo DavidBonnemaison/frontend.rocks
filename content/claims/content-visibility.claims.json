@@ -1,0 +1,16 @@
+{
+  "pageId": "content-visibility",
+  "claims": [
+    {
+      "id": "content-visibility/spec-4-suppressing-an-element-s-contents-the-1",
+      "type": "normative",
+      "statement": "When content-visibility is auto, the user agent skips the element’s contents when it is not relevant to the user, applying size, layout, and paint containment.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-contain-2/",
+        "anchor": "content-visibility",
+        "quote": "When content-visibility is auto, the user agent skips the element’s contents when it is not relevant to the user, applying size, layout, and paint containment."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "isr-swr-edge-invalidation",
+  "claims": [
+    {
+      "id": "isr-swr-edge-invalidation/spec-5-2-2-10-s-maxage-1",
+      "type": "normative",
+      "statement": "The s-maxage response directive indicates that, in shared caches, the maximum age specified by this directive overrides the maximum age specified by either the max-age directive or the Expires header field.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://datatracker.ietf.org/doc/html/rfc9111",
+        "anchor": "__unanchored__",
+        "quote": "The s-maxage response directive indicates that, in shared caches, the maximum age specified by this directive overrides the maximum age specified by either the max-age directive or the Expires header field."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "device-pixel-ratio-subpixel",
+  "claims": [
+    {
+      "id": "device-pixel-ratio-subpixel/spec-6-1-absolute-lengths-1",
+      "type": "normative",
+      "statement": "The reference pixel is the visual angle of one pixel on a device with a pixel density of 96dpi and a distance from the reader of an arm’s length.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-values-4/",
+        "anchor": "reference-pixel",
+        "quote": "The reference pixel is the visual angle of one pixel on a device with a pixel density of 96dpi and a distance from the reader of an arm’s length."
+      }
+    }
+  ]
+}

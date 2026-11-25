@@ -49,6 +49,7 @@ function makeConcept(
     },
     lab: null,
     evidence: null,
+    claims: null,
     filePath: `fixtures/${fm.id}.mdx`,
   };
 }

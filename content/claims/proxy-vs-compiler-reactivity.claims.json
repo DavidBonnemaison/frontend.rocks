@@ -1,0 +1,16 @@
+{
+  "pageId": "proxy-vs-compiler-reactivity",
+  "claims": [
+    {
+      "id": "proxy-vs-compiler-reactivity/spec-10-5-proxy-object-internal-methods-and-i-1",
+      "type": "normative",
+      "statement": "A Proxy exotic object delegates [[Get]] and [[Set]] internal methods to user-defined trap functions on the handler object before forwarding to [[ProxyTarget]].",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://tc39.es/ecma262/",
+        "anchor": "sec-proxy-objects",
+        "quote": "A Proxy exotic object delegates [[Get]] and [[Set]] internal methods to user-defined trap functions on the handler object before forwarding to [[ProxyTarget]]."
+      }
+    }
+  ]
+}

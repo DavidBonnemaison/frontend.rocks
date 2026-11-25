@@ -1,0 +1,27 @@
+{
+  "pageId": "virtual-dom-reconciliation",
+  "claims": [
+    {
+      "id": "virtual-dom-reconciliation/spec-react-reconciliation-tree-diffing-keys-1",
+      "type": "normative",
+      "statement": "When a component renders, React compares the returned tree with the previous render using element type and key to decide whether to update or remount DOM nodes.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://react.dev/learn/preserving-and-resetting-state",
+        "anchor": "__unanchored__",
+        "quote": "When a component renders, React compares the returned tree with the previous render using element type and key to decide whether to update or remount DOM nodes."
+      }
+    },
+    {
+      "id": "virtual-dom-reconciliation/spec-mdn-dom-mutation-cost-2",
+      "type": "normative",
+      "statement": "Mutating live DOM nodes triggers style recalculation and layout invalidation; batching minimal mutations reduces browser pipeline work.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model",
+        "anchor": "__unanchored__",
+        "quote": "Mutating live DOM nodes triggers style recalculation and layout invalidation; batching minimal mutations reduces browser pipeline work."
+      }
+    }
+  ]
+}

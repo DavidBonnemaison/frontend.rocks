@@ -1,0 +1,16 @@
+{
+  "pageId": "css-grid-track-sizing",
+  "claims": [
+    {
+      "id": "css-grid-track-sizing/spec-12-3-track-sizing-algorithm-1",
+      "type": "normative",
+      "statement": "Grid track sizing initializes base sizes and growth limits, resolves intrinsic track sizes, maximizes tracks up to their limits, and finally expands flexible (fr) tracks.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-grid-2/",
+        "anchor": "algo-track-sizing",
+        "quote": "Grid track sizing initializes base sizes and growth limits, resolves intrinsic track sizes, maximizes tracks up to their limits, and finally expands flexible (fr) tracks."
+      }
+    }
+  ]
+}

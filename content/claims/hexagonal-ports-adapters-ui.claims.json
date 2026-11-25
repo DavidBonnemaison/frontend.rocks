@@ -1,0 +1,38 @@
+{
+  "pageId": "hexagonal-ports-adapters-ui",
+  "claims": [
+    {
+      "id": "hexagonal-ports-adapters-ui/spec-intent-ports-and-adapters-1",
+      "type": "normative",
+      "statement": "Allow an application to equally be driven by users, programs, automated test or batch scripts, and to be developed and tested in isolation from its eventual run-time devices and databases.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://alistair.cockburn.us/hexagonal-architecture/",
+        "anchor": "__unanchored__",
+        "quote": "Allow an application to equally be driven by users, programs, automated test or batch scripts, and to be developed and tested in isolation from its eventual run-time devices and databases."
+      }
+    },
+    {
+      "id": "hexagonal-ports-adapters-ui/spec-ecma-262-16-2-modules-2",
+      "type": "normative",
+      "statement": "Static module records resolve imports before evaluation, allowing module graphs to enforce strict directional dependency boundaries at link time.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://tc39.es/ecma262/",
+        "anchor": "sec-modules",
+        "quote": "Static module records resolve imports before evaluation, allowing module graphs to enforce strict directional dependency boundaries at link time."
+      }
+    },
+    {
+      "id": "hexagonal-ports-adapters-ui/spec-object-types-structural-interfaces-3",
+      "type": "normative",
+      "statement": "TypeScript interfaces define structural contracts that are erased completely at emit time, introducing zero runtime class hierarchy overhead.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://www.typescriptlang.org/docs/handbook/2/objects.html",
+        "anchor": "__unanchored__",
+        "quote": "TypeScript interfaces define structural contracts that are erased completely at emit time, introducing zero runtime class hierarchy overhead."
+      }
+    }
+  ]
+}

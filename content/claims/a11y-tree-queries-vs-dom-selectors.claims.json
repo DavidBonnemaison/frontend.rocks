@@ -1,0 +1,27 @@
+{
+  "pageId": "a11y-tree-queries-vs-dom-selectors",
+  "claims": [
+    {
+      "id": "a11y-tree-queries-vs-dom-selectors/spec-4-3-accessible-name-and-description-comp-1",
+      "type": "normative",
+      "statement": "The accessible name is computed by traversing aria-labelledby, aria-label, native host language labeling elements, and descendant text content in priority order.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://www.w3.org/TR/accname-1.2/",
+        "anchor": "__unanchored__",
+        "quote": "The accessible name is computed by traversing aria-labelledby, aria-label, native host language labeling elements, and descendant text content in priority order."
+      }
+    },
+    {
+      "id": "a11y-tree-queries-vs-dom-selectors/spec-5-1-1-exclusion-from-the-accessibility-t-2",
+      "type": "normative",
+      "statement": "Elements with aria-hidden='true' or CSS display: none are not exposed in the accessibility tree.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://www.w3.org/TR/wai-aria-1.2/",
+        "anchor": "__unanchored__",
+        "quote": "Elements with aria-hidden='true' or CSS display: none are not exposed in the accessibility tree."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "shared-array-buffer-atomics",
+  "claims": [
+    {
+      "id": "shared-array-buffer-atomics/spec-ecma-262-25-2-sharedarraybuffer-objects-1",
+      "type": "normative",
+      "statement": "A SharedArrayBuffer represents a fixed-length raw binary data buffer that can be referenced concurrently by multiple agents via TypedArray views and synchronized using Atomics.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://tc39.es/ecma262/",
+        "anchor": "sec-sharedarraybuffer-objects",
+        "quote": "A SharedArrayBuffer represents a fixed-length raw binary data buffer that can be referenced concurrently by multiple agents via TypedArray views and synchronized using Atomics."
+      }
+    }
+  ]
+}

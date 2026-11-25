@@ -1,0 +1,27 @@
+{
+  "pageId": "stale-closures-hooks",
+  "claims": [
+    {
+      "id": "stale-closures-hooks/spec-react-docs-reactive-dependencies-closure-1",
+      "type": "normative",
+      "statement": "Every render has its own props, state, and event handlers. Functions created during a render capture the values from that specific render snapshot.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://react.dev/reference/react/useEffect",
+        "anchor": "specifying-reactive-dependencies",
+        "quote": "Every render has its own props, state, and event handlers. Functions created during a render capture the values from that specific render snapshot."
+      }
+    },
+    {
+      "id": "stale-closures-hooks/spec-mdn-javascript-closures-2",
+      "type": "normative",
+      "statement": "A closure gives a function access to its outer lexical environment from the time the function was created.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures",
+        "anchor": "__unanchored__",
+        "quote": "A closure gives a function access to its outer lexical environment from the time the function was created."
+      }
+    }
+  ]
+}

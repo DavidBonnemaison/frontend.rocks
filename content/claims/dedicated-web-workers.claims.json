@@ -1,0 +1,16 @@
+{
+  "pageId": "dedicated-web-workers",
+  "claims": [
+    {
+      "id": "dedicated-web-workers/spec-html-living-standard-10-2-3-dedicated-wo-1",
+      "type": "normative",
+      "statement": "A Worker object creates an OS-level or isolated thread with its own event loop, global scope (DedicatedWorkerGlobalScope), and message queue, communicating with its creator via structured cloning or transferable ownership.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/workers.html",
+        "anchor": "dedicated-workers-and-the-worker-interface",
+        "quote": "A Worker object creates an OS-level or isolated thread with its own event loop, global scope (DedicatedWorkerGlobalScope), and message queue, communicating with its creator via structured cloning or transferable ownership."
+      }
+    }
+  ]
+}

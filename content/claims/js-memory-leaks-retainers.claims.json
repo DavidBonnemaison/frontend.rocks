@@ -1,0 +1,16 @@
+{
+  "pageId": "js-memory-leaks-retainers",
+  "claims": [
+    {
+      "id": "js-memory-leaks-retainers/spec-reachability-and-retainer-paths-1",
+      "type": "normative",
+      "statement": "An object is considered garbage-collectable if there are zero references pointing to it, or if it is unreachable from the root.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Memory_management",
+        "anchor": "__unanchored__",
+        "quote": "An object is considered garbage-collectable if there are zero references pointing to it, or if it is unreachable from the root."
+      }
+    }
+  ]
+}

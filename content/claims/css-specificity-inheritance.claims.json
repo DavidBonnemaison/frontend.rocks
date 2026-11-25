@@ -1,0 +1,16 @@
+{
+  "pageId": "css-specificity-inheritance",
+  "claims": [
+    {
+      "id": "css-specificity-inheritance/spec-17-calculating-a-selector-s-specificity-1",
+      "type": "normative",
+      "statement": "A selector’s specificity is calculated as a three-component tuple (A, B, C) counting ID selectors, class/attribute/pseudo-class selectors, and type/pseudo-element selectors.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/selectors-4/",
+        "anchor": "specificity-rules",
+        "quote": "A selector’s specificity is calculated as a three-component tuple (A, B, C) counting ID selectors, class/attribute/pseudo-class selectors, and type/pseudo-element selectors."
+      }
+    }
+  ]
+}

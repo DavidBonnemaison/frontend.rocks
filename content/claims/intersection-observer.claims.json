@@ -1,0 +1,16 @@
+{
+  "pageId": "intersection-observer",
+  "claims": [
+    {
+      "id": "intersection-observer/spec-4-processing-model-1",
+      "type": "normative",
+      "statement": "Run the update intersection observations steps as part of the rendering pipeline after layout and before paint.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/IntersectionObserver/",
+        "anchor": "__unanchored__",
+        "quote": "Run the update intersection observations steps as part of the rendering pipeline after layout and before paint."
+      }
+    }
+  ]
+}

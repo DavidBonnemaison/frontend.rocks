@@ -1,0 +1,16 @@
+{
+  "pageId": "beacon-api-visibilitychange",
+  "claims": [
+    {
+      "id": "beacon-api-visibilitychange/spec-beacon-api-3-1-sendbeacon-method-1",
+      "type": "normative",
+      "statement": "The sendBeacon() method queues an asynchronous HTTP POST transmission that the user agent delivers in the background even after the originating document has unloaded.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/beacon/",
+        "anchor": "sendbeacon-method",
+        "quote": "The sendBeacon() method queues an asynchronous HTTP POST transmission that the user agent delivers in the background even after the originating document has unloaded."
+      }
+    }
+  ]
+}

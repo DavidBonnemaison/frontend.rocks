@@ -1,0 +1,16 @@
+{
+  "pageId": "css-anchor-positioning",
+  "claims": [
+    {
+      "id": "css-anchor-positioning/spec-3-anchor-positioning-1",
+      "type": "normative",
+      "statement": "The anchor() function resolves to a length representing the position of a specified edge of the anchor element, evaluated during layout.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-anchor-position-1/",
+        "anchor": "__unanchored__",
+        "quote": "The anchor() function resolves to a length representing the position of a specified edge of the anchor element, evaluated during layout."
+      }
+    }
+  ]
+}

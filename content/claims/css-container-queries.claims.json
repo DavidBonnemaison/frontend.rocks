@@ -1,0 +1,16 @@
+{
+  "pageId": "css-container-queries",
+  "claims": [
+    {
+      "id": "css-container-queries/spec-css-containment-module-level-3-1",
+      "type": "normative",
+      "statement": "Size containment on the inline axis breaks the parent-child sizing cycle required for container queries.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-contain-3/",
+        "anchor": "container-queries",
+        "quote": "Size containment on the inline axis breaks the parent-child sizing cycle required for container queries."
+      }
+    }
+  ]
+}

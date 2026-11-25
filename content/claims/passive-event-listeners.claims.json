@@ -1,0 +1,16 @@
+{
+  "pageId": "passive-event-listeners",
+  "claims": [
+    {
+      "id": "passive-event-listeners/spec-2-9-addeventlisteneroptions-passive-1",
+      "type": "normative",
+      "statement": "When set to true, indicates that the function specified by listener will never call preventDefault().",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://dom.spec.whatwg.org/",
+        "anchor": "dom-addeventlisteneroptions-passive",
+        "quote": "When set to true, indicates that the function specified by listener will never call preventDefault()."
+      }
+    }
+  ]
+}

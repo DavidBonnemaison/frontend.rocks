@@ -1,0 +1,16 @@
+{
+  "pageId": "headless-ui-state-primitives",
+  "claims": [
+    {
+      "id": "headless-ui-state-primitives/spec-aria-authoring-practices-guide-menu-dial-1",
+      "type": "normative",
+      "statement": "A disclosure or menu trigger must expose aria-expanded and aria-controls referencing the controlled container, and return focus to the trigger upon dismissal.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/",
+        "anchor": "__unanchored__",
+        "quote": "A disclosure or menu trigger must expose aria-expanded and aria-controls referencing the controlled container, and return focus to the trigger upon dismissal."
+      }
+    }
+  ]
+}

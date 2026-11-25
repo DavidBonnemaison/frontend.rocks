@@ -1,0 +1,16 @@
+{
+  "pageId": "client-side-router-internals",
+  "claims": [
+    {
+      "id": "client-side-router-internals/spec-7-2-7-the-navigation-api-1",
+      "type": "normative",
+      "statement": "The Navigation API provides a centralized navigate event with intercept() and an AbortSignal that aborts when a subsequent navigation supersedes the current one.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/nav-history-apis.html",
+        "anchor": "navigation-api",
+        "quote": "The Navigation API provides a centralized navigate event with intercept() and an AbortSignal that aborts when a subsequent navigation supersedes the current one."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "actor-over-worker-architecture",
+  "claims": [
+    {
+      "id": "actor-over-worker-architecture/spec-10-1-2-processing-model-1",
+      "type": "normative",
+      "statement": "Each worker has its own event loop, global scope, and task queues, executing independently from the Window event loop.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/workers.html",
+        "anchor": "__unanchored__",
+        "quote": "Each worker has its own event loop, global scope, and task queues, executing independently from the Window event loop."
+      }
+    }
+  ]
+}

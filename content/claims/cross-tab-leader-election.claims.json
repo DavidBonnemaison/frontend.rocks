@@ -1,0 +1,27 @@
+{
+  "pageId": "cross-tab-leader-election",
+  "claims": [
+    {
+      "id": "cross-tab-leader-election/spec-w3c-web-locks-api-lock-requests-1",
+      "type": "normative",
+      "statement": "A lock is held until the callback's returned promise settles, or until the client's execution context terminates.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/web-locks/",
+        "anchor": "__unanchored__",
+        "quote": "A lock is held until the callback's returned promise settles, or until the client's execution context terminates."
+      }
+    },
+    {
+      "id": "cross-tab-leader-election/spec-broadcastchannel-api-2",
+      "type": "normative",
+      "statement": "The BroadcastChannel interface represents a named channel that any browsing context of a given origin can subscribe to for message passing.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel",
+        "anchor": "__unanchored__",
+        "quote": "The BroadcastChannel interface represents a named channel that any browsing context of a given origin can subscribe to for message passing."
+      }
+    }
+  ]
+}

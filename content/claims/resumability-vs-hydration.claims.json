@@ -1,0 +1,27 @@
+{
+  "pageId": "resumability-vs-hydration",
+  "claims": [
+    {
+      "id": "resumability-vs-hydration/spec-web-dev-rendering-on-the-web-hydration-c-1",
+      "type": "normative",
+      "statement": "Hydration requires downloading, parsing, and executing component JavaScript on the client to attach event listeners and reconstruct state over server-rendered HTML.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://web.dev/articles/rendering-on-the-web",
+        "anchor": "__unanchored__",
+        "quote": "Hydration requires downloading, parsing, and executing component JavaScript on the client to attach event listeners and reconstruct state over server-rendered HTML."
+      }
+    },
+    {
+      "id": "resumability-vs-hydration/spec-qwik-architecture-resumability-2",
+      "type": "normative",
+      "statement": "Resumability serializes application state, component boundaries, and event listener closures into HTML attributes so execution resumes on interaction without eager boot.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://qwik.dev/docs/concepts/resumable/",
+        "anchor": "__unanchored__",
+        "quote": "Resumability serializes application state, component boundaries, and event listener closures into HTML attributes so execution resumes on interaction without eager boot."
+      }
+    }
+  ]
+}

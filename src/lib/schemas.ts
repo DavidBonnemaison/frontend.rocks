@@ -1,4 +1,11 @@
 import { z } from 'zod';
+import {
+  PAGE_PROOF_STATUSES,
+  PageProofStatusSchema,
+  type PageProofStatus,
+} from './proof/claim-schema';
+
+export { PAGE_PROOF_STATUSES, PageProofStatusSchema, type PageProofStatus };
 
 export const DOMAIN_VALUES = [
   'rendering-pipeline',
@@ -27,10 +34,6 @@ export const MATURITY_VALUES = [
 
 export const MaturityStatusSchema = z.enum(MATURITY_VALUES);
 export type MaturityStatus = z.infer<typeof MaturityStatusSchema>;
-
-export const PAGE_PROOF_STATUSES = ['unverified', 'proven'] as const;
-export const PageProofStatusSchema = z.enum(PAGE_PROOF_STATUSES);
-export type PageProofStatus = z.infer<typeof PageProofStatusSchema>;
 
 export const RELATION_TYPES = [
   'requires',

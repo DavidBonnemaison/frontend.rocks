@@ -1,0 +1,16 @@
+{
+  "pageId": "js-floating-positioning-engines",
+  "claims": [
+    {
+      "id": "js-floating-positioning-engines/spec-cssom-view-module-getboundingclientrect-1",
+      "type": "normative",
+      "statement": "The getBoundingClientRect() method forces a synchronous layout calculation if styles are dirty, returning a DOMRect relative to the viewport.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect",
+        "anchor": "__unanchored__",
+        "quote": "The getBoundingClientRect() method forces a synchronous layout calculation if styles are dirty, returning a DOMRect relative to the viewport."
+      }
+    }
+  ]
+}

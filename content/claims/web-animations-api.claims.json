@@ -1,0 +1,16 @@
+{
+  "pageId": "web-animations-api",
+  "claims": [
+    {
+      "id": "web-animations-api/spec-4-1-timing-model-1",
+      "type": "normative",
+      "statement": "An animation object samples its effect at each frame according to its current time, playback rate, and easing, independent of script execution once started.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/web-animations-1/",
+        "anchor": "__unanchored__",
+        "quote": "An animation object samples its effect at each frame according to its current time, playback rate, and easing, independent of script execution once started."
+      }
+    }
+  ]
+}

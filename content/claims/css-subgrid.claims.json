@@ -1,0 +1,16 @@
+{
+  "pageId": "css-subgrid",
+  "claims": [
+    {
+      "id": "css-subgrid/spec-2-subgrids-1",
+      "type": "normative",
+      "statement": "A nested grid container whose grid-template-columns or grid-template-rows is subgrid adopts the tracks of its parent grid along that axis.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-grid-2/",
+        "anchor": "subgrids",
+        "quote": "A nested grid container whose grid-template-columns or grid-template-rows is subgrid adopts the tracks of its parent grid along that axis."
+      }
+    }
+  ]
+}

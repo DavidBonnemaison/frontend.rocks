@@ -1,0 +1,16 @@
+{
+  "pageId": "pointer-events-touch-action",
+  "claims": [
+    {
+      "id": "pointer-events-touch-action/spec-9-1-the-touch-action-css-property-1",
+      "type": "normative",
+      "statement": "The touch-action CSS property determines whether touch input may trigger default behavior supplied by the user agent, such as panning or zooming.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/pointerevents/",
+        "anchor": "the-touch-action-css-property",
+        "quote": "The touch-action CSS property determines whether touch input may trigger default behavior supplied by the user agent, such as panning or zooming."
+      }
+    }
+  ]
+}

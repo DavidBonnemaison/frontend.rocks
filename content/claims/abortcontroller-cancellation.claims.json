@@ -1,0 +1,16 @@
+{
+  "pageId": "abortcontroller-cancellation",
+  "claims": [
+    {
+      "id": "abortcontroller-cancellation/spec-3-2-interface-abortcontroller-1",
+      "type": "normative",
+      "statement": "To signal abort on an AbortSignal signal with an optional reason: if signal is aborted, return; set signal's abort reason and run abort algorithms.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://dom.spec.whatwg.org/",
+        "anchor": "interface-abortcontroller",
+        "quote": "To signal abort on an AbortSignal signal with an optional reason: if signal is aborted, return; set signal's abort reason and run abort algorithms."
+      }
+    }
+  ]
+}

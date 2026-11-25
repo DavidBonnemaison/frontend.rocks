@@ -1,0 +1,27 @@
+{
+  "pageId": "async-determinism-fake-timers",
+  "claims": [
+    {
+      "id": "async-determinism-fake-timers/spec-8-6-timers-timer-initialization-steps-1",
+      "type": "normative",
+      "statement": "Each task in the task queue runs to completion, followed immediately by performing a microtask checkpoint before the next timer task executes.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html",
+        "anchor": "__unanchored__",
+        "quote": "Each task in the task queue runs to completion, followed immediately by performing a microtask checkpoint before the next timer task executes."
+      }
+    },
+    {
+      "id": "async-determinism-fake-timers/spec-vitest-fake-timers-advancetimersbytimeas-2",
+      "type": "normative",
+      "statement": "Works like advanceTimersByTime, but will await queued microtasks after each timer callback runs.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://vitest.dev/api/vi.html",
+        "anchor": "vi-usefaketimers",
+        "quote": "Works like advanceTimersByTime, but will await queued microtasks after each timer callback runs."
+      }
+    }
+  ]
+}

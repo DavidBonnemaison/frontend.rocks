@@ -1,0 +1,16 @@
+{
+  "pageId": "fine-grained-signals",
+  "claims": [
+    {
+      "id": "fine-grained-signals/spec-tc39-signals-proposal-stage-1-1",
+      "type": "normative",
+      "statement": "Signals model a reactive dependency graph with glitch-free push-pull propagation.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://github.com/tc39/proposal-signals",
+        "anchor": "__unanchored__",
+        "quote": "Signals model a reactive dependency graph with glitch-free push-pull propagation."
+      }
+    }
+  ]
+}

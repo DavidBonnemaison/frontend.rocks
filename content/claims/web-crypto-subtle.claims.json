@@ -1,0 +1,16 @@
+{
+  "pageId": "web-crypto-subtle",
+  "claims": [
+    {
+      "id": "web-crypto-subtle/spec-web-cryptography-api-14-subtlecrypto-int-1",
+      "type": "normative",
+      "statement": "The SubtleCrypto interface provides a set of cryptographic primitives executed in native code over secure contexts, returning Promises so heavy key derivation and signing never block the main thread.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/webcrypto/",
+        "anchor": "subtlecrypto-interface",
+        "quote": "The SubtleCrypto interface provides a set of cryptographic primitives executed in native code over secure contexts, returning Promises so heavy key derivation and signing never block the main thread."
+      }
+    }
+  ]
+}

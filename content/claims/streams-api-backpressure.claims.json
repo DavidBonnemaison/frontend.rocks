@@ -1,0 +1,16 @@
+{
+  "pageId": "streams-api-backpressure",
+  "claims": [
+    {
+      "id": "streams-api-backpressure/spec-streams-living-standard-6-queuing-strate-1",
+      "type": "normative",
+      "statement": "Backpressure is the mechanism by which a consumer signals to a producer to slow down when the internal queue's desiredSize drops to zero or below.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://streams.spec.whatwg.org/",
+        "anchor": "queuing-strategies",
+        "quote": "Backpressure is the mechanism by which a consumer signals to a producer to slow down when the internal queue's desiredSize drops to zero or below."
+      }
+    }
+  ]
+}

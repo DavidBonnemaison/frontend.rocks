@@ -1,0 +1,16 @@
+{
+  "pageId": "view-transitions-api",
+  "claims": [
+    {
+      "id": "view-transitions-api/spec-2-concepts-1",
+      "type": "normative",
+      "statement": "The user agent captures the old state as static images, runs the update callback, captures the live new state, and animates a pseudo-element tree between them.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-view-transitions-1/",
+        "anchor": "__unanchored__",
+        "quote": "The user agent captures the old state as static images, runs the update callback, captures the live new state, and animates a pseudo-element tree between them."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "react-portal-zindex-legacy",
+  "claims": [
+    {
+      "id": "react-portal-zindex-legacy/spec-4-11-4-the-dialog-element-1",
+      "type": "normative",
+      "statement": "A modal dialog is rendered in the top layer and makes all other elements in the document inert.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/interactive-elements.html",
+        "anchor": "the-dialog-element",
+        "quote": "A modal dialog is rendered in the top layer and makes all other elements in the document inert."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "css-stacking-context",
+  "claims": [
+    {
+      "id": "css-stacking-context/spec-appendix-e-elaborate-description-of-stac-1",
+      "type": "normative",
+      "statement": "Each stacking context is painted atomically; descendant elements cannot interleave with elements outside the context.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css2/",
+        "anchor": "elaborate-stacking-contexts",
+        "quote": "Each stacking context is painted atomically; descendant elements cannot interleave with elements outside the context."
+      }
+    }
+  ]
+}

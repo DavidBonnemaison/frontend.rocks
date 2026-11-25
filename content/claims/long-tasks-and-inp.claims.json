@@ -1,0 +1,16 @@
+{
+  "pageId": "long-tasks-and-inp",
+  "claims": [
+    {
+      "id": "long-tasks-and-inp/spec-3-1-performancelongtasktiming-1",
+      "type": "normative",
+      "statement": "A long task is any task whose duration on the main thread exceeds 50 milliseconds.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/longtasks/",
+        "anchor": "__unanchored__",
+        "quote": "A long task is any task whose duration on the main thread exceeds 50 milliseconds."
+      }
+    }
+  ]
+}

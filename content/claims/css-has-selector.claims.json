@@ -1,0 +1,16 @@
+{
+  "pageId": "css-has-selector",
+  "claims": [
+    {
+      "id": "css-has-selector/spec-4-2-the-relational-pseudo-class-has-1",
+      "type": "normative",
+      "statement": "The relational pseudo-class :has() takes a relative selector list as an argument and matches if any of the relative selectors match at least one element when anchored against the subject.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/selectors-4/",
+        "anchor": "relational",
+        "quote": "The relational pseudo-class :has() takes a relative selector list as an argument and matches if any of the relative selectors match at least one element when anchored against the subject."
+      }
+    }
+  ]
+}

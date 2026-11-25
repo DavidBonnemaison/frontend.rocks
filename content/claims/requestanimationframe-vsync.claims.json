@@ -1,0 +1,16 @@
+{
+  "pageId": "requestanimationframe-vsync",
+  "claims": [
+    {
+      "id": "requestanimationframe-vsync/spec-8-12-animation-frames-1",
+      "type": "normative",
+      "statement": "Animation frame callbacks are invoked during the update the rendering step of the event loop, receiving a high-resolution DOMHighResTimeStamp.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html",
+        "anchor": "animation-frames",
+        "quote": "Animation frame callbacks are invoked during the update the rendering step of the event loop, receiving a high-resolution DOMHighResTimeStamp."
+      }
+    }
+  ]
+}

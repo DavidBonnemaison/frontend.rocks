@@ -1,0 +1,16 @@
+{
+  "pageId": "structured-clone-algorithm",
+  "claims": [
+    {
+      "id": "structured-clone-algorithm/spec-2-7-3-structuredserializeinternal-1",
+      "type": "normative",
+      "statement": "If Type(value) is Object and value has a [[Call]] internal method, then throw a DataCloneError DOMException.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/structured-data.html",
+        "anchor": "structuredserializeinternal",
+        "quote": "If Type(value) is Object and value has a [[Call]] internal method, then throw a DataCloneError DOMException."
+      }
+    }
+  ]
+}

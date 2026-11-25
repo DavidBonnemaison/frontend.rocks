@@ -1,0 +1,27 @@
+{
+  "pageId": "runtime-boundary-validation",
+  "claims": [
+    {
+      "id": "runtime-boundary-validation/spec-parse-don-t-validate-1",
+      "type": "normative",
+      "statement": "A parser is a function that consumes less-structured input and produces more-structured output, preserving type invariants in the return value.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/",
+        "anchor": "__unanchored__",
+        "quote": "A parser is a function that consumes less-structured input and produces more-structured output, preserving type invariants in the return value."
+      }
+    },
+    {
+      "id": "runtime-boundary-validation/spec-ecmascript-json-parse-2",
+      "type": "normative",
+      "statement": "JSON.parse() parses a JSON string and constructs the JavaScript value or object described by the string without runtime type guarantees.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse",
+        "anchor": "__unanchored__",
+        "quote": "JSON.parse() parses a JSON string and constructs the JavaScript value or object described by the string without runtime type guarantees."
+      }
+    }
+  ]
+}

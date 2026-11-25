@@ -1,0 +1,16 @@
+{
+  "pageId": "layout-thrashing",
+  "claims": [
+    {
+      "id": "layout-thrashing/spec-forced-synchronous-layouts-1",
+      "type": "normative",
+      "statement": "Reading geometric properties after invalidating styles forces the browser to run layout synchronously.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://web.dev/articles/avoid-large-complex-layouts-and-layout-thrashing",
+        "anchor": "__unanchored__",
+        "quote": "Reading geometric properties after invalidating styles forces the browser to run layout synchronously."
+      }
+    }
+  ]
+}

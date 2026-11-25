@@ -1,0 +1,16 @@
+{
+  "pageId": "css-cascade-layers",
+  "claims": [
+    {
+      "id": "css-cascade-layers/spec-6-4-cascade-layers-1",
+      "type": "normative",
+      "statement": "Cascade layers are sorted by order of appearance, with unlayered author styles having higher priority than any named layer.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-cascade-5/",
+        "anchor": "layering",
+        "quote": "Cascade layers are sorted by order of appearance, with unlayered author styles having higher priority than any named layer."
+      }
+    }
+  ]
+}

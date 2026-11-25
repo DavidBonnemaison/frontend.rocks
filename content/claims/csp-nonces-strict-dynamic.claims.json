@@ -1,0 +1,16 @@
+{
+  "pageId": "csp-nonces-strict-dynamic",
+  "claims": [
+    {
+      "id": "csp-nonces-strict-dynamic/spec-content-security-policy-level-3-8-3-stri-1",
+      "type": "normative",
+      "statement": "If a script is trusted via a cryptographic nonce or hash and 'strict-dynamic' is present, trust propagates to any parser-inserted or dynamically appended child scripts it creates, while host allowlists are ignored.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/webappsec-csp/",
+        "anchor": "strict-dynamic-usage",
+        "quote": "If a script is trusted via a cryptographic nonce or hash and 'strict-dynamic' is present, trust propagates to any parser-inserted or dynamically appended child scripts it creates, while host allowlists are ignored."
+      }
+    }
+  ]
+}

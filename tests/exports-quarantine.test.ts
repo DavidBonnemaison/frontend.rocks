@@ -31,6 +31,7 @@ function concept(
     },
     lab: null,
     evidence: null,
+    claims: null,
     filePath: `fixtures/${id}.mdx`,
   };
 }

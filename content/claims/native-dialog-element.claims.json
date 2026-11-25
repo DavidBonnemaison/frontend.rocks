@@ -1,0 +1,16 @@
+{
+  "pageId": "native-dialog-element",
+  "claims": [
+    {
+      "id": "native-dialog-element/spec-4-11-4-the-dialog-element-1",
+      "type": "normative",
+      "statement": "showModal() adds the dialog to the document's top layer and marks the rest of the document inert.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/interactive-elements.html",
+        "anchor": "dom-dialog-showmodal",
+        "quote": "showModal() adds the dialog to the document's top layer and marks the rest of the document inert."
+      }
+    }
+  ]
+}

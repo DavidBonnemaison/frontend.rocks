@@ -1,0 +1,16 @@
+{
+  "pageId": "block-formatting-context",
+  "claims": [
+    {
+      "id": "block-formatting-context/spec-3-2-block-formatting-contexts-1",
+      "type": "normative",
+      "statement": "Floats, absolutely positioned elements, block containers that are not block boxes, and block boxes with overflow other than visible establish new block formatting contexts.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-display-3/",
+        "anchor": "block-formatting-context",
+        "quote": "Floats, absolutely positioned elements, block containers that are not block boxes, and block boxes with overflow other than visible establish new block formatting contexts."
+      }
+    }
+  ]
+}

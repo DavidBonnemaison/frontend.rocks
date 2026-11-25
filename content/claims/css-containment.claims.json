@@ -1,0 +1,16 @@
+{
+  "pageId": "css-containment",
+  "claims": [
+    {
+      "id": "css-containment/spec-3-types-of-containment-1",
+      "type": "normative",
+      "statement": "Layout containment ensures that nothing outside the element can affect its internal layout, and nothing inside can affect the layout of anything outside.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-contain-2/",
+        "anchor": "__unanchored__",
+        "quote": "Layout containment ensures that nothing outside the element can affect its internal layout, and nothing inside can affect the layout of anything outside."
+      }
+    }
+  ]
+}

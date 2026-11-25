@@ -1,0 +1,27 @@
+{
+  "pageId": "cdn-edge-cache-keys",
+  "claims": [
+    {
+      "id": "cdn-edge-cache-keys/spec-rfc-9111-section-4-1-calculating-cache-k-1",
+      "type": "normative",
+      "statement": "When a cache receives a request that can be satisfied by a stored response that has a Vary header field, it MUST NOT use that stored response unless all selecting header fields match.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://www.rfc-editor.org/rfc/rfc9111",
+        "anchor": "section-4.1",
+        "quote": "When a cache receives a request that can be satisfied by a stored response that has a Vary header field, it MUST NOT use that stored response unless all selecting header fields match."
+      }
+    },
+    {
+      "id": "cdn-edge-cache-keys/spec-rfc-9211-the-cache-status-http-response-2",
+      "type": "normative",
+      "statement": "The Cache-Status header field conveys how caches handled a request, including hit/miss state and time-to-live.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://www.rfc-editor.org/rfc/rfc9211",
+        "anchor": "__unanchored__",
+        "quote": "The Cache-Status header field conveys how caches handled a request, including hit/miss state and time-to-live."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "proxy-reflect-internals",
+  "claims": [
+    {
+      "id": "proxy-reflect-internals/spec-10-5-proxy-object-internal-methods-and-i-1",
+      "type": "normative",
+      "statement": "A Proxy exotic object intercepts internal methods such as [[Get]], [[Set]], and [[HasProperty]] via user-supplied handler traps.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://tc39.es/ecma262/",
+        "anchor": "sec-proxy-object-internal-methods-and-internal-slots",
+        "quote": "A Proxy exotic object intercepts internal methods such as [[Get]], [[Set]], and [[HasProperty]] via user-supplied handler traps."
+      }
+    }
+  ]
+}

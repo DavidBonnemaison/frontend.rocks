@@ -1,0 +1,16 @@
+{
+  "pageId": "paint-rasterization",
+  "claims": [
+    {
+      "id": "paint-rasterization/spec-renderingng-architecture-paint-raster-1",
+      "type": "normative",
+      "statement": "Paint walks the layout tree in stacking order to produce a list of display items, which rasterization then converts into bitmap tiles on worker threads.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.chrome.com/docs/chromium/renderingng-architecture",
+        "anchor": "__unanchored__",
+        "quote": "Paint walks the layout tree in stacking order to produce a list of display items, which rasterization then converts into bitmap tiles on worker threads."
+      }
+    }
+  ]
+}

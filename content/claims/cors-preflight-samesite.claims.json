@@ -1,0 +1,16 @@
+{
+  "pageId": "cors-preflight-samesite",
+  "claims": [
+    {
+      "id": "cors-preflight-samesite/spec-fetch-living-standard-4-5-cors-preflight-1",
+      "type": "normative",
+      "statement": "Before sending a non-simple cross-origin request, the user agent issues an OPTIONS preflight carrying Access-Control-Request-Method and Access-Control-Request-Headers.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://fetch.spec.whatwg.org/",
+        "anchor": "cors-preflight-fetch-0",
+        "quote": "Before sending a non-simple cross-origin request, the user agent issues an OPTIONS preflight carrying Access-Control-Request-Method and Access-Control-Request-Headers."
+      }
+    }
+  ]
+}

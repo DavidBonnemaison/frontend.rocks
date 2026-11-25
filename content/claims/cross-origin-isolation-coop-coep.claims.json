@@ -1,0 +1,16 @@
+{
+  "pageId": "cross-origin-isolation-coop-coep",
+  "claims": [
+    {
+      "id": "cross-origin-isolation-coop-coep/spec-html-living-standard-7-2-4-cross-origin-1",
+      "type": "normative",
+      "statement": "A document becomes cross-origin isolated when served with Cross-Origin-Opener-Policy: same-origin and a Cross-Origin-Embedder-Policy of require-corp or credentialless, isolating its browsing context group.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/browsers.html",
+        "anchor": "cross-origin-opener-policies",
+        "quote": "A document becomes cross-origin isolated when served with Cross-Origin-Opener-Policy: same-origin and a Cross-Origin-Embedder-Policy of require-corp or credentialless, isolating its browsing context group."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "scroll-driven-animations",
+  "claims": [
+    {
+      "id": "scroll-driven-animations/spec-3-scroll-progress-timelines-1",
+      "type": "normative",
+      "statement": "A scroll progress timeline maps the scroll offset of a scroll container along a specified axis to a percentage progress value from 0% to 100%.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/scroll-animations-1/",
+        "anchor": "__unanchored__",
+        "quote": "A scroll progress timeline maps the scroll offset of a scroll container along a specified axis to a percentage progress value from 0% to 100%."
+      }
+    }
+  ]
+}

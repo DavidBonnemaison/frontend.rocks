@@ -1,0 +1,27 @@
+{
+  "pageId": "broadcast-channel-web-locks",
+  "claims": [
+    {
+      "id": "broadcast-channel-web-locks/spec-html-living-standard-9-5-broadcasting-to-1",
+      "type": "normative",
+      "statement": "A BroadcastChannel object allows scripts from the same origin in different browsing contexts or workers to send and receive messages on a named channel.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/web-messaging.html",
+        "anchor": "broadcasting-to-other-browsing-contexts",
+        "quote": "A BroadcastChannel object allows scripts from the same origin in different browsing contexts or workers to send and receive messages on a named channel."
+      }
+    },
+    {
+      "id": "broadcast-channel-web-locks/spec-web-locks-api-4-lock-managers-2",
+      "type": "normative",
+      "statement": "navigator.locks.request() grants an exclusive or shared lock for a named resource and releases it automatically when the callback's returned Promise settles or the tab terminates.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/web-locks/",
+        "anchor": "api-lock-manager",
+        "quote": "navigator.locks.request() grants an exclusive or shared lock for a named resource and releases it automatically when the callback's returned Promise settles or the tab terminates."
+      }
+    }
+  ]
+}

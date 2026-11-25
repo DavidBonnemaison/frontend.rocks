@@ -1,0 +1,16 @@
+{
+  "pageId": "browser-top-layer",
+  "claims": [
+    {
+      "id": "browser-top-layer/spec-6-top-layer-1",
+      "type": "normative",
+      "statement": "Each document has an associated top layer, an ordered set of elements rendered above all other elements in the document.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://fullscreen.spec.whatwg.org/",
+        "anchor": "top-layer",
+        "quote": "Each document has an associated top layer, an ordered set of elements rendered above all other elements in the document."
+      }
+    }
+  ]
+}

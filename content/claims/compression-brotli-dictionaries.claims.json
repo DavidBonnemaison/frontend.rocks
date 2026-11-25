@@ -1,0 +1,27 @@
+{
+  "pageId": "compression-brotli-dictionaries",
+  "claims": [
+    {
+      "id": "compression-brotli-dictionaries/spec-rfc-7932-brotli-compressed-data-format-1",
+      "type": "normative",
+      "statement": "Brotli is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://www.rfc-editor.org/rfc/rfc7932",
+        "anchor": "__unanchored__",
+        "quote": "Brotli is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling."
+      }
+    },
+    {
+      "id": "compression-brotli-dictionaries/spec-rfc-9842-compression-dictionary-transpor-2",
+      "type": "normative",
+      "statement": "Compression Dictionary Transport defines a mechanism for using designated HTTP responses as an external dictionary for compressing future HTTP responses.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://www.rfc-editor.org/rfc/rfc9842",
+        "anchor": "__unanchored__",
+        "quote": "Compression Dictionary Transport defines a mechanism for using designated HTTP responses as an external dictionary for compressing future HTTP responses."
+      }
+    }
+  ]
+}

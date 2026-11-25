@@ -1,0 +1,27 @@
+{
+  "pageId": "speculation-rules-prerender",
+  "claims": [
+    {
+      "id": "speculation-rules-prerender/spec-wicg-speculation-rules-prerendering-1",
+      "type": "normative",
+      "statement": "Speculation rules allow authors to declaratively specify URLs to prefetch or prerender in a background browsing context before navigation.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://wicg.github.io/nav-speculation/speculation-rules.html",
+        "anchor": "__unanchored__",
+        "quote": "Speculation rules allow authors to declaratively specify URLs to prefetch or prerender in a background browsing context before navigation."
+      }
+    },
+    {
+      "id": "speculation-rules-prerender/spec-mdn-speculation-rules-api-2",
+      "type": "normative",
+      "statement": "document.prerendering is true while a document is prerendering and transitions to false when the page is activated via prerenderingchange.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/Speculation_Rules_API",
+        "anchor": "__unanchored__",
+        "quote": "document.prerendering is true while a document is prerendering and transitions to false when the page is activated via prerenderingchange."
+      }
+    }
+  ]
+}

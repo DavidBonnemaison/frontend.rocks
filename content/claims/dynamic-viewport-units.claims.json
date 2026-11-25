@@ -1,0 +1,16 @@
+{
+  "pageId": "dynamic-viewport-units",
+  "claims": [
+    {
+      "id": "dynamic-viewport-units/spec-6-1-2-viewport-percentage-lengths-1",
+      "type": "normative",
+      "statement": "The small viewport-percentage units (sv*) reflect the viewport size when all dynamic UA interfaces are expanded; large (lv*) when retracted; dynamic (dv*) tracks the current state.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-values-4/",
+        "anchor": "viewport-relative-lengths",
+        "quote": "The small viewport-percentage units (sv*) reflect the viewport size when all dynamic UA interfaces are expanded; large (lv*) when retracted; dynamic (dv*) tracks the current state."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "pageId": "js-garbage-collection",
+  "claims": [
+    {
+      "id": "js-garbage-collection/spec-v8-orinoco-generational-gc-1",
+      "type": "normative",
+      "statement": "The Young Generation is divided into two semi-spaces, and surviving objects are evacuated to the To-space or promoted to the Old Generation.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://v8.dev/blog/trash-talk",
+        "anchor": "__unanchored__",
+        "quote": "The Young Generation is divided into two semi-spaces, and surviving objects are evacuated to the To-space or promoted to the Old Generation."
+      }
+    }
+  ]
+}

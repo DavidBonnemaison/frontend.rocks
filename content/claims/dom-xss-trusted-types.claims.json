@@ -1,0 +1,16 @@
+{
+  "pageId": "dom-xss-trusted-types",
+  "claims": [
+    {
+      "id": "dom-xss-trusted-types/spec-trusted-types-4-2-require-trusted-types-1",
+      "type": "normative",
+      "statement": "When require-trusted-types-for 'script' is active, DOM injection sinks such as Element.innerHTML and script.src reject raw strings and require a TrustedHTML, TrustedScript, or TrustedScriptURL instance.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://w3c.github.io/trusted-types/dist/spec/",
+        "anchor": "trusted-types-csp-directive",
+        "quote": "When require-trusted-types-for 'script' is active, DOM injection sinks such as Element.innerHTML and script.src reject raw strings and require a TrustedHTML, TrustedScript, or TrustedScriptURL instance."
+      }
+    }
+  ]
+}

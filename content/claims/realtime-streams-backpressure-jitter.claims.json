@@ -1,0 +1,16 @@
+{
+  "pageId": "realtime-streams-backpressure-jitter",
+  "claims": [
+    {
+      "id": "realtime-streams-backpressure-jitter/spec-9-2-2-the-eventsource-interface-1",
+      "type": "normative",
+      "statement": "When a user agent is to reestablish the connection, it must set the Last-Event-ID header to the last event ID string and wait the reconnection time.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://html.spec.whatwg.org/multipage/server-sent-events.html",
+        "anchor": "__unanchored__",
+        "quote": "When a user agent is to reestablish the connection, it must set the Last-Event-ID header to the last event ID string and wait the reconnection time."
+      }
+    }
+  ]
+}

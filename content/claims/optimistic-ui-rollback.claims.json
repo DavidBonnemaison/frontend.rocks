@@ -1,0 +1,27 @@
+{
+  "pageId": "optimistic-ui-rollback",
+  "claims": [
+    {
+      "id": "optimistic-ui-rollback/spec-react-useoptimistic-speculative-mutation-1",
+      "type": "normative",
+      "statement": "useOptimistic lets you show a different state while an async action is underway, automatically reverting to the authoritative base state when the action settles.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://react.dev/reference/react/useOptimistic",
+        "anchor": "__unanchored__",
+        "quote": "useOptimistic lets you show a different state while an async action is underway, automatically reverting to the authoritative base state when the action settles."
+      }
+    },
+    {
+      "id": "optimistic-ui-rollback/spec-tanstack-query-snapshot-rollback-2",
+      "type": "normative",
+      "statement": "Cancel outgoing refetches, snapshot the previous cache value, apply the optimistic update, and roll back to the snapshot on error.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates",
+        "anchor": "__unanchored__",
+        "quote": "Cancel outgoing refetches, snapshot the previous cache value, apply the optimistic update, and roll back to the snapshot on error."
+      }
+    }
+  ]
+}

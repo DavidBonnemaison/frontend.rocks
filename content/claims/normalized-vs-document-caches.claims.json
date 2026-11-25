@@ -1,0 +1,27 @@
+{
+  "pageId": "normalized-vs-document-caches",
+  "claims": [
+    {
+      "id": "normalized-vs-document-caches/spec-normalized-cache-architecture-1",
+      "type": "normative",
+      "statement": "A normalized cache splits nested response trees into flat entity records keyed by __typename and id, replacing nested objects with references.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://www.apollographql.com/docs/react/caching/overview",
+        "anchor": "__unanchored__",
+        "quote": "A normalized cache splits nested response trees into flat entity records keyed by __typename and id, replacing nested objects with references."
+      }
+    },
+    {
+      "id": "normalized-vs-document-caches/spec-document-keyed-query-caching-2",
+      "type": "normative",
+      "statement": "Document caches store serialized query responses directly under deterministic query keys and reconcile updates via prefix invalidation and background refetching.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://tanstack.com/query/latest/docs/framework/react/guides/caching",
+        "anchor": "__unanchored__",
+        "quote": "Document caches store serialized query responses directly under deterministic query keys and reconcile updates via prefix invalidation and background refetching."
+      }
+    }
+  ]
+}

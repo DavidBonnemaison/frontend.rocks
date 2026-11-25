@@ -1,0 +1,16 @@
+{
+  "pageId": "css-custom-properties-cascade",
+  "claims": [
+    {
+      "id": "css-custom-properties-cascade/spec-3-using-cascading-variables-the-var-nota-1",
+      "type": "normative",
+      "statement": "If a property contains one or more var() functions, and those functions are syntactically valid, the entire property’s grammar must be assumed to be valid at parse time.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-variables-1/",
+        "anchor": "__unanchored__",
+        "quote": "If a property contains one or more var() functions, and those functions are syntactically valid, the entire property’s grammar must be assumed to be valid at parse time."
+      }
+    }
+  ]
+}

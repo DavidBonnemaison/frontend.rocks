@@ -1,0 +1,27 @@
+{
+  "pageId": "command-pattern-event-sourcing-ui",
+  "claims": [
+    {
+      "id": "command-pattern-event-sourcing-ui/spec-event-sourcing-pattern-1",
+      "type": "normative",
+      "statement": "Capture all changes to an application state as a sequence of events, allowing current state to be rebuilt deterministically by replaying the log.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://martinfowler.com/eaaDev/EventSourcing.html",
+        "anchor": "__unanchored__",
+        "quote": "Capture all changes to an application state as a sequence of events, allowing current state to be rebuilt deterministically by replaying the log."
+      }
+    },
+    {
+      "id": "command-pattern-event-sourcing-ui/spec-pure-reducers-serializable-actions-2",
+      "type": "normative",
+      "statement": "Changes are made with pure functions that take the previous state and an action and return the next state without side effects.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://redux.js.org/understanding/thinking-in-redux/three-principles",
+        "anchor": "__unanchored__",
+        "quote": "Changes are made with pure functions that take the previous state and an action and return the next state without side effects."
+      }
+    }
+  ]
+}
