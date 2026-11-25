@@ -4,6 +4,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProofArtifactSchema } from '@/lib/proof/artifact-schema';
 import { __resetPoliteFetchState, type PoliteFetchOptions } from '@/lib/proof/spec/http';
+import { buildSourceDriftReport } from '@/lib/proof/source/drift';
 import {
   __resetGithubMemo,
   __setSourceRawCacheDirForTests,
@@ -447,3 +448,140 @@ describe('verifySourceQuote & record', () => {
     expect(readSourceRecord('WebKit/WebKit', PINNED_SHA, EVENT_TARGET_PATH, recordDir)).toBeNull();
   });
 });
+
+describe('buildSourceDriftReport', () => {
+  const tempDirs: string[] = [];
+  let recordDir: string;
+
+  beforeEach(() => {
+    __resetGithubMemo();
+    __resetPoliteFetchState();
+    const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fr-source-drift-cache-'));
+    recordDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fr-source-drift-records-'));
+    tempDirs.push(cacheDir, recordDir);
+    __setSourceRawCacheDirForTests(cacheDir);
+  });
+
+  afterEach(() => {
+    while (tempDirs.length > 0) {
+      fs.rmSync(tempDirs.pop()!, { recursive: true, force: true });
+    }
+  });
+
+  it('reports moved when HEAD has 3 lines inserted above while claim stays proven', async () => {
+    const claim = makeClaim();
+    recordSourceExcerpt(claim, '2026-12-01', recordDir);
+
+    const pinnedUrl = `https://raw.githubusercontent.com/WebKit/WebKit/${PINNED_SHA}/${EVENT_TARGET_PATH}`;
+    const headUrl = `https://raw.githubusercontent.com/WebKit/WebKit/${HEAD_SHA}/${EVENT_TARGET_PATH}`;
+    const shifted = `// a\n// b\n// c\n${EVENT_TARGET_CPP}`;
+    const run: ExecFileRunner = async () => ({ stdout: `${HEAD_SHA}\trefs/heads/main\n` });
+
+    const outcome = await verifySourceQuote({
+      claim,
+      fetchOptions: fastFetchOptions(
+        makeFetch({
+          [pinnedUrl]: { status: 200, body: EVENT_TARGET_CPP },
+          [headUrl]: { status: 200, body: shifted },
+        })
+      ),
+      run,
+      recordDir,
+    });
+
+    expect(outcome.kind).toBe('result');
+    if (outcome.kind === 'result') expect(outcome.result.status).toBe('proven');
+    expect(buildSourceDriftReport([{ claim, outcome }])).toEqual([
+      {
+        claimId: claim.id,
+        kind: 'moved',
+        headCommit: HEAD_SHA,
+        linesAtHead: [27, 28],
+      },
+    ]);
+  });
+
+  it('reports stale when recorded excerpt disappears at HEAD or file returns 404 at HEAD', async () => {
+    const claim = makeClaim();
+    recordSourceExcerpt(claim, '2026-12-01', recordDir);
+
+    const pinnedUrl = `https://raw.githubusercontent.com/WebKit/WebKit/${PINNED_SHA}/${EVENT_TARGET_PATH}`;
+    const headUrl = `https://raw.githubusercontent.com/WebKit/WebKit/${HEAD_SHA}/${EVENT_TARGET_PATH}`;
+    const run: ExecFileRunner = async () => ({ stdout: `${HEAD_SHA}\trefs/heads/main\n` });
+
+    const removedOutcome = await verifySourceQuote({
+      claim,
+      fetchOptions: fastFetchOptions(
+        makeFetch({
+          [pinnedUrl]: { status: 200, body: EVENT_TARGET_CPP },
+          [headUrl]: { status: 200, body: EVENT_TARGET_CPP.replace('isScriptExecutionContextValid', 'renamedCheck') },
+        })
+      ),
+      run,
+      recordDir,
+    });
+    expect(buildSourceDriftReport([{ claim, outcome: removedOutcome }])).toEqual([
+      {
+        claimId: claim.id,
+        kind: 'stale',
+        headCommit: HEAD_SHA,
+        linesAtHead: null,
+      },
+    ]);
+
+    // Reset cache for a second HEAD commit where the file returns 404
+    __resetGithubMemo();
+    const headSha2 = '2222222222222222222222222222222222222222';
+    const run2: ExecFileRunner = async () => ({ stdout: `${headSha2}\trefs/heads/main\n` });
+    const notFoundOutcome = await verifySourceQuote({
+      claim,
+      fetchOptions: fastFetchOptions(
+        makeFetch({
+          [pinnedUrl]: { status: 200, body: EVENT_TARGET_CPP },
+        })
+      ),
+      run: run2,
+      recordDir,
+    });
+    expect(buildSourceDriftReport([{ claim, outcome: notFoundOutcome }])).toEqual([
+      {
+        claimId: claim.id,
+        kind: 'stale',
+        headCommit: headSha2,
+        linesAtHead: null,
+      },
+    ]);
+  });
+
+  it('reports unavailable on ls-remote failure and leaves committed record untouched', async () => {
+    const claim = makeClaim();
+    recordSourceExcerpt(claim, '2026-12-01', recordDir);
+    const recPath = sourceRecordPath('WebKit/WebKit', PINNED_SHA, EVENT_TARGET_PATH, recordDir);
+    const beforeRecord = fs.readFileSync(recPath, 'utf8');
+
+    const pinnedUrl = `https://raw.githubusercontent.com/WebKit/WebKit/${PINNED_SHA}/${EVENT_TARGET_PATH}`;
+    const run: ExecFileRunner = async () => {
+      throw new Error('network unreachable');
+    };
+
+    const outcome = await verifySourceQuote({
+      claim,
+      fetchOptions: fastFetchOptions(
+        makeFetch({ [pinnedUrl]: { status: 200, body: EVENT_TARGET_CPP } })
+      ),
+      run,
+      recordDir,
+    });
+
+    expect(buildSourceDriftReport([{ claim, outcome }])).toEqual([
+      {
+        claimId: claim.id,
+        kind: 'unavailable',
+        headCommit: null,
+        linesAtHead: null,
+      },
+    ]);
+    expect(fs.readFileSync(recPath, 'utf8')).toBe(beforeRecord);
+  });
+});
+

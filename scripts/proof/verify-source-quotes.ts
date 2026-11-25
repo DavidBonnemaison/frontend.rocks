@@ -12,6 +12,7 @@ import type {
 import { splitClaimId, type PageProofStatus } from '../../src/lib/proof/claim-schema';
 import { getAllClaims } from '../../src/lib/proof/claims-loader';
 import { getPageProofStatusMap } from '../../src/lib/proof/page-registry';
+import { buildSourceDriftReport } from '../../src/lib/proof/source/drift';
 import {
   pruneSourceRecords,
   recordSourceExcerpt,
@@ -216,6 +217,10 @@ async function main(): Promise<void> {
   const unavailablePath = sidecarPath(outPath, 'unavailable');
   fs.mkdirSync(path.dirname(unavailablePath), { recursive: true });
   fs.writeFileSync(unavailablePath, JSON.stringify(unavailable, null, 2) + '\n', 'utf8');
+
+  const drift = buildSourceDriftReport(outcomes);
+  const driftPath = sidecarPath(outPath, 'drift');
+  fs.writeFileSync(driftPath, JSON.stringify(drift, null, 2) + '\n', 'utf8');
 
   const results = Object.values(artifact.claims);
   const provenCount = results.filter((r) => r.status === 'proven').length;
