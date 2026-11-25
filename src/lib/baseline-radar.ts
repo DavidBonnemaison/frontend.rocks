@@ -1,15 +1,25 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import matter from 'gray-matter';
-import { features as webFeatures } from 'web-features';
 import {
-  ConceptFrontmatterSchema,
-  EvidenceDossierSchema,
+  ConceptFrontmatterFileSchema,
   WeeklyDigestSchema,
   type ConceptFrontmatter,
   type MaturityStatus,
   type WeeklyDigest,
 } from './schemas';
+import { getBaseline } from './proof/support/baseline';
+import { computeConceptMaturity, withComputedMaturity } from './proof/support/maturity';
+import {
+  buildSupportSnapshot,
+  collectSupportReferences,
+  diffSupportSnapshots,
+  readCommittedSupportSnapshot,
+  type SupportChange,
+  type SupportSnapshot,
+  type SupportSnapshotFeature,
+} from './proof/support/snapshot';
+import { getWebFeatures } from './proof/support/data';
 
 export type WebFeatureBaseline = 'high' | 'low' | false;
 
@@ -46,7 +56,7 @@ export interface BaselineChange {
   conceptId: string;
   title: string;
   webFeatureId: string;
-  previousMaturity: MaturityStatus;
+  previousMaturity: MaturityStatus | null;
   nextMaturity: MaturityStatus;
   maturityChanged: boolean;
   supportChanged: boolean;
@@ -62,7 +72,7 @@ export interface ObsolescenceCandidate {
   sourceNextMaturity: MaturityStatus;
   targetConceptId: string;
   targetTitle?: string;
-  targetCurrentMaturity?: MaturityStatus;
+  targetCurrentMaturity?: MaturityStatus | null;
   relationNote: string;
 }
 
@@ -81,6 +91,7 @@ export interface BaselineRadarReport {
   dryRun: boolean;
   mappedConceptsCount: number;
   changes: BaselineChange[];
+  snapshotChanges: SupportChange[];
   obsolescenceCandidates: ObsolescenceCandidate[];
   newPublicationsSinceLastDigest: PublicationSignal[];
   latestDigestId: string | null;
@@ -99,39 +110,71 @@ export function mapBaselineToMaturity(baseline: WebFeatureBaseline | undefined):
   return 'interop-experimental';
 }
 
-/**
- * Formats a browser version from `web-features` support data into the EvidenceDossier string format.
- */
 function formatBrowserVersion(version: string | undefined): string {
   if (!version) return 'Not supported';
   const cleaned = version.replace(/^≤/, '');
   return `${cleaned}+`;
 }
 
-/**
- * Builds a normalized `browser_support` snapshot from a `web-features` entry.
- */
-export function extractBrowserSupport(
-  feature: WebFeatureRecord,
-  maturityStatus: MaturityStatus
-): BrowserSupportSnapshot {
-  const support = feature.status?.support ?? {};
+function buildSupportSnapshotFromFields(input: {
+  baseline: WebFeatureBaseline | undefined;
+  lowDate?: string | null;
+  highDate?: string | null;
+  support?: WebFeatureSupport;
+  maturityStatus: MaturityStatus;
+}): BrowserSupportSnapshot {
+  const support = input.support ?? {};
   const notesParts: string[] = [];
-  if (feature.status?.baseline === 'high' && feature.status.baseline_high_date) {
-    notesParts.push(`Baseline Widely Available since ${feature.status.baseline_high_date}.`);
-  } else if (feature.status?.baseline === 'low' && feature.status.baseline_low_date) {
-    notesParts.push(`Baseline Newly Available since ${feature.status.baseline_low_date}.`);
+  if (input.baseline === 'high' && input.highDate) {
+    notesParts.push(`Baseline Widely Available since ${input.highDate}.`);
+  } else if (input.baseline === 'low' && input.lowDate) {
+    notesParts.push(`Baseline Newly Available since ${input.lowDate}.`);
   } else {
     notesParts.push('Limited availability across core browser engines.');
   }
 
   return {
-    baseline_status: maturityStatus,
+    baseline_status: input.maturityStatus,
     chrome: formatBrowserVersion(support.chrome),
     firefox: formatBrowserVersion(support.firefox),
     safari: formatBrowserVersion(support.safari),
     notes: notesParts.join(' '),
   };
+}
+
+/**
+ * Builds a normalized `browser_support` summary from a `web-features` entry or feature id.
+ */
+export function extractBrowserSupport(
+  feature: WebFeatureRecord | string,
+  maturityStatus?: MaturityStatus
+): BrowserSupportSnapshot {
+  if (typeof feature === 'string') {
+    const lookup = getBaseline(feature);
+    if (!lookup.ok) {
+      return buildSupportSnapshotFromFields({
+        baseline: false,
+        maturityStatus: maturityStatus ?? 'interop-experimental',
+      });
+    }
+    const status = maturityStatus ?? mapBaselineToMaturity(lookup.info.baseline);
+    return buildSupportSnapshotFromFields({
+      baseline: lookup.info.baseline,
+      lowDate: lookup.info.lowDate,
+      highDate: lookup.info.highDate,
+      support: lookup.info.support,
+      maturityStatus: status,
+    });
+  }
+
+  const status = maturityStatus ?? mapBaselineToMaturity(feature.status?.baseline);
+  return buildSupportSnapshotFromFields({
+    baseline: feature.status?.baseline,
+    lowDate: feature.status?.baseline_low_date,
+    highDate: feature.status?.baseline_high_date,
+    support: feature.status?.support,
+    maturityStatus: status,
+  });
 }
 
 /**
@@ -158,7 +201,7 @@ export function detectObsolescenceCandidates(
     for (const rel of source.relations) {
       if (rel.type !== 'replaces') continue;
       const target = byId.get(rel.target_id);
-      if (target && target.maturity_status === 'superseded') continue;
+      if (target && target.pattern_status === 'superseded') continue;
 
       candidates.push({
         sourceConceptId: source.id,
@@ -166,7 +209,7 @@ export function detectObsolescenceCandidates(
         sourceNextMaturity: change.nextMaturity,
         targetConceptId: rel.target_id,
         targetTitle: target?.title,
-        targetCurrentMaturity: target?.maturity_status,
+        targetCurrentMaturity: target?.maturity_status ?? null,
         relationNote: rel.note,
       });
     }
@@ -212,7 +255,6 @@ export function buildDigestDraft(params: BuildDigestDraftParams): WeeklyDigest |
   const entries: WeeklyDigest['entries'] = [];
   const usedTitles = new Set<string>();
 
-  // 1. Obsolescence alerts first (highest architectural impact)
   for (const obs of params.obsolescenceCandidates) {
     if (entries.length >= 8) break;
     const title = `${obs.sourceTitle} reaches ${obs.sourceNextMaturity}: audit ${obs.targetTitle ?? obs.targetConceptId}`;
@@ -229,10 +271,9 @@ export function buildDigestDraft(params: BuildDigestDraftParams): WeeklyDigest |
     });
   }
 
-  // 2. Baseline status transitions
   for (const change of significantChanges) {
     if (entries.length >= 8) break;
-    const title = `${change.title} moves from ${change.previousMaturity} to ${change.nextMaturity}`;
+    const title = `${change.title} moves from ${change.previousMaturity ?? 'unknown'} to ${change.nextMaturity}`;
     if (usedTitles.has(title)) continue;
     usedTitles.add(title);
 
@@ -246,7 +287,6 @@ export function buildDigestDraft(params: BuildDigestDraftParams): WeeklyDigest |
     });
   }
 
-  // 3. New publications (concepts / autopsies) since latest digest
   for (const pub of params.newPublications) {
     if (entries.length >= 8) break;
     const title =
@@ -267,12 +307,11 @@ export function buildDigestDraft(params: BuildDigestDraftParams): WeeklyDigest |
     });
   }
 
-  // 4. Pad to minimum 5 entries required by WeeklyDigestSchema using mapped Baseline concepts
   if (entries.length < 5) {
     const mappedConcepts = params.allConcepts.filter((c) => Boolean(c.web_feature_id));
     for (const concept of mappedConcepts) {
       if (entries.length >= 5) break;
-      const title = `Baseline Watch: ${concept.title} (${concept.maturity_status})`;
+      const title = `Baseline Watch: ${concept.title} (${concept.maturity_status ?? 'pattern'})`;
       if (usedTitles.has(title)) continue;
       usedTitles.add(title);
 
@@ -284,7 +323,7 @@ export function buildDigestDraft(params: BuildDigestDraftParams): WeeklyDigest |
         editorial_take:
           concept.summary_tldr.length >= 20
             ? concept.summary_tldr
-            : `${concept.title} remains tracked via web-features (${concept.web_feature_id}) with status ${concept.maturity_status}.`,
+            : `${concept.title} remains tracked via web-features (${concept.web_feature_id}) with status ${concept.maturity_status ?? 'pattern'}.`,
         related_concepts: [concept.id],
       });
     }
@@ -305,43 +344,29 @@ export function buildDigestDraft(params: BuildDigestDraftParams): WeeklyDigest |
   return WeeklyDigestSchema.parse(draft);
 }
 
-/**
- * Updates `maturity_status` and `last_verified_at` inside a concept's YAML frontmatter
- * without reformatting unrelated YAML keys or MDX body content.
- */
-export function updateConceptFrontmatterRaw(
-  rawMdx: string,
-  updates: { maturity_status: MaturityStatus; last_verified_at: string }
-): string {
-  const match = rawMdx.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (!match) {
-    throw new Error('Missing YAML frontmatter delimiters');
-  }
-
-  let fm = match[1];
-  fm = fm.replace(
-    /^(maturity_status:\s*)(.+)$/m,
-    `$1${updates.maturity_status}`
-  );
-  fm = fm.replace(
-    /^(last_verified_at:\s*)(.+)$/m,
-    `$1'${updates.last_verified_at}'`
-  );
-
-  return rawMdx.replace(match[1], fm);
-}
-
 export interface SyncBaselineRadarOptions {
   rootDir?: string;
   dryRun?: boolean;
   writeDigest?: boolean;
   now?: Date;
+  previousSnapshot?: SupportSnapshot | null;
+  nextSnapshot?: SupportSnapshot;
   featureCatalog?: Record<string, WebFeatureRecord>;
 }
 
+function maturityFromSnapshotFeature(
+  concept: ConceptFrontmatter,
+  feature: SupportSnapshotFeature | undefined
+): MaturityStatus | null {
+  if (concept.pattern_status) return concept.pattern_status;
+  if (!feature) return computeConceptMaturity(concept);
+  return mapBaselineToMaturity(feature.baseline);
+}
+
 /**
- * Runs the Living Baseline Radar against `content/concepts/*.mdx`,
- * `content/evidence/*.evidence-dossier.json`, and `content/digests/*.json`.
+ * Compares the committed support snapshot (`git show HEAD:content/.proof-cache/support-snapshot.json`)
+ * against current compatibility data and builds a Markdown/JSON radar report.
+ * Never modifies `content/concepts/` or `content/evidence/`.
  */
 export function syncBaselineRadar(options: SyncBaselineRadarOptions = {}): BaselineRadarReport {
   const startedAt = Date.now();
@@ -349,16 +374,13 @@ export function syncBaselineRadar(options: SyncBaselineRadarOptions = {}): Basel
   const dryRun = options.dryRun ?? false;
   const writeDigest = options.writeDigest ?? false;
   const now = options.now ?? new Date();
-  const todayIso = now.toISOString().slice(0, 10);
   const catalog: Record<string, WebFeatureRecord> =
-    options.featureCatalog ?? (webFeatures as unknown as Record<string, WebFeatureRecord>);
+    options.featureCatalog ?? (getWebFeatures() as unknown as Record<string, WebFeatureRecord>);
 
   const conceptsDir = path.join(rootDir, 'content', 'concepts');
-  const evidenceDir = path.join(rootDir, 'content', 'evidence');
   const digestsDir = path.join(rootDir, 'content', 'digests');
   const autopsiesDir = path.join(rootDir, 'content', 'autopsies');
 
-  // Load latest digest date
   let latestDigestId: string | null = null;
   let latestDigestDate: string | null = null;
   if (fs.existsSync(digestsDir)) {
@@ -379,104 +401,108 @@ export function syncBaselineRadar(options: SyncBaselineRadarOptions = {}): Basel
     }
   }
 
-  const conceptFiles = fs
-    .readdirSync(conceptsDir)
-    .filter((f) => f.endsWith('.mdx') || f.endsWith('.md'))
-    .sort();
-
   const allConcepts: ConceptFrontmatter[] = [];
-  const changes: BaselineChange[] = [];
-  const updatedFiles: string[] = [];
   const newPublications: PublicationSignal[] = [];
 
-  for (const file of conceptFiles) {
-    const filePath = path.join(conceptsDir, file);
-    const raw = fs.readFileSync(filePath, 'utf-8');
-    const parsed = matter(raw);
-    const fmResult = ConceptFrontmatterSchema.safeParse(parsed.data);
-    if (!fmResult.success) continue;
+  if (fs.existsSync(conceptsDir)) {
+    const conceptFiles = fs
+      .readdirSync(conceptsDir)
+      .filter((f) => f.endsWith('.mdx') || f.endsWith('.md'))
+      .sort();
 
-    const concept = fmResult.data;
-    allConcepts.push(concept);
+    for (const file of conceptFiles) {
+      const filePath = path.join(conceptsDir, file);
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      const parsed = matter(raw);
+      const fmResult = ConceptFrontmatterFileSchema.safeParse(parsed.data);
+      if (!fmResult.success) continue;
 
-    if (latestDigestDate && concept.last_verified_at > latestDigestDate) {
-      newPublications.push({
-        kind: 'concept',
-        id: concept.id,
-        title: concept.title,
-        date: concept.last_verified_at,
-        summary: concept.summary_tldr,
-        sourceUrl: concept.sources[0] ?? 'https://frontend.rocks/concepts/' + concept.id,
-        relatedConcepts: [concept.id],
-      });
-    }
+      const concept = withComputedMaturity(fmResult.data);
+      allConcepts.push(concept);
 
-    if (!concept.web_feature_id) continue;
-    const feature = catalog[concept.web_feature_id];
-    if (!feature || feature.kind !== 'feature') continue;
-
-    const nextMaturity = mapBaselineToMaturity(feature.status?.baseline);
-    const nextSupport = extractBrowserSupport(feature, nextMaturity);
-    const maturityChanged =
-      concept.maturity_status !== 'legacy-pattern' &&
-      concept.maturity_status !== 'superseded' &&
-      concept.maturity_status !== nextMaturity;
-
-    const evidencePath = path.join(evidenceDir, `${concept.id}.evidence-dossier.json`);
-    let previousSupport: BrowserSupportSnapshot | undefined;
-    let supportChanged = false;
-
-    if (fs.existsSync(evidencePath)) {
-      const evidenceRaw = JSON.parse(fs.readFileSync(evidencePath, 'utf-8'));
-      const evidenceParsed = EvidenceDossierSchema.safeParse(evidenceRaw);
-      if (evidenceParsed.success) {
-        previousSupport = evidenceParsed.data.browser_support;
-        supportChanged =
-          previousSupport.baseline_status !== nextSupport.baseline_status ||
-          previousSupport.chrome !== nextSupport.chrome ||
-          previousSupport.firefox !== nextSupport.firefox ||
-          previousSupport.safari !== nextSupport.safari;
-      }
-    }
-
-    if (maturityChanged || supportChanged) {
-      const specUrl = Array.isArray(feature.spec) ? feature.spec[0] : feature.spec;
-      changes.push({
-        conceptId: concept.id,
-        title: concept.title,
-        webFeatureId: concept.web_feature_id,
-        previousMaturity: concept.maturity_status,
-        nextMaturity,
-        maturityChanged,
-        supportChanged,
-        previousSupport,
-        nextSupport,
-        baselineDate: feature.status?.baseline_high_date ?? feature.status?.baseline_low_date,
-        specUrl,
-      });
-
-      if (!dryRun) {
-        if (maturityChanged) {
-          const updatedMdx = updateConceptFrontmatterRaw(raw, {
-            maturity_status: nextMaturity,
-            last_verified_at: todayIso,
-          });
-          fs.writeFileSync(filePath, updatedMdx, 'utf-8');
-          updatedFiles.push(path.relative(rootDir, filePath));
-        }
-
-        if (fs.existsSync(evidencePath) && (maturityChanged || supportChanged)) {
-          const evidenceRaw = JSON.parse(fs.readFileSync(evidencePath, 'utf-8'));
-          evidenceRaw.browser_support = nextSupport;
-          evidenceRaw.compiled_at = todayIso;
-          fs.writeFileSync(evidencePath, `${JSON.stringify(evidenceRaw, null, 2)}\n`, 'utf-8');
-          updatedFiles.push(path.relative(rootDir, evidencePath));
-        }
+      if (latestDigestDate && concept.last_verified_at > latestDigestDate) {
+        newPublications.push({
+          kind: 'concept',
+          id: concept.id,
+          title: concept.title,
+          date: concept.last_verified_at,
+          summary: concept.summary_tldr,
+          sourceUrl: concept.sources[0] ?? 'https://frontend.rocks/concepts/' + concept.id,
+          relatedConcepts: [concept.id],
+        });
       }
     }
   }
 
-  // Check new autopsies since latest digest
+  // Read previous snapshot from git HEAD (or test override) and compare against current snapshot.
+  const previousSnapshot =
+    options.previousSnapshot !== undefined
+      ? options.previousSnapshot
+      : readCommittedSupportSnapshot(rootDir);
+  const nextSnapshot = options.nextSnapshot ?? buildSupportSnapshot({ now });
+
+  const refs = collectSupportReferences();
+  const snapshotChanges = diffSupportSnapshots(previousSnapshot, nextSnapshot, refs);
+  const changedBaselineById = new Map<string, SupportChange>();
+  for (const ch of snapshotChanges) {
+    if (ch.kind === 'baseline') changedBaselineById.set(ch.id, ch);
+  }
+
+  const changes: BaselineChange[] = [];
+  for (const concept of allConcepts) {
+    if (!concept.web_feature_id) continue;
+    const snapChange = changedBaselineById.get(concept.web_feature_id);
+    if (!snapChange) continue;
+
+    const beforeFeat = snapChange.before as SupportSnapshotFeature;
+    const afterFeat = snapChange.after as SupportSnapshotFeature;
+    const previousMaturity = maturityFromSnapshotFeature(concept, beforeFeat);
+    const nextMaturity = mapBaselineToMaturity(afterFeat.baseline);
+    const maturityChanged =
+      !concept.pattern_status && previousMaturity !== nextMaturity;
+
+    const previousSupport = buildSupportSnapshotFromFields({
+      baseline: beforeFeat.baseline,
+      lowDate: beforeFeat.lowDate,
+      highDate: beforeFeat.highDate,
+      support: beforeFeat.support,
+      maturityStatus: previousMaturity ?? mapBaselineToMaturity(beforeFeat.baseline),
+    });
+    const nextSupport = buildSupportSnapshotFromFields({
+      baseline: afterFeat.baseline,
+      lowDate: afterFeat.lowDate,
+      highDate: afterFeat.highDate,
+      support: afterFeat.support,
+      maturityStatus: nextMaturity,
+    });
+    const supportChanged =
+      previousSupport.chrome !== nextSupport.chrome ||
+      previousSupport.firefox !== nextSupport.firefox ||
+      previousSupport.safari !== nextSupport.safari ||
+      maturityChanged;
+
+    const rawFeature = catalog[concept.web_feature_id];
+    const specUrl = rawFeature
+      ? Array.isArray(rawFeature.spec)
+        ? rawFeature.spec[0]
+        : rawFeature.spec
+      : undefined;
+
+    changes.push({
+      conceptId: concept.id,
+      title: concept.title,
+      webFeatureId: concept.web_feature_id,
+      previousMaturity,
+      nextMaturity,
+      maturityChanged,
+      supportChanged,
+      previousSupport,
+      nextSupport,
+      baselineDate: afterFeat.highDate ?? afterFeat.lowDate ?? undefined,
+      specUrl,
+    });
+  }
+
   if (latestDigestDate && fs.existsSync(autopsiesDir)) {
     const autopsyFiles = fs
       .readdirSync(autopsiesDir)
@@ -516,6 +542,7 @@ export function syncBaselineRadar(options: SyncBaselineRadarOptions = {}): Basel
     allConcepts,
   });
 
+  const updatedFiles: string[] = [];
   if (!dryRun && writeDigest && digestDraft) {
     fs.mkdirSync(digestsDir, { recursive: true });
     const draftPath = path.join(digestsDir, `${digestDraft.id}.json`);
@@ -532,6 +559,7 @@ export function syncBaselineRadar(options: SyncBaselineRadarOptions = {}): Basel
     dryRun,
     mappedConceptsCount,
     changes,
+    snapshotChanges,
     obsolescenceCandidates,
     newPublicationsSinceLastDigest: newPublications,
     latestDigestId,
@@ -550,7 +578,7 @@ export function formatBaselineRadarMarkdown(report: BaselineRadarReport): string
   lines.push('# Living Baseline Radar — Weekly Sync Report');
   lines.push('');
   lines.push(
-    `- **Mode**: ${report.dryRun ? 'dry-run (no files modified)' : 'write'} | **Mapped concepts**: ${report.mappedConceptsCount} | **Detected changes**: ${report.changes.length} | **Duration**: ${report.durationMs}ms`
+    `- **Mode**: ${report.dryRun ? 'dry-run (no files modified)' : 'report'} | **Mapped concepts**: ${report.mappedConceptsCount} | **Detected changes**: ${report.changes.length} | **Duration**: ${report.durationMs}ms`
   );
   lines.push('');
 
@@ -563,11 +591,22 @@ export function formatBaselineRadarMarkdown(report: BaselineRadarReport): string
     lines.push('| --- | --- | --- | --- | --- | --- |');
     for (const c of report.changes) {
       const maturityCell = c.maturityChanged
-        ? `\`${c.previousMaturity}\` -> \`${c.nextMaturity}\``
+        ? `\`${c.previousMaturity ?? 'null'}\` -> \`${c.nextMaturity}\``
         : `\`${c.nextMaturity}\` (support updated)`;
       lines.push(
         `| \`${c.conceptId}\` | \`${c.webFeatureId}\` | ${maturityCell} | ${c.nextSupport.chrome} | ${c.nextSupport.firefox} | ${c.nextSupport.safari} |`
       );
+    }
+  }
+
+  const browserChanges = report.snapshotChanges.filter((c) => c.kind === 'browser');
+  if (browserChanges.length > 0) {
+    lines.push('');
+    lines.push('## BCD Key Changes');
+    lines.push('');
+    for (const ch of browserChanges) {
+      const pages = ch.affectedPages.length > 0 ? ch.affectedPages.join(', ') : 'none';
+      lines.push(`- \`${ch.id}\` (affected pages: ${pages})`);
     }
   }
 
@@ -577,7 +616,7 @@ export function formatBaselineRadarMarkdown(report: BaselineRadarReport): string
     lines.push('');
     for (const obs of report.obsolescenceCandidates) {
       lines.push(
-        `- **\`${obs.targetConceptId}\`** (currently \`${obs.targetCurrentMaturity ?? 'unknown'}\`) — replaced by \`${obs.sourceConceptId}\` which reached \`${obs.sourceNextMaturity}\`: ${obs.relationNote}`
+        `- **\`${obs.targetConceptId}\`** (currently \`${obs.targetCurrentMaturity ?? 'pattern'}\`) — replaced by \`${obs.sourceConceptId}\` which reached \`${obs.sourceNextMaturity}\`: ${obs.relationNote}`
       );
     }
   }

@@ -2,7 +2,6 @@
 id: hydration-mismatch-mechanics
 title: "Hydration Mismatch & Subtree Bailout Mechanics"
 domain: framework-internals
-maturity_status: baseline-widely
 summary_tldr: "One mismatched timestamp or browser-extension node during SSR hydration can discard the server DOM and force a synchronous client re-render. Understanding cursor matching and Suspense bailout boundaries keeps LCP and INP intact."
 relations:
   - target_id: resumability-vs-hydration

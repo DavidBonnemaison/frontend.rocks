@@ -11,7 +11,7 @@ export interface VsHubConceptRef {
   id: string;
   title: string;
   domain: string;
-  maturityStatus: string;
+  maturityStatus: string | null;
 }
 
 export interface VsHubItem {
@@ -245,15 +245,27 @@ export function VsHubClient({ pairs }: { pairs: VsHubItem[] }) {
                 <div className="vs-hub-maturities" aria-label="Concept maturity statuses">
                   <div className="vs-hub-maturity-row">
                     <span className="vs-hub-maturity-name">{pair.primary.title}</span>
-                    <span className={`badge badge-${pair.primary.maturityStatus}`}>
-                      {formatMaturityLabel(pair.primary.maturityStatus)}
-                    </span>
+                    {pair.primary.maturityStatus ? (
+                      <span className={`badge badge-${pair.primary.maturityStatus}`}>
+                        {formatMaturityLabel(pair.primary.maturityStatus)}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Pattern (no platform feature)
+                      </span>
+                    )}
                   </div>
                   <div className="vs-hub-maturity-row">
                     <span className="vs-hub-maturity-name">{pair.secondary.title}</span>
-                    <span className={`badge badge-${pair.secondary.maturityStatus}`}>
-                      {formatMaturityLabel(pair.secondary.maturityStatus)}
-                    </span>
+                    {pair.secondary.maturityStatus ? (
+                      <span className={`badge badge-${pair.secondary.maturityStatus}`}>
+                        {formatMaturityLabel(pair.secondary.maturityStatus)}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Pattern (no platform feature)
+                      </span>
+                    )}
                   </div>
                 </div>
 

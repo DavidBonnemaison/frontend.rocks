@@ -10,7 +10,7 @@ export interface PathPreviewConcept {
   id: string;
   title: string;
   domain: Domain;
-  maturity_status: MaturityStatus;
+  maturity_status: MaturityStatus | null;
   summary_tldr: string;
   hasLab: boolean;
 }
@@ -61,9 +61,11 @@ export function PathPreview({
       <div className="path-preview-detail" role="tabpanel">
         <div className="path-preview-detail-meta">
           <span className="badge">{formatDomainLabel(active.domain)}</span>
-          <span className={`badge badge-${active.maturity_status}`}>
-            {formatMaturityLabel(active.maturity_status)}
-          </span>
+          {active.maturity_status && (
+            <span className={`badge badge-${active.maturity_status}`}>
+              {formatMaturityLabel(active.maturity_status)}
+            </span>
+          )}
           {active.hasLab && (
             <span className="lab-badge">{UI_STRINGS.sections.interactiveSimulator}</span>
           )}

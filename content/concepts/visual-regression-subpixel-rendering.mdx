@@ -2,7 +2,6 @@
 id: visual-regression-subpixel-rendering
 title: "Visual Regression Testing & Deterministic Rasterization"
 domain: testing-verification
-maturity_status: baseline-widely
 summary_tldr: "Screenshot diffs generated on macOS Retina fail in Linux CI because CoreText and FreeType rasterize subpixel glyph edges differently; pinning container rasterizers and fonts eliminates false diffs."
 relations:
   - target_id: device-pixel-ratio-subpixel

@@ -108,7 +108,7 @@ export const UI_STRINGS = {
   maturity: {
     'baseline-widely': 'Baseline · Widely',
     'baseline-newly': 'Baseline · Newly',
-    'interop-experimental': 'Experimental',
+    'interop-experimental': 'Limited availability',
     'legacy-pattern': 'Legacy Pattern',
     superseded: 'Superseded',
   } as Record<string, string>,
@@ -166,7 +166,8 @@ export const UI_STRINGS = {
   },
 } as const;
 
-export function formatMaturityLabel(status: string): string {
+export function formatMaturityLabel(status: string | null | undefined): string {
+  if (!status) return '';
   return UI_STRINGS.maturity[status] ?? status;
 }
 

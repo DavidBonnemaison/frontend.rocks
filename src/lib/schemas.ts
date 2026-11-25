@@ -52,28 +52,47 @@ export const RelationSchema = z.object({
 });
 export type ConceptRelation = z.infer<typeof RelationSchema>;
 
-export const ConceptFrontmatterSchema = z.object({
-  id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'id must be a lowercase kebab-case slug'),
-  title: z.string().min(2).max(120),
-  domain: DomainSchema,
-  maturity_status: MaturityStatusSchema,
-  superseded_by: z.array(z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)).optional(),
-  summary_tldr: z
-    .string()
-    .min(10)
-    .max(280, 'summary_tldr must be strictly <= 280 characters'),
-  relations: z.array(RelationSchema),
-  sources: z.array(z.string().url()).min(1, 'At least one primary source URL is required'),
-  last_verified_at: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'last_verified_at must be ISO-8601 YYYY-MM-DD'),
-  proof_status: PageProofStatusSchema.default('unverified'),
-  keywords: z.array(z.string().min(1)).optional(),
-  lab_id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
-  web_feature_id: z.string().min(1).optional(),
-});
+export const PATTERN_STATUS_VALUES = ['legacy-pattern', 'superseded'] as const;
+export const PatternStatusSchema = z.enum(PATTERN_STATUS_VALUES);
+export type PatternStatus = z.infer<typeof PatternStatusSchema>;
 
-export type ConceptFrontmatter = z.infer<typeof ConceptFrontmatterSchema>;
+export const ConceptFrontmatterFileSchema = z
+  .object({
+    id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'id must be a lowercase kebab-case slug'),
+    title: z.string().min(2).max(120),
+    domain: DomainSchema,
+    pattern_status: PatternStatusSchema.optional(),
+    superseded_by: z.array(z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)).optional(),
+    summary_tldr: z
+      .string()
+      .min(10)
+      .max(280, 'summary_tldr must be strictly <= 280 characters'),
+    relations: z.array(RelationSchema),
+    sources: z.array(z.string().url()).min(1, 'At least one primary source URL is required'),
+    last_verified_at: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'last_verified_at must be ISO-8601 YYYY-MM-DD'),
+    proof_status: PageProofStatusSchema.default('unverified'),
+    keywords: z.array(z.string().min(1)).optional(),
+    lab_id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
+    web_feature_id: z.string().min(1).optional(),
+  })
+  .strict()
+  .superRefine((fm, ctx) => {
+    if (fm.pattern_status && (!fm.superseded_by || fm.superseded_by.length === 0)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['superseded_by'],
+        message: 'superseded_by must contain at least one concept id when pattern_status is set',
+      });
+    }
+  });
+
+export type ConceptFrontmatterFile = z.infer<typeof ConceptFrontmatterFileSchema>;
+/** Frontmatter after loading: maturity_status is computed, never read from the file. */
+export type ConceptFrontmatter = ConceptFrontmatterFile & {
+  maturity_status: MaturityStatus | null;
+};
 
 // --- InteractivePrimitive Schemas ---
 

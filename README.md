@@ -37,7 +37,7 @@ npm run dev
 
 Checks before a pull request: `npm run check:all` (typecheck, lint, unit tests, content validation), then `npm run build-prod` and `npx playwright test` for the E2E suite. A pull request runs the `@smoke` subset (`npx playwright test --grep @smoke`) on a build without the OG images (`npm run generate:exports:fast`); the full suite and Lighthouse run in the daily deploy workflow.
 
-Normative specification quotes can be checked locally with `npm run proof:verify-specs` (use `-- --record` to update committed quote metadata in `content/.proof-cache/specs/`). Engine source code quotes can be checked locally with `npm run proof:verify-sources` (use `-- --record` to update `content/.proof-cache/sources/` and `-- --resolve` to resolve a snippet to exact lines and commit SHA).
+Normative specification quotes can be checked locally with `npm run proof:verify-specs` (use `-- --record` to update committed quote metadata in `content/.proof-cache/specs/`). Engine source code quotes can be checked locally with `npm run proof:verify-sources` (use `-- --record` to update `content/.proof-cache/sources/` and `-- --resolve` to resolve a snippet to exact lines and commit SHA). Computed browser support claims and hand-written support lint can be checked locally with `npm run proof:support` (use `-- --write` to regenerate canonical statements and `-- --write-snapshot` to update `content/.proof-cache/support-snapshot.json`).
 
 `npm run lint` has a warning ratchet (`--max-warnings`). It can go down, never up.
 

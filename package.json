@@ -30,20 +30,28 @@
     "proof:migrate-evidence": "tsx scripts/proof/migrate-evidence-to-claims.ts",
     "proof:verify-specs": "tsx scripts/proof/verify-spec-quotes.ts",
     "proof:verify-sources": "tsx scripts/proof/verify-source-quotes.ts",
+    "proof:support": "tsx scripts/proof/check-support.ts",
     "check:all": "npm run typecheck && npm run lint && npm run test && npm run validate:content"
   },
   "dependencies": {
+    "@mdn/browser-compat-data": "8.1.8",
     "@mdx-js/mdx": "^3.1.1",
     "@modelcontextprotocol/sdk": "^1.32.2",
     "cheerio": "1.2.0",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.511.0",
+    "mdast-util-to-string": "4.0.0",
     "next": "^16.4.6",
     "next-mdx-remote": "^5.0.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "remark-gfm": "^4.0.1",
+    "remark-mdx": "3.1.1",
+    "remark-parse": "11.0.0",
     "shiki": "^4.6.0",
+    "unified": "11.0.5",
+    "unist-util-visit": "5.2.0",
+    "web-features": "^3.47.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -69,7 +77,6 @@
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "vitest": "^5.1.0",
-    "web-features": "^3.47.0",
     "yaml": "2.9.1"
   },
   "license": "MIT",

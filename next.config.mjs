@@ -6,6 +6,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  serverExternalPackages: ['@mdn/browser-compat-data', 'web-features'],
 };
 
 export default nextConfig;

@@ -2,7 +2,6 @@
 id: concurrent-rendering-lanes
 title: "Priority Lanes & Time-Slicing Schedulers"
 domain: framework-internals
-maturity_status: baseline-widely
 summary_tldr: "Heavy state updates lock the main thread and tank INP past 200 ms. Bitmask priority lanes let a framework scheduler pause background tree reconciliation, yield to user input, and resume work across frames."
 relations:
   - target_id: scheduler-api-yield

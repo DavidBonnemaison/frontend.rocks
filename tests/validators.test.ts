@@ -66,7 +66,7 @@ describe('validateConceptMdx', () => {
 id: sample-node
 title: Sample Node
 domain: css-layout
-maturity_status: baseline-widely
+web_feature_id: container-queries
 summary_tldr: "Short and precise definition of the concept in under 280 characters."
 relations: []
 sources:
@@ -103,7 +103,7 @@ Common pitfalls.
 id: sample-node
 title: Sample Node
 domain: css-layout
-maturity_status: baseline-widely
+web_feature_id: container-queries
 summary_tldr: "Short and precise definition of the concept in under 280 characters."
 relations: []
 sources:

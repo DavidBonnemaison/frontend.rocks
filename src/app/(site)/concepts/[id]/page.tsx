@@ -173,7 +173,7 @@ interface ConnectionCardItem {
   targetId: string;
   targetTitle: string;
   targetDomain: string;
-  targetMaturity?: string;
+  targetMaturity?: string | null;
   groupLabel: string;
   note: string;
 }
@@ -475,9 +475,11 @@ export default async function ConceptPage({
 
         <div className="concept-meta">
           <span className="badge">{formatDomainLabel(frontmatter.domain)}</span>
-          <span className={`badge badge-${frontmatter.maturity_status}`}>
-            {formatMaturityLabel(frontmatter.maturity_status)}
-          </span>
+          {frontmatter.maturity_status && (
+            <span className={`badge badge-${frontmatter.maturity_status}`}>
+              {formatMaturityLabel(frontmatter.maturity_status)}
+            </span>
+          )}
         </div>
 
         <h1 className="concept-title">{frontmatter.title}</h1>
@@ -526,7 +528,9 @@ export default async function ConceptPage({
                       className="rel-chip"
                       title={
                         target
-                          ? `${target.summary_tldr} [${formatMaturityLabel(target.maturity_status)}]`
+                          ? target.maturity_status
+                            ? `${target.summary_tldr} [${formatMaturityLabel(target.maturity_status)}]`
+                            : target.summary_tldr
                           : r.note
                       }
                     >
@@ -548,7 +552,9 @@ export default async function ConceptPage({
                       className="rel-chip"
                       title={
                         target
-                          ? `${target.summary_tldr} [${formatMaturityLabel(target.maturity_status)}]`
+                          ? target.maturity_status
+                            ? `${target.summary_tldr} [${formatMaturityLabel(target.maturity_status)}]`
+                            : target.summary_tldr
                           : r.note
                       }
                     >
@@ -574,7 +580,9 @@ export default async function ConceptPage({
                       className="rel-chip"
                       title={
                         target
-                          ? `${target.summary_tldr} [${formatMaturityLabel(target.maturity_status)}]`
+                          ? target.maturity_status
+                            ? `${target.summary_tldr} [${formatMaturityLabel(target.maturity_status)}]`
+                            : target.summary_tldr
                           : r.note
                       }
                     >

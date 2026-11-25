@@ -99,4 +99,26 @@ test.describe('Concept page', () => {
     );
     expect(desktopOverflow).toBe(false);
   });
+
+  test('renders no maturity badge on an architecture pattern and shows a computed Baseline badge on a platform feature', async ({
+    page,
+  }) => {
+    await page.goto('/concepts/hexagonal-ports-adapters-ui/', { waitUntil: 'networkidle' });
+    const patternMeta = page.locator('.concept-meta');
+    await expect(patternMeta).toBeVisible();
+    await expect(
+      patternMeta.locator(
+        '.badge-baseline-widely, .badge-baseline-newly, .badge-interop-experimental, .badge-legacy-pattern, .badge-superseded'
+      )
+    ).toHaveCount(0);
+
+    await page.goto('/concepts/css-container-queries/', { waitUntil: 'networkidle' });
+    const featureBadge = page
+      .locator('.concept-meta')
+      .locator('.badge-baseline-widely, .badge-baseline-newly, .badge-interop-experimental');
+    await expect(featureBadge).toHaveCount(1);
+    await expect(featureBadge).toHaveText(
+      /^(Baseline · Widely|Baseline · Newly|Limited availability)$/
+    );
+  });
 });

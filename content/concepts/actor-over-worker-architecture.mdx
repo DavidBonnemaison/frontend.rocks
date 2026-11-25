@@ -2,7 +2,6 @@
 id: actor-over-worker-architecture
 title: Actor-over-Worker Architecture (Off-Main-Thread UI)
 domain: web-apis
-maturity_status: baseline-widely
 summary_tldr: "Stop freezing 60fps UI frames with Redux reducers and SQLite queries on the main thread. Isolated Worker actors serialize state mutations behind message mailboxes, keeping the main thread exclusively for DOM commits and input."
 relations:
   - target_id: dedicated-web-workers

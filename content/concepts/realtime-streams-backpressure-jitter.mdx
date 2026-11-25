@@ -2,7 +2,6 @@
 id: realtime-streams-backpressure-jitter
 title: WebSockets, SSE, Reconnection Jitter & Consumer Backpressure
 domain: network-perf
-maturity_status: baseline-widely
 summary_tldr: "Unbounded WebSocket bursts spike tab memory until OOM, while synchronized reconnects DDoS your own edge servers. Pair ReadableStream backpressure with full-jitter exponential backoff so slow UI consumers throttle sockets safely."
 relations:
   - target_id: streams-api-backpressure

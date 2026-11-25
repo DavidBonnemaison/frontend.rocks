@@ -2,7 +2,6 @@
 id: server-state-cache-machines
 title: "Server State Cache Machines (fresh → stale → fetching)"
 domain: framework-internals
-maturity_status: baseline-widely
 summary_tldr: "Stop firing duplicate API requests on every component mount or tab switch. A deterministic cache state machine deduplicates in-flight fetches, serves stale memory in 0 ms, and revalidates in the background."
 relations:
   - target_id: http-caching-directives

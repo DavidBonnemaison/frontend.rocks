@@ -9,13 +9,14 @@ import type { GraphNodeData } from './KnowledgeGraph';
 export function ConceptIndex({ nodes }: { nodes: GraphNodeData[] }) {
   const [query, setQuery] = useState('');
   const [domain, setDomain] = useState<Domain | 'all'>('all');
-  const [maturity, setMaturity] = useState<MaturityStatus | 'all'>('all');
+  const [maturity, setMaturity] = useState<MaturityStatus | 'pattern' | 'all'>('all');
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return nodes.filter((n) => {
       if (domain !== 'all' && n.domain !== domain) return false;
-      if (maturity !== 'all' && n.maturity_status !== maturity) return false;
+      if (maturity === 'pattern' && n.maturity_status !== null) return false;
+      if (maturity !== 'all' && maturity !== 'pattern' && n.maturity_status !== maturity) return false;
       if (q) {
         const hay = `${n.id} ${n.title} ${n.summary_tldr}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -61,7 +62,7 @@ export function ConceptIndex({ nodes }: { nodes: GraphNodeData[] }) {
         </select>
         <select
           value={maturity}
-          onChange={(e) => setMaturity(e.target.value as MaturityStatus | 'all')}
+          onChange={(e) => setMaturity(e.target.value as MaturityStatus | 'pattern' | 'all')}
           className="sim-select"
           aria-label="Filter by maturity"
         >
@@ -71,6 +72,7 @@ export function ConceptIndex({ nodes }: { nodes: GraphNodeData[] }) {
               {formatMaturityLabel(m)}
             </option>
           ))}
+          <option value="pattern">Pattern (no platform feature)</option>
         </select>
       </div>
 
@@ -90,9 +92,11 @@ export function ConceptIndex({ nodes }: { nodes: GraphNodeData[] }) {
           >
             <div style={{ display: 'flex', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
               <span className="badge">{formatDomainLabel(n.domain)}</span>
-              <span className={`badge badge-${n.maturity_status}`}>
-                {formatMaturityLabel(n.maturity_status)}
-              </span>
+              {n.maturity_status && (
+                <span className={`badge badge-${n.maturity_status}`}>
+                  {formatMaturityLabel(n.maturity_status)}
+                </span>
+              )}
             </div>
             <strong>{n.title}</strong>
             <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: 'var(--text-muted)' }}>

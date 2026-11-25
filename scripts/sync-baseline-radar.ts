@@ -1,40 +1,46 @@
-import fs from 'fs';
+import fs from 'node:fs';
+import path from 'node:path';
+import { parseCliArgs } from '../src/lib/cli-args';
 import {
   formatBaselineRadarMarkdown,
   syncBaselineRadar,
 } from '../src/lib/baseline-radar';
 import { SITE_ROOT } from '../src/lib/paths';
 
-function parseArgValue(args: string[], flag: string): string | undefined {
-  const idx = args.indexOf(flag);
-  if (idx === -1) return undefined;
-  return args[idx + 1];
-}
-
-function main(): void {
-  const args = process.argv.slice(2);
-  const dryRun = args.includes('--dry-run');
-  const asJson = args.includes('--json');
-  const writeDigest = args.includes('--write-digest');
-  const reportOut = parseArgValue(args, '--report-out');
+/**
+ * Compares the committed snapshot (`git show HEAD:content/.proof-cache/support-snapshot.json`)
+ * against the currently installed `@mdn/browser-compat-data` and `web-features` packages,
+ * and prints (or writes via `--report-out`) the Markdown radar report.
+ */
+async function main(): Promise<void> {
+  const args = parseCliArgs(process.argv.slice(2), {
+    'dry-run': 'boolean',
+    json: 'boolean',
+    'write-digest': 'boolean',
+    'report-out': 'string',
+  });
 
   const report = syncBaselineRadar({
     rootDir: SITE_ROOT,
-    dryRun,
-    writeDigest,
+    dryRun: Boolean(args['dry-run']),
+    writeDigest: Boolean(args['write-digest']),
   });
 
   const markdown = formatBaselineRadarMarkdown(report);
 
-  if (reportOut) {
-    fs.writeFileSync(reportOut, `${markdown}\n`, 'utf-8');
+  if (args['report-out']) {
+    fs.mkdirSync(path.dirname(args['report-out']), { recursive: true });
+    fs.writeFileSync(args['report-out'], `${markdown}\n`, 'utf-8');
   }
 
-  if (asJson) {
+  if (args.json) {
     console.log(JSON.stringify(report, null, 2));
   } else {
     console.log(markdown);
   }
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

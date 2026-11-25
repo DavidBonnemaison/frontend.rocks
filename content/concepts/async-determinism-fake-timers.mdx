@@ -2,7 +2,6 @@
 id: async-determinism-fake-timers
 title: "Async Determinism, Fake Timers & Microtask Draining"
 domain: testing-verification
-maturity_status: baseline-widely
 summary_tldr: "Real setTimeout calls in tests bake CI CPU jitter into assertions; fake timers replace wall-clock APIs with a deterministic queue that still breaks if microtasks are not drained."
 relations:
   - target_id: event-loop-tasks-microtasks

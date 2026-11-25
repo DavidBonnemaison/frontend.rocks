@@ -1,6 +1,7 @@
 import matter from 'gray-matter';
-import { ConceptFrontmatterSchema, type ConceptFrontmatter } from '../schemas';
+import { ConceptFrontmatterFileSchema, type ConceptFrontmatter } from '../schemas';
 import { extractSectionText } from '../mdx/sections';
+import { withComputedMaturity } from '../proof/support/maturity';
 
 export interface MandatorySectionDef {
   key: 'tl_dr' | 'interactive_lab' | 'under_the_hood' | 'genealogy' | 'production_pitfalls';
@@ -46,7 +47,7 @@ export function validateConceptMdx(
   const errors: string[] = [];
   const parsed = matter(rawContent);
 
-  const fmResult = ConceptFrontmatterSchema.safeParse(parsed.data);
+  const fmResult = ConceptFrontmatterFileSchema.safeParse(parsed.data);
   if (!fmResult.success) {
     for (const issue of fmResult.error.issues) {
       errors.push(`Frontmatter [${issue.path.join('.')}]: ${issue.message}`);
@@ -54,7 +55,7 @@ export function validateConceptMdx(
     return { valid: false, errors };
   }
 
-  const frontmatter = fmResult.data;
+  const frontmatter = withComputedMaturity(fmResult.data);
   if (expectedId && frontmatter.id !== expectedId) {
     errors.push(`Filename id "${expectedId}" does not match frontmatter id "${frontmatter.id}".`);
   }

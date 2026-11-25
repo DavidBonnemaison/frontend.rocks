@@ -10,7 +10,7 @@ export const GraphNodeSchema = z.object({
   id: z.string(),
   title: z.string(),
   domain: z.string(),
-  maturity_status: z.string(),
+  maturity_status: z.string().nullable(),
   superseded_by: z.array(z.string()).default([]),
   summary_tldr: z.string(),
   last_verified_at: z.string().optional(),

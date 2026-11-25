@@ -72,7 +72,7 @@ async function main(): Promise<void> {
       .join('\n');
     return [
       `# ${c.frontmatter.title} (${c.frontmatter.id})`,
-      `Domain: ${c.frontmatter.domain} | Maturity: ${c.frontmatter.maturity_status} | Verified: ${c.frontmatter.last_verified_at}`,
+      `Domain: ${c.frontmatter.domain} | Maturity: ${c.frontmatter.maturity_status ?? 'n/a (architecture pattern)'} | Verified: ${c.frontmatter.last_verified_at}`,
       `TL;DR: ${c.frontmatter.summary_tldr}`,
       rels ? `Relations:\n${rels}` : '',
       '',
