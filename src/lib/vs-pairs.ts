@@ -25,9 +25,13 @@ const MATURITY_RANK: Record<MaturityStatus, number> = {
   'baseline-widely': 0,
   'baseline-newly': 1,
   'interop-experimental': 2,
-  'legacy-pattern': 3,
-  superseded: 4,
+  'legacy-pattern': 4,
+  superseded: 5,
 };
+
+function maturityRank(status: MaturityStatus | null): number {
+  return status ? MATURITY_RANK[status] : 3;
+}
 
 export function hasRequiredVsFields(concept: LoadedConcept): boolean {
   const { frontmatter, sections } = concept;
@@ -44,8 +48,8 @@ function normalizeContrastOrder(
   a: LoadedConcept,
   b: LoadedConcept
 ): [LoadedConcept, LoadedConcept] {
-  const rankA = MATURITY_RANK[a.frontmatter.maturity_status];
-  const rankB = MATURITY_RANK[b.frontmatter.maturity_status];
+  const rankA = maturityRank(a.frontmatter.maturity_status);
+  const rankB = maturityRank(b.frontmatter.maturity_status);
   if (rankA !== rankB) {
     return rankA < rankB ? [a, b] : [b, a];
   }

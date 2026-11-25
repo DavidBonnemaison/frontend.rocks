@@ -88,7 +88,7 @@ export function buildConceptMarkdownTwin(
     '',
     `- **Canonical URL:** ${SITE_URL}/concepts/${frontmatter.id}/`,
     `- **Domain:** ${formatDomainLabel(frontmatter.domain)}`,
-    `- **Baseline / Maturity Status:** ${formatMaturityLabel(frontmatter.maturity_status)}`,
+    `- **Baseline / Maturity Status:** ${frontmatter.maturity_status ? formatMaturityLabel(frontmatter.maturity_status) : 'n/a (architecture pattern)'}`,
     `- **Last Verified:** ${frontmatter.last_verified_at}`,
     `- **TL;DR:** ${frontmatter.summary_tldr}`,
     '',
@@ -186,7 +186,7 @@ export function buildVsMarkdownTwin(
     '',
     `| Dimension | ${pFm.title} | ${sFm.title} |`,
     '| :--- | :--- | :--- |',
-    `| **Maturity** | ${formatMaturityLabel(pFm.maturity_status)} | ${formatMaturityLabel(sFm.maturity_status)} |`,
+    `| **Maturity** | ${pFm.maturity_status ? formatMaturityLabel(pFm.maturity_status) : 'n/a (architecture pattern)'} | ${sFm.maturity_status ? formatMaturityLabel(sFm.maturity_status) : 'n/a (architecture pattern)'} |`,
     `| **Domain** | ${formatDomainLabel(pFm.domain)} | ${formatDomainLabel(sFm.domain)} |`,
     `| **Mental Model** | ${pFm.summary_tldr} | ${sFm.summary_tldr} |`,
     `| **Prerequisites** | ${pReqs || 'None'} | ${sReqs || 'None'} |`,
@@ -248,7 +248,7 @@ export function buildLlmsTxt(params: {
           '## Concepts',
           ...concepts.map(
             (c) =>
-              `- [${c.frontmatter.title}](${SITE_URL}/concepts/${c.frontmatter.id}.md) ([HTML](${SITE_URL}/concepts/${c.frontmatter.id}/)): ${c.frontmatter.summary_tldr} (${c.frontmatter.domain}, ${c.frontmatter.maturity_status}) · Anchors: [Under the Hood](${SITE_URL}/concepts/${c.frontmatter.id}/#under-the-hood), [Production Pitfalls](${SITE_URL}/concepts/${c.frontmatter.id}/#production-pitfalls)`
+              `- [${c.frontmatter.title}](${SITE_URL}/concepts/${c.frontmatter.id}.md) ([HTML](${SITE_URL}/concepts/${c.frontmatter.id}/)): ${c.frontmatter.summary_tldr} (${c.frontmatter.domain}, ${c.frontmatter.maturity_status ?? 'n/a (architecture pattern)'}) · Anchors: [Under the Hood](${SITE_URL}/concepts/${c.frontmatter.id}/#under-the-hood), [Production Pitfalls](${SITE_URL}/concepts/${c.frontmatter.id}/#production-pitfalls)`
           ),
           '',
         ]

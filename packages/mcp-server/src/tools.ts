@@ -325,7 +325,7 @@ export type GetConceptInternalsInput = z.infer<
 const NeighborSchema = z.object({
   id: z.string(),
   title: z.string(),
-  maturity_status: z.string(),
+  maturity_status: z.string().nullable(),
   note: z.string(),
   canonical_url: z.string(),
 });
@@ -335,7 +335,7 @@ export const GetConceptInternalsOutputSchema = z.object({
   concept_id: z.string(),
   title: z.string().optional(),
   domain: z.string().optional(),
-  maturity_status: z.string().optional(),
+  maturity_status: z.string().nullable().optional(),
   summary_tldr: z.string().optional(),
   canonical_url: z.string().optional(),
   lab_url: z.string().optional(),
@@ -502,13 +502,13 @@ export const CheckPatternObsolescenceOutputSchema = z.object({
   query: z.string(),
   found: z.boolean(),
   is_obsolete: z.boolean(),
-  maturity_status: z.string().optional(),
+  maturity_status: z.string().nullable().optional(),
   matched_concept: z
     .object({
       id: z.string(),
       title: z.string(),
       domain: z.string(),
-      maturity_status: z.string(),
+      maturity_status: z.string().nullable(),
       summary_tldr: z.string(),
       canonical_url: z.string(),
       last_verified_at: z.string().optional(),
@@ -518,7 +518,7 @@ export const CheckPatternObsolescenceOutputSchema = z.object({
     z.object({
       id: z.string(),
       title: z.string(),
-      maturity_status: z.string(),
+      maturity_status: z.string().nullable(),
       summary_tldr: z.string(),
       canonical_url: z.string(),
       note: z.string(),
@@ -537,7 +537,7 @@ export const CheckPatternObsolescenceOutputSchema = z.object({
     z.object({
       id: z.string(),
       title: z.string(),
-      maturity_status: z.string(),
+      maturity_status: z.string().nullable(),
       canonical_url: z.string(),
     })
   ),
@@ -656,11 +656,13 @@ export async function checkPatternObsolescence(
   }
 
   const verdict = isObsolete
-    ? `"${matched.title}" is marked ${matched.maturity_status} and superseded by ${
+    ? `"${matched.title}" is marked ${matched.maturity_status ?? 'not a platform feature'} and superseded by ${
         replacementPrimitives.map((r) => r.title).join(', ') ||
         'native Web Platform primitives'
       }.`
-    : `"${matched.title}" is active (maturity: ${matched.maturity_status}) and not marked obsolete.`;
+    : matched.maturity_status === null
+      ? `"${matched.title}" is not a platform feature and not marked obsolete.`
+      : `"${matched.title}" is active (maturity: ${matched.maturity_status}) and not marked obsolete.`;
 
   return {
     query: input.pattern_or_api,

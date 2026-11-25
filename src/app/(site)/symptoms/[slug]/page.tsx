@@ -163,9 +163,11 @@ export default async function SymptomDetailPage({
                   <span className="connection-type-tag">Step {idx + 1}</span>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <span className="badge">{formatDomainLabel(frontmatter.domain)}</span>
-                    <span className={`badge badge-${frontmatter.maturity_status}`}>
-                      {formatMaturityLabel(frontmatter.maturity_status)}
-                    </span>
+                    {frontmatter.maturity_status && (
+                      <span className={`badge badge-${frontmatter.maturity_status}`}>
+                        {formatMaturityLabel(frontmatter.maturity_status)}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="connection-card-title" style={{ marginTop: '8px', fontSize: '1.15rem' }}>

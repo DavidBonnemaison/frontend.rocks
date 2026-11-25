@@ -4,13 +4,13 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Info } from 'lucide-react';
 import type { Domain, MaturityStatus } from '@/lib/schemas';
-import { UI_STRINGS } from '@/lib/ui-strings';
+import { formatMaturityLabel, UI_STRINGS } from '@/lib/ui-strings';
 
 export interface ConceptPreviewData {
   id: string;
   title: string;
   domain: Domain;
-  maturity_status: MaturityStatus;
+  maturity_status: MaturityStatus | null;
   summary_tldr: string;
 }
 
@@ -116,9 +116,11 @@ export function ConceptInlineLink({ href, preview, children }: ConceptInlineLink
         >
           <span className="concept-preview-badges">
             <span className="badge">{domainLabel}</span>
-            <span className={`badge badge-${preview.maturity_status}`}>
-              {preview.maturity_status}
-            </span>
+            {preview.maturity_status && (
+              <span className={`badge badge-${preview.maturity_status}`}>
+                {formatMaturityLabel(preview.maturity_status)}
+              </span>
+            )}
           </span>
           <span className="concept-preview-title">{preview.title}</span>
           <span className="concept-preview-tldr">{preview.summary_tldr}</span>

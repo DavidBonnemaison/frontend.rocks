@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { features as webFeatures } from 'web-features';
 import {
   EvidenceDossierSchema,
   InteractivePrimitiveSchema,
@@ -9,6 +8,7 @@ import {
   type AutopsyFrontmatter,
   type ConceptFrontmatter,
 } from '../src/lib/schemas';
+import { getBaseline } from '../src/lib/proof/support/baseline';
 import { extractInlineConceptLinks } from '../src/lib/mdx/sections';
 import {
   validateAutopsyCaseNumberContiguity,
@@ -70,11 +70,9 @@ async function main(): Promise<void> {
         errors.push(`[${file}] Missing InteractivePrimitive config at content/labs/${labId}.json`);
       }
       if (res.frontmatter.web_feature_id) {
-        const wf = webFeatures[res.frontmatter.web_feature_id];
-        if (!wf || wf.kind !== 'feature') {
-          errors.push(
-            `[${file}] Unknown or non-feature web_feature_id "${res.frontmatter.web_feature_id}" in web-features`
-          );
+        const baseline = getBaseline(res.frontmatter.web_feature_id);
+        if (!baseline.ok) {
+          errors.push(`[${file}] ${baseline.message}`);
         }
       }
     }

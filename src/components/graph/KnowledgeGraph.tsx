@@ -18,7 +18,7 @@ export interface GraphNodeData {
   id: string;
   title: string;
   domain: Domain;
-  maturity_status: MaturityStatus;
+  maturity_status: MaturityStatus | null;
   summary_tldr: string;
   relations: ConceptFrontmatter['relations'];
 }
@@ -152,7 +152,7 @@ function getEdgeEndpoint(from: PositionedNode, to: PositionedNode): { x: number;
 
 export function KnowledgeGraph({ nodes }: { nodes: GraphNodeData[] }) {
   const [domainFilter, setDomainFilter] = useState<Domain | 'all'>('all');
-  const [maturityFilter, setMaturityFilter] = useState<MaturityStatus | 'all'>('all');
+  const [maturityFilter, setMaturityFilter] = useState<MaturityStatus | 'pattern' | 'all'>('all');
   const [progressFilter, setProgressFilter] = useState<'all' | 'explored' | 'remaining'>('all');
   const [exploredIds, setExploredIds] = useState<string[]>([]);
   const [progressHydrated, setProgressHydrated] = useState(false);
@@ -247,7 +247,14 @@ export function KnowledgeGraph({ nodes }: { nodes: GraphNodeData[] }) {
     () =>
       nodes.filter((n) => {
         if (domainFilter !== 'all' && n.domain !== domainFilter) return false;
-        if (maturityFilter !== 'all' && n.maturity_status !== maturityFilter) return false;
+        if (maturityFilter === 'pattern' && n.maturity_status !== null) return false;
+        if (
+          maturityFilter !== 'all' &&
+          maturityFilter !== 'pattern' &&
+          n.maturity_status !== maturityFilter
+        ) {
+          return false;
+        }
         if (progressFilter === 'explored' && !exploredSet.has(n.id)) return false;
         if (progressFilter === 'remaining' && exploredSet.has(n.id)) return false;
         return true;
@@ -460,7 +467,9 @@ export function KnowledgeGraph({ nodes }: { nodes: GraphNodeData[] }) {
             <span>{UI_STRINGS.graph.maturityLabel}</span>
             <select
               value={maturityFilter}
-              onChange={(e) => setMaturityFilter(e.target.value as MaturityStatus | 'all')}
+              onChange={(e) =>
+                setMaturityFilter(e.target.value as MaturityStatus | 'pattern' | 'all')
+              }
               className="sim-select"
             >
               <option value="all">{UI_STRINGS.graph.allOption}</option>
@@ -469,6 +478,7 @@ export function KnowledgeGraph({ nodes }: { nodes: GraphNodeData[] }) {
                   {formatMaturityLabel(m)}
                 </option>
               ))}
+              <option value="pattern">Pattern (no platform feature)</option>
             </select>
           </label>
 
@@ -824,9 +834,11 @@ export function KnowledgeGraph({ nodes }: { nodes: GraphNodeData[] }) {
                         data-explored={isExplored ? 'true' : 'false'}
                       >
                         <div className="graph-tree-card-head">
-                          <span className={`badge badge-${n.maturity_status}`}>
-                            {formatMaturityLabel(n.maturity_status)}
-                          </span>
+                          {n.maturity_status && (
+                            <span className={`badge badge-${n.maturity_status}`}>
+                              {formatMaturityLabel(n.maturity_status)}
+                            </span>
+                          )}
                           {isExplored && (
                             <span className="graph-explored-badge">
                               <Check size={11} aria-hidden="true" />
@@ -894,9 +906,11 @@ export function KnowledgeGraph({ nodes }: { nodes: GraphNodeData[] }) {
                     >
                       <div className="graph-tree-card-head">
                         <span className="badge">{formatDomainLabel(n.domain)}</span>
-                        <span className={`badge badge-${n.maturity_status}`}>
-                          {formatMaturityLabel(n.maturity_status)}
-                        </span>
+                        {n.maturity_status && (
+                          <span className={`badge badge-${n.maturity_status}`}>
+                            {formatMaturityLabel(n.maturity_status)}
+                          </span>
+                        )}
                         {isExplored && (
                           <span className="graph-explored-badge">
                             <Check size={11} aria-hidden="true" />
@@ -967,6 +981,14 @@ export function KnowledgeGraph({ nodes }: { nodes: GraphNodeData[] }) {
             <span>{style.label}</span>
           </span>
         ))}
+        <span className="graph-legend-item">
+          <span
+            className="graph-domain-dot"
+            style={{ backgroundColor: 'var(--text-muted)' }}
+            aria-hidden="true"
+          />
+          <span>Pattern (no platform feature)</span>
+        </span>
         {progressHydrated && (
           <span className="graph-legend-item graph-legend-explored" data-testid="graph-explored-counter">
             <span className="graph-explored-dot" aria-hidden="true">
@@ -1010,9 +1032,11 @@ export function KnowledgeGraph({ nodes }: { nodes: GraphNodeData[] }) {
             <div>
               <div className="graph-context-badges">
                 <span className="badge">{formatDomainLabel(activeNode.domain)}</span>
-                <span className={`badge badge-${activeNode.maturity_status}`}>
-                  {formatMaturityLabel(activeNode.maturity_status)}
-                </span>
+                {activeNode.maturity_status && (
+                  <span className={`badge badge-${activeNode.maturity_status}`}>
+                    {formatMaturityLabel(activeNode.maturity_status)}
+                  </span>
+                )}
                 {progressHydrated && exploredSet.has(activeNode.id) && (
                   <span className="graph-explored-badge">
                     <Check size={11} aria-hidden="true" />

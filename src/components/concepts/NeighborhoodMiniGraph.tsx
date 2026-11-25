@@ -7,7 +7,7 @@ export interface MiniGraphNode {
   id: string;
   title: string;
   domain?: Domain;
-  maturity_status?: MaturityStatus;
+  maturity_status?: MaturityStatus | null;
   relationLabel?: string;
 }
 

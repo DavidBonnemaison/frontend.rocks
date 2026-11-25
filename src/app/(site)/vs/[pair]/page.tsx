@@ -132,12 +132,16 @@ export default async function VsComparisonPage({
         <span className="badge">
           {relationType === 'replaces' ? 'Native Replacement' : 'Mechanical Comparison'}
         </span>
-        <span className={`badge badge-${pFm.maturity_status}`}>
-          {pFm.title}: {formatMaturityLabel(pFm.maturity_status)}
-        </span>
-        <span className={`badge badge-${sFm.maturity_status}`}>
-          {sFm.title}: {formatMaturityLabel(sFm.maturity_status)}
-        </span>
+        {pFm.maturity_status && (
+          <span className={`badge badge-${pFm.maturity_status}`}>
+            {pFm.title}: {formatMaturityLabel(pFm.maturity_status)}
+          </span>
+        )}
+        {sFm.maturity_status && (
+          <span className={`badge badge-${sFm.maturity_status}`}>
+            {sFm.title}: {formatMaturityLabel(sFm.maturity_status)}
+          </span>
+        )}
       </div>
 
       <h1 className="concept-title">
@@ -216,34 +220,30 @@ export default async function VsComparisonPage({
                   Maturity &amp; Domain
                 </td>
                 <td style={{ padding: '12px 14px', verticalAlign: 'top' }}>
-                  <span className={`badge badge-${pFm.maturity_status}`}>
-                    {formatMaturityLabel(pFm.maturity_status)}
-                  </span>{' '}
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                    · {formatDomainLabel(pFm.domain)}
-                  </span>
-                  {primary.evidence?.browser_support && (
-                    <div style={{ marginTop: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                      Chrome {primary.evidence.browser_support.chrome} · Firefox{' '}
-                      {primary.evidence.browser_support.firefox} · Safari{' '}
-                      {primary.evidence.browser_support.safari}
-                    </div>
+                  {pFm.maturity_status && (
+                    <>
+                      <span className={`badge badge-${pFm.maturity_status}`}>
+                        {formatMaturityLabel(pFm.maturity_status)}
+                      </span>{' '}
+                    </>
                   )}
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                    {pFm.maturity_status ? '· ' : ''}
+                    {formatDomainLabel(pFm.domain)}
+                  </span>
                 </td>
                 <td style={{ padding: '12px 14px', verticalAlign: 'top' }}>
-                  <span className={`badge badge-${sFm.maturity_status}`}>
-                    {formatMaturityLabel(sFm.maturity_status)}
-                  </span>{' '}
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                    · {formatDomainLabel(sFm.domain)}
-                  </span>
-                  {secondary.evidence?.browser_support && (
-                    <div style={{ marginTop: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                      Chrome {secondary.evidence.browser_support.chrome} · Firefox{' '}
-                      {secondary.evidence.browser_support.firefox} · Safari{' '}
-                      {secondary.evidence.browser_support.safari}
-                    </div>
+                  {sFm.maturity_status && (
+                    <>
+                      <span className={`badge badge-${sFm.maturity_status}`}>
+                        {formatMaturityLabel(sFm.maturity_status)}
+                      </span>{' '}
+                    </>
                   )}
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                    {sFm.maturity_status ? '· ' : ''}
+                    {formatDomainLabel(sFm.domain)}
+                  </span>
                 </td>
               </tr>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -304,9 +304,11 @@ export default async function VsComparisonPage({
           <div className="connection-card">
             <div className="connection-card-top">
               <span className="connection-type-tag">{pFm.title}</span>
-              <span className={`badge badge-${pFm.maturity_status}`}>
-                {formatMaturityLabel(pFm.maturity_status)}
-              </span>
+              {pFm.maturity_status && (
+                <span className={`badge badge-${pFm.maturity_status}`}>
+                  {formatMaturityLabel(pFm.maturity_status)}
+                </span>
+              )}
             </div>
             <p className="connection-card-note" style={{ marginTop: '8px' }}>
               {primary.evidence?.engine_internals.mechanism_summary ??
@@ -320,9 +322,11 @@ export default async function VsComparisonPage({
           <div className="connection-card">
             <div className="connection-card-top">
               <span className="connection-type-tag">{sFm.title}</span>
-              <span className={`badge badge-${sFm.maturity_status}`}>
-                {formatMaturityLabel(sFm.maturity_status)}
-              </span>
+              {sFm.maturity_status && (
+                <span className={`badge badge-${sFm.maturity_status}`}>
+                  {formatMaturityLabel(sFm.maturity_status)}
+                </span>
+              )}
             </div>
             <p className="connection-card-note" style={{ marginTop: '8px' }}>
               {secondary.evidence?.engine_internals.mechanism_summary ??

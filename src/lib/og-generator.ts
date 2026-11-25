@@ -32,7 +32,7 @@ function loadLocalInterFonts(): Font[] {
   return cachedFonts;
 }
 
-function getMaturityColors(status: MaturityStatus): {
+function getMaturityColors(status: MaturityStatus | null): {
   bg: string;
   text: string;
   border: string;
@@ -62,6 +62,12 @@ function getMaturityColors(status: MaturityStatus): {
         bg: 'rgba(245, 118, 66, 0.14)',
         text: '#fdba74',
         border: 'rgba(245, 118, 66, 0.42)',
+      };
+    case null:
+      return {
+        bg: 'rgba(152, 164, 181, 0.12)',
+        text: '#98a4b5',
+        border: 'rgba(152, 164, 181, 0.32)',
       };
   }
 }
@@ -137,7 +143,7 @@ export async function renderConceptOgPng(concept: LoadedConcept): Promise<Buffer
                   style: {
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px',
+                    gap: '14px',
                   },
                   children: [
                     {
@@ -175,22 +181,26 @@ export async function renderConceptOgPng(concept: LoadedConcept): Promise<Buffer
                   ],
                 },
               },
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    display: 'flex',
-                    padding: '8px 18px',
-                    borderRadius: '999px',
-                    backgroundColor: maturityColors.bg,
-                    border: `1px solid ${maturityColors.border}`,
-                    fontSize: '18px',
-                    fontWeight: 600,
-                    color: maturityColors.text,
-                  },
-                  children: maturityLabel,
-                },
-              },
+              ...(maturityLabel
+                ? [
+                    {
+                      type: 'div',
+                      props: {
+                        style: {
+                          display: 'flex',
+                          padding: '8px 18px',
+                          borderRadius: '999px',
+                          backgroundColor: maturityColors.bg,
+                          border: `1px solid ${maturityColors.border}`,
+                          fontSize: '18px',
+                          fontWeight: 600,
+                          color: maturityColors.text,
+                        },
+                        children: maturityLabel,
+                      },
+                    },
+                  ]
+                : []),
             ],
           },
         },
@@ -832,57 +842,73 @@ export async function renderVsOgPng(pair: VsPair): Promise<Buffer> {
                   ],
                 },
               },
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  },
-                  children: [
+              ...(pFm.maturity_status || sFm.maturity_status
+                ? [
                     {
                       type: 'div',
                       props: {
                         style: {
                           display: 'flex',
-                          padding: '6px 14px',
-                          borderRadius: '999px',
-                          backgroundColor: pColors.bg,
-                          border: `1px solid ${pColors.border}`,
-                          fontSize: '15px',
-                          fontWeight: 600,
-                          color: pColors.text,
+                          alignItems: 'center',
+                          gap: '8px',
                         },
-                        children: formatMaturityLabel(pFm.maturity_status),
+                        children: [
+                          ...(pFm.maturity_status
+                            ? [
+                                {
+                                  type: 'div',
+                                  props: {
+                                    style: {
+                                      display: 'flex',
+                                      padding: '6px 14px',
+                                      borderRadius: '999px',
+                                      backgroundColor: pColors.bg,
+                                      border: `1px solid ${pColors.border}`,
+                                      fontSize: '15px',
+                                      fontWeight: 600,
+                                      color: pColors.text,
+                                    },
+                                    children: formatMaturityLabel(pFm.maturity_status),
+                                  },
+                                },
+                              ]
+                            : []),
+                          ...(pFm.maturity_status && sFm.maturity_status
+                            ? [
+                                {
+                                  type: 'div',
+                                  props: {
+                                    style: { fontSize: '16px', color: '#98a4b5', fontWeight: 700 },
+                                    children: 'vs',
+                                  },
+                                },
+                              ]
+                            : []),
+                          ...(sFm.maturity_status
+                            ? [
+                                {
+                                  type: 'div',
+                                  props: {
+                                    style: {
+                                      display: 'flex',
+                                      padding: '6px 14px',
+                                      borderRadius: '999px',
+                                      backgroundColor: sColors.bg,
+                                      border: `1px solid ${sColors.border}`,
+                                      fontSize: '15px',
+                                      fontWeight: 600,
+                                      color: sColors.text,
+                                    },
+                                    children: formatMaturityLabel(sFm.maturity_status),
+                                  },
+                                },
+                              ]
+                            : []),
+                        ],
                       },
                     },
-                    {
-                      type: 'div',
-                      props: {
-                        style: { fontSize: '16px', color: '#98a4b5', fontWeight: 700 },
-                        children: 'vs',
-                      },
-                    },
-                    {
-                      type: 'div',
-                      props: {
-                        style: {
-                          display: 'flex',
-                          padding: '6px 14px',
-                          borderRadius: '999px',
-                          backgroundColor: sColors.bg,
-                          border: `1px solid ${sColors.border}`,
-                          fontSize: '15px',
-                          fontWeight: 600,
-                          color: sColors.text,
-                        },
-                        children: formatMaturityLabel(sFm.maturity_status),
-                      },
-                    },
-                  ],
-                },
-              },
+                  ]
+                : []),
             ],
           },
         },

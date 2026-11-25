@@ -258,6 +258,54 @@ describe('@frontend-rocks/mcp server (US-19.2)', () => {
       expect(parsed.found).toBe(false);
       expect(parsed.message).toContain('not available');
     });
+
+    it('handles null maturity_status as not a platform feature', async () => {
+      const os = await import('node:os');
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-null-maturity-'));
+      try {
+        fs.writeFileSync(
+          path.join(tmpDir, 'graph.json'),
+          JSON.stringify({
+            nodes: [
+              {
+                id: 'hexagonal-ports-adapters-ui',
+                title: 'Hexagonal Architecture',
+                domain: 'software-architecture',
+                maturity_status: null,
+                superseded_by: [],
+                summary_tldr: 'Decouple domain logic from UI adapters via ports.',
+              },
+            ],
+            edges: [],
+          })
+        );
+        const { server } = createFrontendRocksMcpServer({
+          localPublicDir: tmpDir,
+          preferLocal: true,
+        });
+        const [ct, st] = InMemoryTransport.createLinkedPair();
+        const localClient = new Client({ name: 'test-null-maturity', version: '1.0.0' });
+        await Promise.all([server.connect(st), localClient.connect(ct)]);
+        try {
+          const raw = await localClient.callTool({
+            name: 'check_pattern_obsolescence',
+            arguments: { pattern_or_api: 'hexagonal-ports-adapters-ui' },
+          });
+          const parsed = CheckPatternObsolescenceOutputSchema.parse(
+            extractStructuredResult(raw as never)
+          );
+          expect(parsed.found).toBe(true);
+          expect(parsed.is_obsolete).toBe(false);
+          expect(parsed.maturity_status).toBeNull();
+          expect(parsed.verdict).toContain('not a platform feature');
+        } finally {
+          await localClient.close();
+          await server.close();
+        }
+      } finally {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      }
+    });
   });
 
   describe('find_related_autopsy', () => {

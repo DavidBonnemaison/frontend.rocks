@@ -3,13 +3,14 @@ import path from 'path';
 import matter from 'gray-matter';
 import { features as webFeatures } from 'web-features';
 import {
-  ConceptFrontmatterSchema,
+  ConceptFrontmatterFileSchema,
   EvidenceDossierSchema,
   WeeklyDigestSchema,
   type ConceptFrontmatter,
   type MaturityStatus,
   type WeeklyDigest,
 } from './schemas';
+import { withComputedMaturity } from './proof/support/maturity';
 
 export type WebFeatureBaseline = 'high' | 'low' | false;
 
@@ -46,7 +47,7 @@ export interface BaselineChange {
   conceptId: string;
   title: string;
   webFeatureId: string;
-  previousMaturity: MaturityStatus;
+  previousMaturity: MaturityStatus | null;
   nextMaturity: MaturityStatus;
   maturityChanged: boolean;
   supportChanged: boolean;
@@ -62,7 +63,7 @@ export interface ObsolescenceCandidate {
   sourceNextMaturity: MaturityStatus;
   targetConceptId: string;
   targetTitle?: string;
-  targetCurrentMaturity?: MaturityStatus;
+  targetCurrentMaturity?: MaturityStatus | null;
   relationNote: string;
 }
 
@@ -393,10 +394,10 @@ export function syncBaselineRadar(options: SyncBaselineRadarOptions = {}): Basel
     const filePath = path.join(conceptsDir, file);
     const raw = fs.readFileSync(filePath, 'utf-8');
     const parsed = matter(raw);
-    const fmResult = ConceptFrontmatterSchema.safeParse(parsed.data);
+    const fmResult = ConceptFrontmatterFileSchema.safeParse(parsed.data);
     if (!fmResult.success) continue;
 
-    const concept = fmResult.data;
+    const concept = withComputedMaturity(fmResult.data);
     allConcepts.push(concept);
 
     if (latestDigestDate && concept.last_verified_at > latestDigestDate) {

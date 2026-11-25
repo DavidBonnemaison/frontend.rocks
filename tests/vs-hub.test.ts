@@ -34,8 +34,12 @@ describe('US-17.4: /vs Hub (Compare Primitives)', () => {
       expect(pair.primary.frontmatter.domain.trim().length).toBeGreaterThan(0);
       expect(pair.secondary.frontmatter.domain.trim().length).toBeGreaterThan(0);
 
-      expect(pair.primary.frontmatter.maturity_status.trim().length).toBeGreaterThan(0);
-      expect(pair.secondary.frontmatter.maturity_status.trim().length).toBeGreaterThan(0);
+      if (pair.primary.frontmatter.maturity_status !== null) {
+        expect(pair.primary.frontmatter.maturity_status.trim().length).toBeGreaterThan(0);
+      }
+      if (pair.secondary.frontmatter.maturity_status !== null) {
+        expect(pair.secondary.frontmatter.maturity_status.trim().length).toBeGreaterThan(0);
+      }
 
       domains.add(pair.primary.frontmatter.domain);
       domains.add(pair.secondary.frontmatter.domain);

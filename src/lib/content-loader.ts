@@ -3,7 +3,7 @@ import path from 'path';
 import matter from 'gray-matter';
 import {
   AutopsyFrontmatterSchema,
-  ConceptFrontmatterSchema,
+  ConceptFrontmatterFileSchema,
   EvidenceDossierSchema,
   InteractivePrimitiveSchema,
   LearningPathsFileSchema,
@@ -20,6 +20,7 @@ import { CONTENT_DIR } from './paths';
 import { extractAutopsyChapters } from './validators/autopsy-validator';
 import type { ClaimsFile } from './proof/claim-schema';
 import { getClaimsForPage } from './proof/claims-loader';
+import { withComputedMaturity } from './proof/support/maturity';
 
 const CONCEPTS_DIR = path.join(CONTENT_DIR, 'concepts');
 const AUTOPSIES_DIR = path.join(CONTENT_DIR, 'autopsies');
@@ -96,10 +97,12 @@ export function getAllConcepts(): LoadedConcept[] {
     const filePath = path.join(CONCEPTS_DIR, file);
     const raw = fs.readFileSync(filePath, 'utf-8');
     const parsed = matter(raw);
-    const frontmatter = parseWithFileContext(
-      ConceptFrontmatterSchema,
-      parsed.data,
-      `content/concepts/${file}`
+    const frontmatter = withComputedMaturity(
+      parseWithFileContext(
+        ConceptFrontmatterFileSchema,
+        parsed.data,
+        `content/concepts/${file}`
+      )
     );
 
     const sections: ConceptSections = {
