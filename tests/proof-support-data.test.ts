@@ -1,5 +1,10 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { CompatData } from '@mdn/browser-compat-data';
+import { ProofArtifactSchema } from '@/lib/proof/artifact-schema';
+import type { ClaimsFile } from '@/lib/proof/claim-schema';
 import {
   __setBcdForTests,
   __setWebFeaturesForTests,
@@ -10,6 +15,12 @@ import {
 import { CORE_BROWSERS, getBcdNode, getBcdSupport } from '@/lib/proof/support/bcd';
 import { getBaseline, webFeaturesForBcdKey } from '@/lib/proof/support/baseline';
 import { getSupportEventDate } from '@/lib/proof/support/dates';
+import { renderSupportStatement } from '@/lib/proof/support/statements';
+import { verifySupportClaim, type SupportClaim } from '@/lib/proof/support/verify';
+import {
+  rewriteSupportStatementsOnDisk,
+  runSupportCheck,
+} from '../scripts/proof/check-support';
 
 function makeSyntheticBcd(): CompatData {
   return {
@@ -432,3 +443,404 @@ describe('getSupportEventDate on synthetic data', () => {
     ).toBe('2022-03-14');
   });
 });
+
+describe('renderSupportStatement', () => {
+  function setupStatementFixtures(): void {
+    __setBcdForTests({
+      ...makeSyntheticBcd(),
+      css: {
+        properties: {
+          ...makeSyntheticBcd().css.properties,
+          demo_all_supported: {
+            __compat: {
+              source_file: 'css/properties/demo_all_supported.json',
+              support: {
+                chrome: { version_added: '105' },
+                chrome_android: { version_added: '105' },
+                edge: { version_added: '105' },
+                firefox: { version_added: '110' },
+                firefox_android: { version_added: '110' },
+                safari: { version_added: '16' },
+                safari_ios: { version_added: '16' },
+              },
+            },
+          },
+        },
+      },
+    } as unknown as CompatData);
+
+    __setWebFeaturesForTests({
+      ...makeSyntheticWebFeatures(),
+      'demo-low': {
+        kind: 'feature',
+        name: 'Demo Low Feature',
+        description: 'Newly available',
+        description_html: '<p>Low</p>',
+        spec: 'https://example.org/low',
+        compat_features: ['css.properties.demo_earliest'],
+        status: {
+          baseline: 'low',
+          baseline_low_date: '2024-05-01',
+          support: {
+            chrome: '105',
+            chrome_android: '105',
+            edge: '105',
+            firefox: '110',
+            firefox_android: '110',
+            safari: '16',
+            safari_ios: '16',
+          },
+        },
+      },
+      'demo-missing-1': {
+        kind: 'feature',
+        name: 'Missing One',
+        description: 'Missing 1 browser',
+        description_html: '<p>1</p>',
+        spec: 'https://example.org/1',
+        compat_features: ['css.properties.demo_earliest'],
+        status: {
+          baseline: false,
+          support: {
+            chrome: '105',
+            chrome_android: '105',
+            edge: '105',
+            firefox: '110',
+            firefox_android: '110',
+            safari: '16',
+          },
+        },
+      },
+      'demo-missing-2': {
+        kind: 'feature',
+        name: 'Missing Two',
+        description: 'Missing 2 browsers',
+        description_html: '<p>2</p>',
+        spec: 'https://example.org/2',
+        compat_features: ['css.properties.demo_earliest'],
+        status: {
+          baseline: false,
+          support: {
+            chrome: '105',
+            chrome_android: '105',
+            edge: '105',
+            firefox: '110',
+            firefox_android: '110',
+          },
+        },
+      },
+      'demo-missing-3': {
+        kind: 'feature',
+        name: 'Missing Three',
+        description: 'Missing 3 browsers',
+        description_html: '<p>3</p>',
+        spec: 'https://example.org/3',
+        compat_features: ['css.properties.demo_earliest'],
+        status: {
+          baseline: false,
+          support: {
+            chrome: '105',
+            chrome_android: '105',
+            edge: '105',
+            firefox: '110',
+          },
+        },
+      },
+      'demo-missing-0': {
+        kind: 'feature',
+        name: 'Not Baseline Yet',
+        description: 'All versions present but not Baseline yet',
+        description_html: '<p>0</p>',
+        spec: 'https://example.org/0',
+        compat_features: ['css.properties.demo_earliest'],
+        status: {
+          baseline: false,
+          support: {
+            chrome: '105',
+            chrome_android: '105',
+            edge: '105',
+            firefox: '110',
+            firefox_android: '110',
+            safari: '16',
+            safari_ios: '16',
+          },
+        },
+      },
+    } as unknown as WebFeaturesMap);
+  }
+
+  it('renders Baseline high, low, imprecise dates, and all non-Baseline missing-browser counts', () => {
+    setupStatementFixtures();
+
+    expect(
+      renderSupportStatement({
+        bcdKey: 'css.properties.demo_earliest',
+        webFeatureId: 'demo-high',
+      })
+    ).toEqual({
+      ok: true,
+      statement: 'Demo High Feature is Baseline Widely available (since 2025-08-14).',
+    });
+
+    expect(
+      renderSupportStatement({
+        bcdKey: 'css.properties.demo_earliest',
+        webFeatureId: 'demo-low',
+      })
+    ).toEqual({
+      ok: true,
+      statement: 'Demo Low Feature is Baseline Newly available (since 2024-05-01).',
+    });
+
+    // Imprecise date (≤...) omits "(since ...)"
+    expect(
+      renderSupportStatement({
+        bcdKey: 'css.properties.demo_all_cases',
+        webFeatureId: 'demo-imprecise',
+      })
+    ).toEqual({
+      ok: true,
+      statement: 'Demo Imprecise Date is Baseline Widely available.',
+    });
+
+    expect(
+      renderSupportStatement({
+        bcdKey: 'css.properties.demo_earliest',
+        webFeatureId: 'demo-missing-1',
+      })
+    ).toEqual({
+      ok: true,
+      statement: 'Missing One is not Baseline: it is not yet supported in Safari iOS.',
+    });
+
+    expect(
+      renderSupportStatement({
+        bcdKey: 'css.properties.demo_earliest',
+        webFeatureId: 'demo-missing-2',
+      })
+    ).toEqual({
+      ok: true,
+      statement:
+        'Missing Two is not Baseline: it is not yet supported in Safari and Safari iOS.',
+    });
+
+    expect(
+      renderSupportStatement({
+        bcdKey: 'css.properties.demo_earliest',
+        webFeatureId: 'demo-missing-3',
+      })
+    ).toEqual({
+      ok: true,
+      statement:
+        'Missing Three is not Baseline: it is not yet supported in Firefox Android, Safari and Safari iOS.',
+    });
+
+    expect(
+      renderSupportStatement({
+        bcdKey: 'css.properties.demo_earliest',
+        webFeatureId: 'demo-missing-0',
+      })
+    ).toEqual({
+      ok: true,
+      statement: 'Not Baseline Yet is not Baseline yet.',
+    });
+  });
+
+  it('renders BCD-only statements with and without missing browsers', () => {
+    setupStatementFixtures();
+
+    expect(renderSupportStatement({ bcdKey: 'css.properties.demo_all_supported' })).toEqual({
+      ok: true,
+      statement:
+        '`css.properties.demo_all_supported` is supported in Chrome 105, Chrome Android 105, Edge 105, Firefox 110, Firefox Android 110, Safari 16 and Safari iOS 16.',
+    });
+
+    expect(renderSupportStatement({ bcdKey: 'css.properties.demo_earliest' })).toEqual({
+      ok: true,
+      statement:
+        '`css.properties.demo_earliest` is supported in Chrome 105, Edge 105, Firefox 110, Safari 15.4 and Safari iOS 16; not supported in Chrome Android and Firefox Android.',
+    });
+  });
+});
+
+describe('verifySupportClaim', () => {
+  const now = new Date('2026-11-25T12:00:00Z');
+
+  function makeSupportClaim(
+    statement: string,
+    proof: SupportClaim['proof']
+  ): SupportClaim {
+    return {
+      id: 'demo-page/support-main',
+      type: 'support',
+      statement,
+      proof,
+    };
+  }
+
+  it('reports every failure reason and succeeds on matching canonical statement', () => {
+    __setBcdForTests(makeSyntheticBcd());
+    __setWebFeaturesForTests(makeSyntheticWebFeatures());
+
+    const unknownBcd = verifySupportClaim(
+      makeSupportClaim('Some placeholder statement here.', {
+        kind: 'bcd',
+        bcdKey: 'css.properties.unknown',
+      }),
+      now
+    );
+    expect(unknownBcd.status).toBe('failed');
+    expect(unknownBcd.reason).toBe('unknown-bcd-key');
+
+    const unknownWf = verifySupportClaim(
+      makeSupportClaim('Some placeholder statement here.', {
+        kind: 'bcd',
+        bcdKey: 'css.properties.demo_earliest',
+        webFeatureId: 'no-such-feature',
+      }),
+      now
+    );
+    expect(unknownWf.status).toBe('failed');
+    expect(unknownWf.reason).toBe('unknown-web-feature');
+
+    const movedWf = verifySupportClaim(
+      makeSupportClaim('Some placeholder statement here.', {
+        kind: 'bcd',
+        bcdKey: 'css.properties.demo_earliest',
+        webFeatureId: 'demo-moved',
+      }),
+      now
+    );
+    expect(movedWf.status).toBe('failed');
+    expect(movedWf.reason).toBe('web-feature-moved');
+    expect(movedWf.message).toContain('demo-high');
+
+    const splitWf = verifySupportClaim(
+      makeSupportClaim('Some placeholder statement here.', {
+        kind: 'bcd',
+        bcdKey: 'css.properties.demo_earliest',
+        webFeatureId: 'demo-split',
+      }),
+      now
+    );
+    expect(splitWf.status).toBe('failed');
+    expect(splitWf.reason).toBe('web-feature-split');
+
+    const notInFeature = verifySupportClaim(
+      makeSupportClaim('Some placeholder statement here.', {
+        kind: 'bcd',
+        bcdKey: 'css.properties.demo_all_cases',
+        webFeatureId: 'demo-high',
+      }),
+      now
+    );
+    expect(notInFeature.status).toBe('failed');
+    expect(notInFeature.reason).toBe('bcd-key-not-in-feature');
+
+    const outdated = verifySupportClaim(
+      makeSupportClaim('Container queries work everywhere.', {
+        kind: 'bcd',
+        bcdKey: 'css.properties.demo_earliest',
+        webFeatureId: 'demo-high',
+      }),
+      now
+    );
+    expect(outdated.status).toBe('failed');
+    expect(outdated.reason).toBe('statement-outdated');
+    expect(outdated.details.expected).toBe(
+      'Demo High Feature is Baseline Widely available (since 2025-08-14).'
+    );
+
+    const proven = verifySupportClaim(
+      makeSupportClaim('Demo High Feature is Baseline Widely available (since 2025-08-14).', {
+        kind: 'bcd',
+        bcdKey: 'css.properties.demo_earliest',
+        webFeatureId: 'demo-high',
+      }),
+      now
+    );
+    expect(proven.status).toBe('proven');
+    expect(proven.reason).toBeNull();
+    expect(proven.details.baseline).toBe('high');
+  });
+
+  it('flags statement-outdated when a feature transitions from Baseline low to high and --write updates only the statement', () => {
+    __setBcdForTests(makeSyntheticBcd());
+    const wf = makeSyntheticWebFeatures();
+    const lowWf = {
+      ...wf,
+      'demo-high': {
+        ...wf['demo-high'],
+        status: {
+          ...((wf['demo-high'] as unknown as { status: Record<string, unknown> }).status),
+          baseline: 'low',
+          baseline_low_date: '2023-02-14',
+          baseline_high_date: undefined,
+        },
+      },
+    } as unknown as WebFeaturesMap;
+
+    __setWebFeaturesForTests(lowWf);
+    const claim = makeSupportClaim(
+      'Demo High Feature is Baseline Newly available (since 2023-02-14).',
+      {
+        kind: 'bcd',
+        bcdKey: 'css.properties.demo_earliest',
+        webFeatureId: 'demo-high',
+      }
+    );
+    expect(verifySupportClaim(claim, now).status).toBe('proven');
+
+    // Simulate package update: low -> high
+    __setWebFeaturesForTests(wf);
+    const afterBump = verifySupportClaim(claim, now);
+    expect(afterBump.status).toBe('failed');
+    expect(afterBump.reason).toBe('statement-outdated');
+
+    // Test rewriteSupportStatementsOnDisk updates only statement
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'support-write-'));
+    try {
+      const claimsFile: ClaimsFile = {
+        pageId: 'demo-page',
+        claims: [claim],
+      };
+      const filePath = path.join(tmpDir, 'demo-page.claims.json');
+      const beforeText = `${JSON.stringify(claimsFile, null, 2)}\n`;
+      fs.writeFileSync(filePath, beforeText, 'utf-8');
+
+      const updated = rewriteSupportStatementsOnDisk(new Map([['demo-page', claimsFile]]), {
+        claimsDir: tmpDir,
+      });
+      expect(updated).toEqual([filePath]);
+
+      const afterText = fs.readFileSync(filePath, 'utf-8');
+      const beforeLines = beforeText.split('\n');
+      const afterLines = afterText.split('\n');
+      expect(beforeLines.length).toBe(afterLines.length);
+      const changedLines = beforeLines.filter((line, i) => line !== afterLines[i]);
+      expect(changedLines).toHaveLength(1);
+      expect(afterText).toContain(
+        'Demo High Feature is Baseline Widely available (since 2025-08-14).'
+      );
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('produces a valid ProofArtifactSchema artifact via runSupportCheck', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'support-artifact-'));
+    try {
+      const outPath = path.join(tmpDir, 'support.json');
+      const { artifact, exitCode } = runSupportCheck({
+        page: 'css-container-queries',
+        outPath,
+      });
+      expect(exitCode).toBe(0);
+      expect(ProofArtifactSchema.safeParse(artifact).success).toBe(true);
+      expect(fs.existsSync(outPath)).toBe(true);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+});
+
