@@ -4,6 +4,30 @@ import { formatDomainLabel, formatFailureModeLabel, formatMaturityLabel } from '
 
 export const SITE_URL = 'https://frontend.rocks';
 
+export interface BuildInfo {
+  commit: string;
+  previousCommit: string | null;
+  builtAt: string;
+  context: string;
+}
+
+/**
+ * Content of public/build-info.json. `previousCommit` is the commit in production
+ * (DEPLOYED_COMMIT, set by ci-main-daily.yml), `context` is DEPLOY_CONTEXT or "local".
+ */
+export function buildBuildInfo(
+  env: Record<string, string | undefined>,
+  gitHead: string,
+  now: Date = new Date(),
+): BuildInfo {
+  return {
+    commit: gitHead,
+    previousCommit: env.DEPLOYED_COMMIT?.trim() || null,
+    builtAt: now.toISOString(),
+    context: env.DEPLOY_CONTEXT?.trim() || 'local',
+  };
+}
+
 export function escapeXml(str: string): string {
   return str
     .replace(/&/g, '&amp;')

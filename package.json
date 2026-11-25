@@ -11,15 +11,17 @@
     "start": "next start",
     "build-prod": "node -e \"import('node:fs').then(fs => ['.next','out','dist'].forEach(d => fs.rmSync(d, {recursive:true, force:true})))\" && npm run validate:content && npm run generate:exports && next build && mv out dist",
     "maintenance:indexnow-quarantine": "tsx scripts/maintenance/indexnow-quarantine.ts",
+    "predev": "tsx scripts/generate-exports.ts --skip-og",
     "generate:exports": "tsx scripts/generate-exports.ts",
+    "generate:exports:fast": "tsx scripts/generate-exports.ts --skip-og",
     "build:public-skill": "tsx scripts/build-public-skill-bundle.ts",
     "generate:lab-previews": "tsx scripts/capture-lab-previews.ts",
     "clean": "node -e \"import('node:fs').then(fs => ['.next','out','dist'].forEach(d => fs.rmSync(d, {recursive:true, force:true})))\"",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=6",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "validate:content": "tsx scripts/validate-content.ts",
-    "check:all": "npm run typecheck && npm run test && npm run validate:content"
+    "check:all": "npm run typecheck && npm run lint && npm run test && npm run validate:content"
   },
   "dependencies": {
     "@mdx-js/mdx": "^3.1.1",
@@ -51,7 +53,7 @@
     "satori": "^0.63.2",
     "tailwindcss": "^4.3.5",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2",
+    "typescript": "~6.0.3",
     "vitest": "^5.1.0",
     "web-features": "^3.47.0",
     "yaml": "2.9.1"

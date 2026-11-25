@@ -21,16 +21,23 @@ Each claim has a type, and each type has its own check. The receipts are on [fro
 - `src/`: the Next.js site, the content schemas and the proof library.
 - `scripts/`: build, validation and proof scripts.
 - `tests/`: unit tests (Vitest) and end-to-end tests (Playwright).
-- `netlify/`: edge function and function used in production.
+- `netlify/`: edge function and functions used in production (`mcp` and `deploy-succeeded`, which sends the IndexNow notification after each deploy).
 - `packages/`: the MCP server and the public audit skill.
+- `public/`: static files only (favicons and the IndexNow key). The build writes everything else there (`llms.txt`, `sitemap.xml`, `search-index.json`, Markdown twins, OG images, `build-info.json`...). None of it is tracked by git, and `tests/repo-hygiene.test.ts` fails if one gets committed.
 
-## Running locally
+## Local setup
 
 ```bash
+nvm use        # Node 24, see .nvmrc
 npm ci
 npm run dev
-npm run proof:all
 ```
+
+> If `npm ci` fails with HTTP 403 on a recently published package, the device protection agent may have blocked it (`block_reason: min_package_age`). Check with `aikidoctl events --json`. Do not change the registry or bypass the agent. Wait until the package is old enough, or pin an older version through `overrides` in `package.json` and note it in the PR.
+
+Checks before a pull request: `npm run check:all` (typecheck, lint, unit tests, content validation), then `npm run build-prod` and `npx playwright test` for the E2E suite. A pull request runs the `@smoke` subset (`npx playwright test --grep @smoke`) on a build without the OG images (`npm run generate:exports:fast`); the full suite and Lighthouse run in the daily deploy workflow.
+
+`npm run lint` has a warning ratchet (`--max-warnings`). It can go down, never up.
 
 ## Licenses
 

@@ -1,6 +1,7 @@
 {
   "name": "@frontend-rocks/mcp",
   "version": "1.0.0",
+  "private": true,
   "description": "Official zero-backend Model Context Protocol (MCP) server for frontend.rocks — browser internals, production failure autopsies, and pattern obsolescence intelligence.",
   "license": "MIT",
   "type": "module",

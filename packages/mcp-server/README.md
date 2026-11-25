@@ -18,25 +18,46 @@ All artifacts are cached in memory with a **1-hour TTL** (`3_600_000 ms`). If th
 
 ## Quick Start
 
-Run directly via `npx`:
+The server is hosted at `https://frontend.rocks/mcp` (Streamable HTTP). Nothing to install and no API key. This package is not published to npm.
+
+### Claude Code
 
 ```bash
-npx -y @frontend-rocks/mcp
+claude mcp add --transport http frontend-rocks https://frontend.rocks/mcp
 ```
 
-### Claude Code / Claude Desktop / Cursor / Windsurf
+### Cursor
 
-Add to your MCP configuration (`claude_desktop_config.json`, `.mcp.json`, or `.cursor/mcp.json`):
+Add to `.cursor/mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "frontend-rocks": {
-      "command": "npx",
-      "args": ["-y", "@frontend-rocks/mcp"]
+      "url": "https://frontend.rocks/mcp"
     }
   }
 }
+```
+
+### Antigravity
+
+```json
+{
+  "mcpServers": {
+    "frontend-rocks": {
+      "serverUrl": "https://frontend.rocks/mcp"
+    }
+  }
+}
+```
+
+## Local development
+
+From a clone of the repository, run the stdio server with `tsx`:
+
+```bash
+npx tsx packages/mcp-server/src/index.ts
 ```
 
 ## Available MCP Tools

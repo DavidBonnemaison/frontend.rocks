@@ -5,6 +5,13 @@ interface EdgeContext {
 
 const NEGOTIABLE_ROUTE_RE = /^\/(concepts|autopsies|vs)\/([a-z0-9-]+)\/?$/;
 
+/** Adds Accept to an existing Vary value without dropping the other tokens. */
+function withVaryAccept(vary: string | null): string {
+  if (!vary) return 'Accept';
+  const tokens = vary.split(',').map((t) => t.trim().toLowerCase());
+  return tokens.includes('accept') || tokens.includes('*') ? vary : `${vary}, Accept`;
+}
+
 export default async function markdownNegotiation(
   request: Request,
   context: EdgeContext
@@ -30,7 +37,7 @@ export default async function markdownNegotiation(
   }
   const headers = new Headers(response.headers);
   headers.set('Content-Type', 'text/markdown; charset=utf-8');
-  headers.set('Vary', 'Accept');
+  headers.set('Vary', withVaryAccept(headers.get('Vary')));
 
   return new Response(response.body, {
     status: response.status,

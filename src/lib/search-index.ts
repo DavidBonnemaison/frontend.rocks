@@ -66,12 +66,12 @@ export function buildStaticSearchEntries(): SearchItem[] {
       id: 'agents-ecosystem',
       title: 'AI Agents, Audit Skill & MCP Server',
       subtitle:
-        'Install frontend-rocks-audit, connect @frontend-rocks/mcp in Cursor, Claude Code, or Antigravity, and consume llms.txt & audit-rules.json.',
+        'Install frontend-rocks-audit, connect the hosted MCP endpoint in Cursor, Claude Code, or Antigravity, and consume llms.txt & audit-rules.json.',
       href: '/agents/',
       keywords:
-        'agents mcp skill audit llms.txt llms-full.txt graph.json audit-rules.json cursor claude antigravity frontend-rocks-audit @frontend-rocks/mcp',
+        'agents mcp skill audit llms.txt llms-full.txt graph.json audit-rules.json cursor claude antigravity frontend-rocks-audit hosted mcp endpoint',
       searchText:
-        'agents mcp server skill audit frontend-rocks-audit @frontend-rocks/mcp llms.txt llms-full.txt graph.json audit-rules.json cursor claude code antigravity diagnose_symptom get_concept_internals check_pattern_obsolescence find_related_autopsy markdown twins',
+        'agents mcp server skill audit frontend-rocks-audit hosted mcp endpoint llms.txt llms-full.txt graph.json audit-rules.json cursor claude code antigravity diagnose_symptom get_concept_internals check_pattern_obsolescence find_related_autopsy markdown twins',
       badge: 'Agents · MCP',
     },
   ];

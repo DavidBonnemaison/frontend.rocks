@@ -3,10 +3,12 @@
 import { getAllAutopsies, getAllConcepts } from '../../src/lib/content-loader';
 import { PRODUCTION_SYMPTOMS } from '../../src/config/symptoms';
 import { extractVsPairs } from '../../src/lib/vs-pairs';
-import { submitIndexNow } from '../post-deploy-seo';
+import { parseCliArgs } from '../../src/lib/cli-args';
+import { submitIndexNow } from '../../src/lib/indexnow';
 import { buildQuarantineUrls } from './quarantine-urls';
 
 async function main(): Promise<void> {
+  const args = parseCliArgs(process.argv.slice(2), { 'dry-run': 'boolean' });
   const concepts = getAllConcepts();
   const autopsies = getAllAutopsies();
   const urls = buildQuarantineUrls({
@@ -16,7 +18,7 @@ async function main(): Promise<void> {
     vsPairs: extractVsPairs(concepts, autopsies),
   });
 
-  if (process.argv.includes('--dry-run')) {
+  if (args['dry-run'] === true) {
     console.log(`${urls.length} URL(s). First 5:`);
     for (const u of urls.slice(0, 5)) console.log(`  ${u}`);
     return;
