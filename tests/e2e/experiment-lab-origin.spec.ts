@@ -62,3 +62,23 @@ test('top-level lab host runs __frLabRun and populates window.__frResult', async
   const result = await page.evaluate(() => window.__frResult);
   expect(result?.ok).toBe(true);
 });
+
+test('react-vendor-render loads local React vendor bundle in opaque mode', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4175/__test/parent.html');
+
+  const treatment = await page.evaluate(() =>
+    window.__frTestRun('react-vendor-render', 'treatment', {}, { vendorBaseUrl: 'http://127.0.0.1:4175' })
+  );
+  expect(treatment.ok).toBe(true);
+  if (treatment.ok) {
+    expect(treatment.value).toEqual({ text: 'rendered' });
+  }
+
+  const control = await page.evaluate(() =>
+    window.__frTestRun('react-vendor-render', 'control', {}, { vendorBaseUrl: 'http://127.0.0.1:4175' })
+  );
+  expect(control.ok).toBe(true);
+  if (control.ok) {
+    expect(control.value).toEqual({ text: null });
+  }
+});

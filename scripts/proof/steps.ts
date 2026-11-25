@@ -11,6 +11,7 @@ export interface ProofStep {
 
 export const PROOF_STEPS: ProofStep[] = [
   { name: 'build-experiments', script: 'scripts/proof/build-experiments.ts' },
+  { name: 'build-vendor', script: 'scripts/proof/build-vendor.ts' },
   { name: 'build-harness', script: 'scripts/proof/build-harness.ts' },
   {
     name: 'build-lab-dev',
