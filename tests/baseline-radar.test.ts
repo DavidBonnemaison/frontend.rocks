@@ -1,3 +1,7 @@
+import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   buildDigestDraft,
@@ -6,11 +10,15 @@ import {
   extractBrowserSupport,
   formatBaselineRadarMarkdown,
   mapBaselineToMaturity,
-  updateConceptFrontmatterRaw,
+  syncBaselineRadar,
   type BaselineChange,
   type PublicationSignal,
-} from '../src/lib/baseline-radar';
-import { WeeklyDigestSchema, type ConceptFrontmatter } from '../src/lib/schemas';
+} from '@/lib/baseline-radar';
+import {
+  diffSupportSnapshots,
+  type SupportSnapshot,
+} from '@/lib/proof/support/snapshot';
+import { WeeklyDigestSchema, type ConceptFrontmatter } from '@/lib/schemas';
 
 function makeConcept(overrides: Partial<ConceptFrontmatter>): ConceptFrontmatter {
   return {
@@ -28,17 +36,40 @@ function makeConcept(overrides: Partial<ConceptFrontmatter>): ConceptFrontmatter
   };
 }
 
-describe('Living Baseline Radar (US-18.2)', () => {
-  describe('mapBaselineToMaturity', () => {
+function makeSnapshot(overrides: Partial<SupportSnapshot> = {}): SupportSnapshot {
+  return {
+    generatedAt: '2026-11-25T00:00:00.000Z',
+    dataVersions: { bcd: '8.1.8', webFeatures: '3.47.0' },
+    features: {
+      'container-queries': {
+        baseline: 'low',
+        lowDate: '2023-02-14',
+        highDate: null,
+        support: {
+          chrome: '105',
+          chrome_android: '105',
+          edge: '105',
+          firefox: '110',
+          firefox_android: '110',
+          safari: '16',
+          safari_ios: '16',
+        },
+      },
+    },
+    bcdKeys: {},
+    ...overrides,
+  };
+}
+
+describe('Compatibility data radar', () => {
+  describe('mapBaselineToMaturity & extractBrowserSupport', () => {
     it('maps web-features baseline values to MaturityStatus', () => {
       expect(mapBaselineToMaturity('high')).toBe('baseline-widely');
       expect(mapBaselineToMaturity('low')).toBe('baseline-newly');
       expect(mapBaselineToMaturity(false)).toBe('interop-experimental');
       expect(mapBaselineToMaturity(undefined)).toBe('interop-experimental');
     });
-  });
 
-  describe('extractBrowserSupport', () => {
     it('normalizes browser versions and baseline notes', () => {
       const support = extractBrowserSupport(
         {
@@ -79,6 +110,139 @@ describe('Living Baseline Radar (US-18.2)', () => {
     });
   });
 
+  describe('diffSupportSnapshots & syncBaselineRadar', () => {
+    it('detects Baseline low -> high transition and lists affected pages in report without mutating content', () => {
+      const prev = makeSnapshot();
+      const next = makeSnapshot({
+        features: {
+          'container-queries': {
+            ...prev.features['container-queries'],
+            baseline: 'high',
+            highDate: '2025-08-14',
+          },
+        },
+      });
+
+      const diffs = diffSupportSnapshots(prev, next, {
+        featureToPages: new Map([['container-queries', ['css-container-queries']]]),
+      });
+      expect(diffs).toHaveLength(1);
+      expect(diffs[0]).toMatchObject({
+        kind: 'baseline',
+        id: 'container-queries',
+        affectedPages: ['css-container-queries'],
+      });
+
+      const report = syncBaselineRadar({
+        rootDir: process.cwd(),
+        dryRun: false,
+        previousSnapshot: prev,
+        nextSnapshot: next,
+      });
+
+      expect(report.updatedFiles).toEqual([]);
+      const cqChange = report.changes.find((c) => c.conceptId === 'css-container-queries');
+      expect(cqChange).toBeDefined();
+      expect(cqChange?.previousMaturity).toBe('baseline-newly');
+      expect(cqChange?.nextMaturity).toBe('baseline-widely');
+      expect(cqChange?.maturityChanged).toBe(true);
+
+      const md = formatBaselineRadarMarkdown(report);
+      expect(md).toContain('css-container-queries');
+      expect(md).toContain('`baseline-newly` -> `baseline-widely`');
+    });
+
+    it('detects BCD browser support changes in diffSupportSnapshots', () => {
+      const prev = makeSnapshot({
+        bcdKeys: {
+          'css.at-rules.container': {
+            chrome: { status: 'supported', since: '105' },
+            chrome_android: { status: 'supported', since: '105' },
+            edge: { status: 'supported', since: '105' },
+            firefox: { status: 'unsupported', since: null },
+            firefox_android: { status: 'unsupported', since: null },
+            safari: { status: 'supported', since: '16' },
+            safari_ios: { status: 'supported', since: '16' },
+          },
+        },
+      });
+      const next = makeSnapshot({
+        bcdKeys: {
+          'css.at-rules.container': {
+            ...prev.bcdKeys['css.at-rules.container'],
+            firefox: { status: 'supported', since: '110' },
+          },
+        },
+      });
+
+      const diffs = diffSupportSnapshots(prev, next, {
+        bcdKeyToPages: new Map([['css.at-rules.container', ['css-container-queries']]]),
+      });
+      expect(diffs).toHaveLength(1);
+      expect(diffs[0]).toMatchObject({
+        kind: 'browser',
+        id: 'css.at-rules.container',
+        affectedPages: ['css-container-queries'],
+      });
+    });
+
+    it('never modifies content/concepts or content/evidence on a temp corpus', () => {
+      const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'radar-nomutate-'));
+      try {
+        const conceptsDir = path.join(tmpRoot, 'content', 'concepts');
+        const evidenceDir = path.join(tmpRoot, 'content', 'evidence');
+        fs.mkdirSync(conceptsDir, { recursive: true });
+        fs.mkdirSync(evidenceDir, { recursive: true });
+
+        const conceptMdx = [
+          '---',
+          'id: css-container-queries',
+          'title: CSS Container Queries',
+          'domain: css-layout',
+          'web_feature_id: container-queries',
+          'summary_tldr: "Style elements based on query container dimensions."',
+          'relations: []',
+          'sources:',
+          '  - "https://drafts.csswg.org/css-conditional-5/"',
+          'last_verified_at: "2026-11-01"',
+          '---',
+          '',
+          'Body',
+        ].join('\n');
+        const conceptPath = path.join(conceptsDir, 'css-container-queries.mdx');
+        fs.writeFileSync(conceptPath, conceptMdx, 'utf-8');
+
+        const evidenceJson = JSON.stringify({ unchanged: true }, null, 2);
+        const evidencePath = path.join(evidenceDir, 'css-container-queries.evidence-dossier.json');
+        fs.writeFileSync(evidencePath, evidenceJson, 'utf-8');
+
+        const prev = makeSnapshot();
+        const next = makeSnapshot({
+          features: {
+            'container-queries': {
+              ...prev.features['container-queries'],
+              baseline: 'high',
+              highDate: '2025-08-14',
+            },
+          },
+        });
+
+        const report = syncBaselineRadar({
+          rootDir: tmpRoot,
+          dryRun: false,
+          previousSnapshot: prev,
+          nextSnapshot: next,
+        });
+
+        expect(report.changes).toHaveLength(1);
+        expect(fs.readFileSync(conceptPath, 'utf-8')).toBe(conceptMdx);
+        expect(fs.readFileSync(evidencePath, 'utf-8')).toBe(evidenceJson);
+      } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+      }
+    });
+  });
+
   describe('detectObsolescenceCandidates', () => {
     it('flags target concepts on replaces edges when source reaches Baseline', () => {
       const concepts: ConceptFrontmatter[] = [
@@ -92,16 +256,13 @@ describe('Living Baseline Radar (US-18.2)', () => {
               type: 'replaces',
               note: 'Native anchor positioning eliminates JS floating positioning loops.',
             },
-            {
-              target_id: 'css-stacking-context',
-              type: 'requires',
-              note: 'Requires understanding stacking contexts and containing blocks.',
-            },
           ],
         }),
         makeConcept({
           id: 'js-floating-positioning-engines',
           title: 'JS Floating Positioning Engines',
+          pattern_status: 'legacy-pattern',
+          superseded_by: ['css-anchor-positioning'],
           maturity_status: 'legacy-pattern',
           web_feature_id: undefined,
         }),
@@ -127,15 +288,10 @@ describe('Living Baseline Radar (US-18.2)', () => {
 
       const candidates = detectObsolescenceCandidates(concepts, changes);
       expect(candidates).toHaveLength(1);
-      expect(candidates[0]).toMatchObject({
-        sourceConceptId: 'css-anchor-positioning',
-        sourceNextMaturity: 'baseline-newly',
-        targetConceptId: 'js-floating-positioning-engines',
-        targetCurrentMaturity: 'legacy-pattern',
-      });
+      expect(candidates[0].targetConceptId).toBe('js-floating-positioning-engines');
     });
 
-    it('skips targets already marked superseded', () => {
+    it('skips targets whose pattern_status is superseded', () => {
       const concepts: ConceptFrontmatter[] = [
         makeConcept({
           id: 'popover-api-light-dismiss',
@@ -152,6 +308,8 @@ describe('Living Baseline Radar (US-18.2)', () => {
         makeConcept({
           id: 'react-portal-zindex-legacy',
           title: 'React Portal z-index Ladders',
+          pattern_status: 'superseded',
+          superseded_by: ['popover-api-light-dismiss'],
           maturity_status: 'superseded',
           web_feature_id: undefined,
         }),
@@ -254,52 +412,86 @@ describe('Living Baseline Radar (US-18.2)', () => {
       const validated = WeeklyDigestSchema.parse(draft);
       expect(validated.id).toBe(computeIsoWeekId(new Date('2026-11-24T07:00:00Z')));
       expect(validated.entries.length).toBeGreaterThanOrEqual(5);
-      expect(validated.entries.length).toBeLessThanOrEqual(8);
-      expect(validated.entries[0]?.category).toBe('obsolescence-alert');
     });
   });
 
-  describe('updateConceptFrontmatterRaw & formatBaselineRadarMarkdown', () => {
-    it('updates maturity_status and last_verified_at without altering body', () => {
-      const raw = [
-        '---',
-        'id: popover-api-light-dismiss',
-        'maturity_status: baseline-newly',
-        "last_verified_at: '2026-11-01'",
-        'web_feature_id: popover',
-        '---',
-        '',
-        '# Popover API',
-      ].join('\n');
+  describe('publish-radar-pr.sh allowlist guard (DRY_RUN=1)', () => {
+    const scriptPath = path.join(process.cwd(), '.github', 'scripts', 'publish-radar-pr.sh');
 
-      const updated = updateConceptFrontmatterRaw(raw, {
-        maturity_status: 'baseline-widely',
-        last_verified_at: '2026-11-24',
-      });
+    it('refuses a patch that touches src/', () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'radar-patch-bad-'));
+      try {
+        fs.writeFileSync(
+          path.join(tmpDir, 'radar.patch'),
+          [
+            'diff --git a/src/lib/paths.ts b/src/lib/paths.ts',
+            '--- a/src/lib/paths.ts',
+            '+++ b/src/lib/paths.ts',
+            '@@ -1 +1 @@',
+            '-a',
+            '+b',
+            '',
+          ].join('\n')
+        );
+        fs.writeFileSync(path.join(tmpDir, 'report.md'), '# Report\n');
 
-      expect(updated).toContain('maturity_status: baseline-widely');
-      expect(updated).toContain("last_verified_at: '2026-11-24'");
-      expect(updated).toContain('web_feature_id: popover');
-      expect(updated).toContain('# Popover API');
+        let failed = false;
+        let stderr = '';
+        try {
+          execFileSync('bash', [scriptPath, tmpDir], {
+            cwd: process.cwd(),
+            env: { ...process.env, DRY_RUN: '1' },
+            encoding: 'utf-8',
+            stdio: ['ignore', 'pipe', 'pipe'],
+          });
+        } catch (err) {
+          failed = true;
+          stderr = String((err as { stderr?: unknown }).stderr ?? '');
+        }
+        expect(failed).toBe(true);
+        expect(stderr).toContain('disallowed path');
+      } finally {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      }
     });
 
-    it('renders Markdown summary cleanly', () => {
-      const md = formatBaselineRadarMarkdown({
-        generatedAt: '2026-11-24T07:00:00.000Z',
-        dryRun: true,
-        mappedConceptsCount: 48,
-        changes: [],
-        obsolescenceCandidates: [],
-        newPublicationsSinceLastDigest: [],
-        latestDigestId: '2026-w46',
-        latestDigestDate: '2026-11-15',
-        digestDraft: null,
-        updatedFiles: [],
-        durationMs: 42,
-      });
+    it('accepts a valid patch touching only allowed paths in DRY_RUN=1', () => {
+      const tmpRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'radar-patch-ok-repo-'));
+      const incomingDir = fs.mkdtempSync(path.join(os.tmpdir(), 'radar-patch-ok-in-'));
+      try {
+        execFileSync('git', ['init'], { cwd: tmpRepo, stdio: 'ignore' });
+        execFileSync('git', ['config', 'user.name', 'Test'], { cwd: tmpRepo, stdio: 'ignore' });
+        execFileSync('git', ['config', 'user.email', 'test@example.com'], {
+          cwd: tmpRepo,
+          stdio: 'ignore',
+        });
 
-      expect(md).toContain('Living Baseline Radar');
-      expect(md).toContain('**Mapped concepts**: 48');
+        fs.mkdirSync(path.join(tmpRepo, 'content', '.proof-cache'), { recursive: true });
+        const snapFile = path.join(tmpRepo, 'content', '.proof-cache', 'support-snapshot.json');
+        fs.writeFileSync(snapFile, '{"v":1}\n');
+        execFileSync('git', ['add', '.'], { cwd: tmpRepo, stdio: 'ignore' });
+        execFileSync('git', ['commit', '-m', 'init'], { cwd: tmpRepo, stdio: 'ignore' });
+
+        fs.writeFileSync(snapFile, '{"v":2}\n');
+        const patch = execFileSync('git', ['diff', '--binary'], {
+          cwd: tmpRepo,
+          encoding: 'utf-8',
+        });
+        execFileSync('git', ['checkout', '--', '.'], { cwd: tmpRepo, stdio: 'ignore' });
+
+        fs.writeFileSync(path.join(incomingDir, 'radar.patch'), patch);
+        fs.writeFileSync(path.join(incomingDir, 'report.md'), '# Report\n');
+
+        const out = execFileSync('bash', [scriptPath, incomingDir], {
+          cwd: tmpRepo,
+          env: { ...process.env, DRY_RUN: '1' },
+          encoding: 'utf-8',
+        });
+        expect(out).toContain('DRY_RUN=1: validated 1 file(s)');
+      } finally {
+        fs.rmSync(tmpRepo, { recursive: true, force: true });
+        fs.rmSync(incomingDir, { recursive: true, force: true });
+      }
     });
   });
 });

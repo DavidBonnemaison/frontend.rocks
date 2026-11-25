@@ -1,68 +1,75 @@
-name: Living Baseline Radar
+name: Compatibility data radar
 
 on:
   schedule:
     - cron: '0 7 * * 2'
   workflow_dispatch:
-    inputs:
-      dry_run:
-        description: 'Preview Baseline drift without modifying concept or evidence files'
-        required: false
-        default: false
-        type: boolean
+
+concurrency:
+  group: baseline-radar
+  cancel-in-progress: false
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
-  baseline-radar:
+  update:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
-
       - run: npm ci
-
-      - name: Install latest web-features
-        run: npm install --no-save web-features@latest
-
-      - name: Run Living Baseline Radar
+      - name: Pick versions published at least 14 days ago
+        id: pick
         run: |
-          FLAGS="--report-out baseline-radar-report.md"
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            FLAGS="$FLAGS --dry-run"
-          else
-            FLAGS="$FLAGS --write-digest"
-          fi
-          npx tsx scripts/sync-baseline-radar.ts $FLAGS
-
-      - name: Check for git diff
-        id: git_diff
+          echo "bcd=$(node scripts/radar/pick-version.mjs @mdn/browser-compat-data 14)" >> "$GITHUB_OUTPUT"
+          echo "wf=$(node scripts/radar/pick-version.mjs web-features 14)" >> "$GITHUB_OUTPUT"
+      - name: Bump compatibility data
+        run: npm install --save-exact "@mdn/browser-compat-data@${{ steps.pick.outputs.bcd }}" "web-features@${{ steps.pick.outputs.wf }}"
+      - name: Run the radar (reads the committed snapshot)
+        run: mkdir -p artifacts/radar && npx tsx scripts/sync-baseline-radar.ts --report-out artifacts/radar/report.md
+      - name: Regenerate support statements and snapshot
+        run: npm run proof:support -- --write --write-snapshot
+      - name: Build the patch
+        id: diff
         run: |
-          if git diff --quiet && [ -z "$(git ls-files --others --exclude-standard content/)" ]; then
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_changes=true" >> "$GITHUB_OUTPUT"
-          fi
+          git diff --binary -- package.json package-lock.json content/.proof-cache/support-snapshot.json content/claims > artifacts/radar/radar.patch
+          if [ -s artifacts/radar/radar.patch ]; then echo "changed=true" >> "$GITHUB_OUTPUT"; else echo "changed=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/upload-artifact@v7
+        if: steps.diff.outputs.changed == 'true'
+        with:
+          name: radar
+          path: artifacts/radar/
+          retention-days: 7
+          if-no-files-found: error
 
-      - name: Run full verification suite
-        if: ${{ github.event.inputs.dry_run != 'true' && steps.git_diff.outputs.has_changes == 'true' }}
-        run: npm run check:all
-
-      - name: Create Baseline Sync PR
-        if: ${{ github.event.inputs.dry_run != 'true' && steps.git_diff.outputs.has_changes == 'true' }}
-        uses: peter-evans/create-pull-request@v8
+  publish:
+    needs: update
+    if: needs.update.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
         with:
           token: ${{ secrets.NIGHTLY_PR_TOKEN }}
-          commit-message: 'chore(radar): weekly baseline sync'
-          branch: 'radar/baseline-sync-${{ github.run_id }}'
-          delete-branch: true
-          title: 'chore(radar): weekly baseline sync'
-          body-path: baseline-radar-report.md
-          labels: |
-            baseline-radar
-            automated-pr
+          persist-credentials: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: radar
+          path: incoming
+      - name: Apply, commit, open the PR and enable auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.NIGHTLY_PR_TOKEN }}
+        run: bash .github/scripts/publish-radar-pr.sh incoming

@@ -25,6 +25,11 @@ import {
 } from '../../src/lib/proof/claims-loader';
 import { getDataVersions, getWebFeatures } from '../../src/lib/proof/support/data';
 import { collectProvenYears } from '../../src/lib/proof/support/proven-years';
+import {
+  buildSupportSnapshot,
+  getDefaultSnapshotPath,
+  writeSupportSnapshot,
+} from '../../src/lib/proof/support/snapshot';
 import { renderSupportStatement } from '../../src/lib/proof/support/statements';
 import { verifySupportClaim, type SupportClaim } from '../../src/lib/proof/support/verify';
 import { lintSupportProse } from '../../src/lib/validators/support-lint';
@@ -206,6 +211,7 @@ export interface RunSupportCheckOptions {
   outPath?: string;
   artifactsDir?: string;
   write?: boolean;
+  writeSnapshot?: boolean;
   suggestWebFeatures?: boolean;
   strict?: boolean;
   now?: Date;
@@ -229,6 +235,7 @@ export function runSupportCheck(options: RunSupportCheckOptions = {}): {
   exitCode: 0 | 1;
   updatedFiles: string[];
   suggestionsPath: string | null;
+  snapshotPath: string | null;
 } {
   const now = options.now ?? new Date();
   resetClaimsCache();
@@ -358,6 +365,17 @@ export function runSupportCheck(options: RunSupportCheckOptions = {}): {
   const outPath = options.outPath ?? path.join(SITE_ROOT, 'artifacts', 'proof', 'support.json');
   writeProofArtifact(artifact, outPath);
 
+  let snapshotPath: string | null = null;
+  if (options.writeSnapshot) {
+    snapshotPath = getDefaultSnapshotPath();
+    const snapshot = buildSupportSnapshot({
+      now,
+      concepts,
+      claims: [...allClaimsById.values()],
+    });
+    writeSupportSnapshot(snapshot, snapshotPath);
+  }
+
   let suggestionsPath: string | null = null;
   if (options.suggestWebFeatures) {
     const suggestions = suggestWebFeaturesForConcepts(concepts);
@@ -367,7 +385,7 @@ export function runSupportCheck(options: RunSupportCheckOptions = {}): {
   }
 
   const exitCode = computeSupportExitCode(artifact, Boolean(options.strict));
-  return { artifact, exitCode, updatedFiles, suggestionsPath };
+  return { artifact, exitCode, updatedFiles, suggestionsPath, snapshotPath };
 }
 
 async function main(): Promise<void> {
@@ -386,11 +404,12 @@ async function main(): Promise<void> {
     process.exit(2);
   }
 
-  const { artifact, exitCode, updatedFiles, suggestionsPath } = runSupportCheck({
+  const { artifact, exitCode, updatedFiles, suggestionsPath, snapshotPath } = runSupportCheck({
     page: args.page,
     claim: args.claim,
     outPath: args.out,
     write: Boolean(args.write),
+    writeSnapshot: Boolean(args['write-snapshot']),
     suggestWebFeatures: Boolean(args['suggest-web-features']),
     strict: Boolean(args.strict),
   });
@@ -409,6 +428,9 @@ async function main(): Promise<void> {
         .map((f) => path.relative(SITE_ROOT, f))
         .join(', ')}`
     );
+  }
+  if (snapshotPath) {
+    console.log(`Wrote support snapshot to ${path.relative(SITE_ROOT, snapshotPath)}`);
   }
   if (suggestionsPath) {
     console.log(`Wrote web-feature suggestions to ${path.relative(SITE_ROOT, suggestionsPath)}`);
