@@ -1,0 +1,16 @@
+{
+  "claims": {},
+  "demotedPages": {},
+  "engines": {},
+  "experimentMeta": {},
+  "experiments": {},
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "pages": {},
+  "runner": {
+    "node": "none",
+    "os": "none",
+    "playwright": "none",
+    "react": null
+  },
+  "schemaVersion": 1
+}
