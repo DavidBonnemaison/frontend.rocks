@@ -25,6 +25,7 @@
     "proof:run": "npm run proof:build && tsx scripts/proof/run-experiments.ts",
     "proof:aggregate": "tsx scripts/proof/aggregate-results.ts",
     "proof:gate": "tsx scripts/proof/gate.ts",
+    "proof:selftest": "npm run proof:build && tsx scripts/proof/selftest.ts",
     "proof:all": "tsx scripts/proof/all.ts",
     "proof:migrate-evidence": "tsx scripts/proof/migrate-evidence-to-claims.ts",
     "proof:verify-specs": "tsx scripts/proof/verify-spec-quotes.ts",
