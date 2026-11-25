@@ -4,6 +4,7 @@ import type { ConsoleEntry, RunVariant } from '../../src/lib/proof/define-experi
 import type { ExperimentBundle } from '../../src/lib/proof/experiment-schema';
 import type { CaseResult, VacuityResult } from '../../src/lib/proof/results-schema';
 import type { ParamValues } from '../../src/lib/proof/runtime/compose';
+import { jsonEqual } from '../../src/lib/proof/runtime/canonical-json';
 import { evaluateCase, type Executor } from '../../src/lib/proof/runtime/evaluate';
 import type { RunResult } from '../../src/lib/proof/runtime/protocol';
 import { encodeParams, type TestServer } from './test-server';
@@ -255,13 +256,70 @@ class ContextPool {
   }
 }
 
+type OkResult = Extract<RunResult, { ok: true }>;
+
+async function checkVacuity(
+  bundle: ExperimentBundle,
+  exec: Executor,
+  treatment: Map<string, RunResult>,
+  control: Map<string, RunResult>
+): Promise<VacuityResult> {
+  const okKeys = [...treatment.keys()].filter((k) => treatment.get(k)!.ok && control.get(k)!.ok);
+  const differs =
+    okKeys.length === 0
+      ? null
+      : okKeys.some(
+          (k) => !jsonEqual((treatment.get(k) as OkResult).value, (control.get(k) as OkResult).value)
+        );
+
+  const differingKeys = Object.keys(bundle.expect)
+    .sort()
+    .filter((k) => !jsonEqual(bundle.expect[k].treatment, bundle.expect[k].control))
+    .filter((k) => treatment.get(k)?.ok);
+
+  let mutationChanges: boolean | null = null;
+  for (const key of differingKeys) {
+    const mutated = await exec('treatment', bundle.expect[key].params ?? {}, true, {
+      expectKey: key,
+    });
+    const changed = !mutated.ok || !jsonEqual(mutated.value, (treatment.get(key) as OkResult).value);
+    mutationChanges = changed;
+    if (changed) break;
+  }
+
+  let blankDiffers: boolean | null = null;
+  const ref = differingKeys[0];
+  if (ref) {
+    const blank = await exec('blank', {}, false, { expectKey: null });
+    blankDiffers = !blank.ok || !jsonEqual(blank.value, (treatment.get(ref) as OkResult).value);
+  }
+
+  const failures = [
+    differs === false && 'treatment and control produced identical observations in every case',
+    mutationChanges === false &&
+      'removing mutation.remove from the treatment did not change the observation',
+    blankDiffers === false && 'observe returned the same value on a blank document',
+  ].filter(Boolean) as string[];
+
+  return {
+    ok: failures.length === 0,
+    checks: { differs, mutationChanges, blankDiffers },
+    detail: failures.length ? failures.join('; ') : null,
+  };
+}
+
 export async function runStandard(
   bundle: ExperimentBundle,
   exec: Executor
 ): Promise<EngineRunOutcome> {
   const cases: Record<string, CaseResult> = {};
+  const observedTreatment = new Map<string, RunResult>();
+  const observedControl = new Map<string, RunResult>();
+
   for (const key of Object.keys(bundle.expect).sort()) {
-    const evaluation = await evaluateCase(bundle, key, exec);
+    const { raw, ...evaluation } = await evaluateCase(bundle, key, exec);
+    observedTreatment.set(key, raw.treatment);
+    observedControl.set(key, raw.control);
     cases[key] = {
       status: evaluation.status,
       observed: evaluation.observed,
@@ -269,14 +327,16 @@ export async function runStandard(
       error: evaluation.error,
     };
   }
-  return {
-    cases,
-    vacuity: {
-      ok: true,
-      checks: { differs: null, mutationChanges: null, blankDiffers: null },
-      detail: null,
-    },
-  };
+
+  const vacuity = await checkVacuity(bundle, exec, observedTreatment, observedControl);
+  if (!vacuity.ok) {
+    for (const key of Object.keys(cases)) {
+      if (cases[key].status !== 'error') {
+        cases[key] = { ...cases[key], status: 'vacuous', error: vacuity.detail };
+      }
+    }
+  }
+  return { cases, vacuity };
 }
 
 export async function runExperimentInEngine(input: EngineRunInput): Promise<EngineRunOutcome> {
