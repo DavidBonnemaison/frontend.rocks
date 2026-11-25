@@ -40,6 +40,20 @@ import {
 } from '@/lib/seo-schema';
 import { getVsPairsForConcept } from '@/lib/vs-pairs';
 import { isPublished, robotsForStatus } from '@/lib/publication';
+import type { Claim } from '@/lib/proof/claim-schema';
+import { getAllClaims, getClaimsForPage } from '@/lib/proof/claims-loader';
+import {
+  buildClaimsBySlug,
+  createProofMdxComponents,
+} from '@/components/proof/mdx-components';
+
+let cachedClaimsById: Map<string, Claim> | null = null;
+function getClaimsById(): Map<string, Claim> {
+  if (!cachedClaimsById) {
+    cachedClaimsById = new Map(getAllClaims().map((c) => [c.id, c]));
+  }
+  return cachedClaimsById;
+}
 
 export function generateStaticParams() {
   return getAllConcepts().map((c) => ({ id: c.frontmatter.id }));
@@ -92,17 +106,25 @@ export async function generateMetadata({
 }
 
 function MdxBlock({
+  pageId,
   source,
   conceptPreviews,
 }: {
+  pageId: string;
   source: string;
   conceptPreviews: Record<string, ConceptPreviewData>;
 }) {
+  const proofComponents = createProofMdxComponents({
+    pageId,
+    claimsBySlug: buildClaimsBySlug(getClaimsForPage(pageId)?.claims ?? []),
+    claimsById: getClaimsById(),
+  });
   return (
     <div className="mdx-prose">
       <MDXRemote
         source={source}
         components={{
+          ...proofComponents,
           a: ({ href, children, ...rest }) => {
             if (href) {
               const match = /^\/concepts\/([a-z0-9-]+)(?:[/?#].*)?$/.exec(href);
@@ -577,7 +599,7 @@ export default async function ConceptPage({
             <Lightbulb size={16} aria-hidden="true" />
             <span>{UI_STRINGS.callouts.mentalModel}</span>
           </div>
-          <MdxBlock source={sections.tl_dr} conceptPreviews={conceptPreviews} />
+          <MdxBlock pageId={frontmatter.id} source={sections.tl_dr} conceptPreviews={conceptPreviews} />
         </section>
 
         {lab && (
@@ -588,12 +610,12 @@ export default async function ConceptPage({
 
         <section id="under-the-hood" className="section-block">
           <h2>{UI_STRINGS.sections.underTheHood}</h2>
-          <MdxBlock source={sections.under_the_hood} conceptPreviews={conceptPreviews} />
+          <MdxBlock pageId={frontmatter.id} source={sections.under_the_hood} conceptPreviews={conceptPreviews} />
         </section>
 
         <section id="genealogy" className="section-block">
           <h2>Problem Genealogy</h2>
-          <MdxBlock source={sections.genealogy} conceptPreviews={conceptPreviews} />
+          <MdxBlock pageId={frontmatter.id} source={sections.genealogy} conceptPreviews={conceptPreviews} />
         </section>
 
         <section id="production-pitfalls" className="section-block">
@@ -604,7 +626,7 @@ export default async function ConceptPage({
                 <AlertTriangle size={16} aria-hidden="true" />
                 <span>{UI_STRINGS.callouts.productionPitfall}</span>
               </div>
-              <MdxBlock source={mainPitfalls} conceptPreviews={conceptPreviews} />
+              <MdxBlock pageId={frontmatter.id} source={mainPitfalls} conceptPreviews={conceptPreviews} />
             </div>
           )}
           {whenNotToUse && (
@@ -613,7 +635,7 @@ export default async function ConceptPage({
                 <Ban size={16} aria-hidden="true" />
                 <span>{UI_STRINGS.callouts.whenNotToUse}</span>
               </div>
-              <MdxBlock source={whenNotToUse} conceptPreviews={conceptPreviews} />
+              <MdxBlock pageId={frontmatter.id} source={whenNotToUse} conceptPreviews={conceptPreviews} />
             </div>
           )}
         </section>

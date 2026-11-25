@@ -27,6 +27,20 @@ import {
 } from '@/lib/seo-schema';
 import '../autopsy-detail.css';
 import { isPublished, robotsForStatus } from '@/lib/publication';
+import type { Claim } from '@/lib/proof/claim-schema';
+import { getAllClaims, getClaimsForPage } from '@/lib/proof/claims-loader';
+import {
+  buildClaimsBySlug,
+  createProofMdxComponents,
+} from '@/components/proof/mdx-components';
+
+let cachedClaimsById: Map<string, Claim> | null = null;
+function getClaimsById(): Map<string, Claim> {
+  if (!cachedClaimsById) {
+    cachedClaimsById = new Map(getAllClaims().map((c) => [c.id, c]));
+  }
+  return cachedClaimsById;
+}
 
 export function generateStaticParams() {
   return getAllAutopsies().map((a) => ({ slug: a.frontmatter.id }));
@@ -79,23 +93,31 @@ export async function generateMetadata({
 }
 
 function MdxBlock({
+  pageId,
   source,
   conceptPreviews,
   causalSteps,
   lab,
   caseFile,
 }: {
+  pageId: string;
   source: string;
   conceptPreviews: Record<string, ConceptPreviewData>;
   causalSteps: CausalChainStepItem[];
   lab: InteractivePrimitiveConfig | null;
   caseFile: AutopsyCaseFile;
 }) {
+  const proofComponents = createProofMdxComponents({
+    pageId,
+    claimsBySlug: buildClaimsBySlug(getClaimsForPage(pageId)?.claims ?? []),
+    claimsById: getClaimsById(),
+  });
   return (
     <div className="mdx-prose autopsy-prose">
       <MDXRemote
         source={source}
         components={{
+          ...proofComponents,
           h2: ({ children, ...rest }) => (
             <h2 className="autopsy-narrative-h2" {...rest}>
               {children}
@@ -299,6 +321,7 @@ export default async function AutopsyDetailPage({
 
       <div id="incident-report" className="autopsy-narrative-body">
         <MdxBlock
+          pageId={frontmatter.id}
           source={autopsy.body}
           conceptPreviews={conceptPreviews}
           causalSteps={causalSteps}
