@@ -10,6 +10,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import type { AutopsyCaseFile, FailureMode } from '@/lib/schemas';
+import { trackOnce } from '@/lib/analytics';
 import { buildDetectiveOptions, type DetectiveOption } from '@/lib/detective';
 import './DevToolsDetective.css';
 
@@ -67,6 +68,7 @@ export function DevToolsDetective({
     }
     if (option.isRootCause) {
       setRevealed(false);
+      trackOnce('experiment_fix_success', slug);
     }
   };
 

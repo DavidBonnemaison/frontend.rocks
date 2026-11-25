@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, X } from 'lucide-react';
+import { track, trackOnce } from '@/lib/analytics';
 import { searchItems as runWeightedSearch, type SearchItem } from '@/lib/search';
 import './CommandPalette.css';
 
@@ -40,20 +41,43 @@ export function CommandPalette() {
   const [items, setItems] = useState<SearchItem[]>(() => cachedSearchIndex ?? []);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const queryRef = useRef('');
+  const zeroResultsTrackedRef = useRef(false);
   const router = useRouter();
+
+  useEffect(() => {
+    queryRef.current = query;
+  }, [query]);
+
+  useEffect(() => {
+    if (open) {
+      zeroResultsTrackedRef.current = false;
+    }
+  }, [open]);
+
+  const closePalette = useCallback(() => {
+    if (queryRef.current.trim().length >= 2) {
+      track('search_query');
+    }
+    setOpen(false);
+  }, []);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        setOpen((prev) => !prev);
-      } else if (e.key === 'Escape') {
-        setOpen(false);
+        if (open) {
+          closePalette();
+        } else {
+          setOpen(true);
+        }
+      } else if (e.key === 'Escape' && open) {
+        closePalette();
       }
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [open, closePalette]);
 
   useEffect(() => {
     if (!open || cachedSearchIndex) return;
@@ -81,11 +105,29 @@ export function CommandPalette() {
   const results = useMemo(() => runWeightedSearch(items, query, 12), [items, query]);
 
   useEffect(() => {
+    if (
+      open &&
+      !loading &&
+      !loadError &&
+      results.length === 0 &&
+      query.trim().length >= 3 &&
+      !zeroResultsTrackedRef.current
+    ) {
+      zeroResultsTrackedRef.current = true;
+      trackOnce('search_zero_results');
+    }
+  }, [open, loading, loadError, results.length, query]);
+
+  useEffect(() => {
     setSelectedIdx(0);
   }, [query, open]);
 
   const navigate = (href: string) => {
-    setOpen(false);
+    const symptomMatch = /^\/symptoms\/([a-z0-9-]+)\/?$/.exec(href);
+    if (symptomMatch) {
+      track('symptom_search', symptomMatch[1]);
+    }
+    closePalette();
     setQuery('');
     router.push(href);
   };
@@ -108,7 +150,7 @@ export function CommandPalette() {
           role="dialog"
           aria-modal="true"
           aria-label="Instant search"
-          onClick={() => setOpen(false)}
+          onClick={closePalette}
           style={{
             position: 'fixed',
             inset: 0,
@@ -174,7 +216,7 @@ export function CommandPalette() {
               />
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={closePalette}
                 aria-label="Close search"
                 style={{
                   background: 'transparent',

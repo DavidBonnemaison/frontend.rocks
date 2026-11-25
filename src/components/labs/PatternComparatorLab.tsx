@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import type { PatternComparatorLabConfig } from '@/lib/schemas';
+import { useTrackLabInteraction } from '@/lib/analytics-hooks';
 import { UI_STRINGS } from '@/lib/ui-strings';
 
 export function PatternComparatorLab({
@@ -13,8 +14,17 @@ export function PatternComparatorLab({
   headerExtra?: React.ReactNode;
 }) {
   const [focus, setFocus] = useState<'split' | 'before' | 'after'>('split');
+  const trackInteract = useTrackLabInteraction(config.id);
 
-  const handleReset = () => setFocus('split');
+  const handleSelectFocus = (next: 'split' | 'before' | 'after') => {
+    setFocus(next);
+    trackInteract();
+  };
+
+  const handleReset = () => {
+    setFocus('split');
+    trackInteract();
+  };
 
   return (
     <section
@@ -32,7 +42,7 @@ export function PatternComparatorLab({
           <div className="segmented" role="group" aria-label="Display mode">
             <button
               type="button"
-              onClick={() => setFocus('split')}
+              onClick={() => handleSelectFocus('split')}
               className={`seg-btn ${focus === 'split' ? 'active' : ''}`}
               aria-pressed={focus === 'split'}
             >
@@ -40,7 +50,7 @@ export function PatternComparatorLab({
             </button>
             <button
               type="button"
-              onClick={() => setFocus('before')}
+              onClick={() => handleSelectFocus('before')}
               className={`seg-btn ${focus === 'before' ? 'active' : ''}`}
               aria-pressed={focus === 'before'}
             >
@@ -48,7 +58,7 @@ export function PatternComparatorLab({
             </button>
             <button
               type="button"
-              onClick={() => setFocus('after')}
+              onClick={() => handleSelectFocus('after')}
               className={`seg-btn ${focus === 'after' ? 'active' : ''}`}
               aria-pressed={focus === 'after'}
             >

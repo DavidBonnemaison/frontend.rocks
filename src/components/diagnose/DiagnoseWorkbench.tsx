@@ -18,6 +18,7 @@ import {
   type DiagnoseWorkerRequest,
   type DiagnoseWorkerResponse,
 } from '@/lib/diagnose/types';
+import { TARGET_RE, track } from '@/lib/analytics';
 import './DiagnoseWorkbench.css';
 
 function formatBytes(bytes: number): string {
@@ -64,6 +65,9 @@ export function DiagnoseWorkbench() {
         return;
       }
 
+      const inputKind = fileName.toLowerCase().endsWith('.har') ? 'har' : 'trace';
+      track('paste_bug_submit', undefined, { kind: inputKind });
+
       setError(null);
       setIsAnalyzing(true);
 
@@ -78,6 +82,14 @@ export function DiagnoseWorkbench() {
 
         if (event.data.ok) {
           setSummary(event.data.result);
+          const resultKind = event.data.result.format === 'har' ? 'har' : 'trace';
+          const prescriptions = event.data.result.findings.flatMap((f) => f.prescriptions);
+          if (prescriptions.length > 0) {
+            const validSlug = prescriptions.find((p) => TARGET_RE.test(p.slug))?.slug;
+            track('paste_bug_match', validSlug, { kind: resultKind, matched: true });
+          } else {
+            track('paste_bug_match', undefined, { kind: resultKind, matched: false });
+          }
         } else {
           setSummary(null);
           setError(event.data.error);

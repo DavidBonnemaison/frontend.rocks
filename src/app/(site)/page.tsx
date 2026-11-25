@@ -127,6 +127,8 @@ export default function HomePage() {
                 key={s.slug}
                 href={`/symptoms/${s.slug}/`}
                 className="home-symptom-row"
+                data-analytics-event="symptom_search"
+                data-analytics-target={s.slug}
               >
                 <span className="home-symptom-quote">&ldquo;{s.search_title}&rdquo;</span>
                 <span className="home-symptom-badge">
