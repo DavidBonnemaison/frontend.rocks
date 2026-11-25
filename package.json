@@ -21,7 +21,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "validate:content": "tsx scripts/validate-content.ts",
-    "proof:build": "tsx scripts/proof/build-experiments.ts",
+    "proof:build": "tsx scripts/proof/build-experiments.ts && tsx scripts/proof/build-harness.ts",
     "proof:migrate-evidence": "tsx scripts/proof/migrate-evidence-to-claims.ts",
     "proof:verify-specs": "tsx scripts/proof/verify-spec-quotes.ts",
     "proof:verify-sources": "tsx scripts/proof/verify-source-quotes.ts",
