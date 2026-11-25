@@ -5,6 +5,11 @@ import { RotateCcw } from 'lucide-react';
 import type { LiveSandboxControl, LiveSandboxLabConfig } from '@/lib/schemas';
 import { UI_STRINGS } from '@/lib/ui-strings';
 import { useTrackLabInteraction } from '@/lib/analytics-hooks';
+import {
+  escapeHtmlAttr,
+  sanitizeScriptContent,
+  sanitizeStyleContent,
+} from '@/lib/proof/runtime/sanitize';
 import './LiveSandboxLab.css';
 
 export type SandboxControlValues = Record<string, number | boolean | string>;
@@ -21,22 +26,6 @@ export function getInitialSandboxValues(config: LiveSandboxLabConfig): SandboxCo
     init[ctrl.key] = ctrl.defaultValue;
   }
   return init;
-}
-
-function escapeHtmlAttr(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-function sanitizeStyleContent(css: string): string {
-  return css.replace(/<\/style/gi, '<\\/style');
-}
-
-function sanitizeScriptContent(js: string): string {
-  return js.replace(/<\/script/gi, '<\\/script');
 }
 
 function resolveControlCssVar(
