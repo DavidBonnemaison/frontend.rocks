@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { classifySpecUrl, isRejection, MATURITY_LABELS } from '@/lib/proof/spec/domains';
+import { normalizeSpecText, normalizeWithMap, originalSlice } from '@/lib/proof/spec/normalize';
 
 describe('classifySpecUrl', () => {
   it.each([
@@ -115,5 +116,30 @@ describe('classifySpecUrl', () => {
     const res = classifySpecUrl('not a url');
     expect(isRejection(res)).toBe(true);
     if (isRejection(res)) expect(res.reason).toBe('domain-not-allowed');
+  });
+});
+
+describe('normalizeSpecText and originalSlice', () => {
+  it('normalizes whitespace, typographic quotes, soft hyphens, dashes, and ellipsis', () => {
+    expect(normalizeSpecText('a\u00A0b')).toBe('a b');
+    expect(normalizeSpecText('l\u2019event')).toBe("l'event");
+    expect(normalizeSpecText('a\u00ADb')).toBe('ab');
+    expect(normalizeSpecText('  x \n\t y  ')).toBe('x y');
+    expect(normalizeSpecText('\u2026')).toBe('...');
+    expect(normalizeSpecText('foo\u2014bar\u2013baz')).toBe('foo-bar-baz');
+    expect(normalizeSpecText('\u201Cquoted\u201D')).toBe('"quoted"');
+  });
+
+  it('preserves case', () => {
+    expect(normalizeSpecText('While The Queue')).toBe('While The Queue');
+    expect(normalizeSpecText('While The Queue')).not.toBe('while the queue');
+  });
+
+  it('extracts originalSlice preserving typography while collapsing whitespace', () => {
+    const n = normalizeWithMap('the event loop\u2019s  queue');
+    const needle = "loop's queue";
+    const start = n.normalized.indexOf(needle);
+    expect(start).toBeGreaterThan(-1);
+    expect(originalSlice(n, start, start + needle.length)).toBe('loop\u2019s queue');
   });
 });
