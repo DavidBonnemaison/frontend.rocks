@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { SOURCE_REPOS } from '@/lib/proof/claim-schema';
+import {
+  MAX_EXCERPT_CHARS,
+  MAX_EXCERPT_LINES,
+  checkExcerptSize,
+  dedentLines,
+  excerptAt,
+  findExcerpt,
+  normalizeExcerpt,
+} from '@/lib/proof/source/excerpt';
 import { REPOS, checkPathAllowed, isSourceRepo, languageForPath } from '@/lib/proof/source/repos';
 
 describe('repos', () => {
@@ -59,5 +68,75 @@ describe('repos', () => {
     expect(languageForPath('CHANGELOG.md')).toBe('markdown');
     expect(languageForPath('Source/WebCore/dom/EventTarget.idl')).toBe('text');
     expect(languageForPath('Source/WebCore/dom/Makefile')).toBe('text');
+  });
+});
+
+describe('excerpt', () => {
+  it('dedents common leading spaces and tabs while preserving blank interior lines', () => {
+    expect(dedentLines(['    if (ok) {  ', '        return true;\t', '', '    }'])).toEqual([
+      'if (ok) {',
+      '    return true;',
+      '',
+      '}',
+    ]);
+    expect(dedentLines(['\tif (ok)', '\t\treturn true;'])).toEqual(['if (ok)', '\treturn true;']);
+  });
+
+  it('normalizes excerpts by stripping leading/trailing blank lines and CRLF', () => {
+    const raw = '\r\n\r\n    if (a) {  \r\n\r\n      return b;\r\n    }\r\n  \r\n';
+    expect(normalizeExcerpt(raw)).toBe('if (a) {\n\n  return b;\n}');
+    expect(() => normalizeExcerpt('   \n\t\n  ')).toThrow('Empty excerpt');
+  });
+
+  it('extracts 1-indexed inclusive ranges and returns null out of bounds', () => {
+    const file = ['line 1', '    line 2', '        line 3', 'line 4'].join('\n');
+    expect(excerptAt(file, 2, 3)).toBe('line 2\n    line 3');
+    expect(excerptAt(file, 0, 2)).toBeNull();
+    expect(excerptAt(file, 3, 2)).toBeNull();
+    expect(excerptAt(file, 2, 5)).toBeNull();
+  });
+
+  it('finds unique, re-indented, ambiguous, and absent excerpts accurately', () => {
+    const file = [
+      'void demo() {',
+      '    if (ready) {',
+      '        return false;',
+      '    }',
+      '    if (done) {',
+      '        return false;',
+      '    }',
+      '}',
+    ].join('\n');
+
+    // Re-indented by 4 extra spaces relative to the file
+    const reindented = '        if (ready) {\n            return false;\n        }';
+    expect(findExcerpt(file, reindented)).toEqual([[2, 4]]);
+
+    // Single character difference: return true vs return false
+    const oneCharDiff = 'if (ready) {\n    return true;\n}';
+    expect(findExcerpt(file, oneCharDiff)).toEqual([]);
+
+    // Ambiguous match (appears twice)
+    expect(findExcerpt(file, 'return false;')).toEqual([
+      [3, 3],
+      [6, 6],
+    ]);
+  });
+
+  it('enforces maximum line count and character count', () => {
+    const exactLines = Array.from({ length: MAX_EXCERPT_LINES }, (_, i) => `l${i}`).join('\n');
+    expect(checkExcerptSize(exactLines)).toEqual({ ok: true });
+
+    const tooManyLines = Array.from({ length: MAX_EXCERPT_LINES + 1 }, (_, i) => `l${i}`).join(
+      '\n'
+    );
+    const linesRes = checkExcerptSize(tooManyLines);
+    expect(linesRes.ok).toBe(false);
+    if (!linesRes.ok) expect(linesRes.reason).toBe('excerpt-too-long');
+
+    const tooManyChars = 'a'.repeat(MAX_EXCERPT_CHARS + 1);
+    const charsRes = checkExcerptSize(tooManyChars);
+    expect(charsRes.ok).toBe(false);
+    if (!charsRes.ok) expect(charsRes.reason).toBe('excerpt-too-long');
   });
 });
