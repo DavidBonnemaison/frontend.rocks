@@ -17,6 +17,8 @@ jobs:
     timeout-minutes: 3
     outputs:
       code: ${{ steps.f.outputs.code }}
+      proof: ${{ steps.f.outputs.proof }}
+      proof_runtime: ${{ steps.f.outputs.proof_runtime }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -32,6 +34,20 @@ jobs:
           else
             echo "code=false" >> "$GITHUB_OUTPUT"
           fi
+          proof=false
+          proof_runtime=false
+          if echo "$CHANGED" | grep -qE '^(content/|src/lib/proof/|scripts/proof/|tests/fixtures/experiments/|package-lock\.json$)'; then
+            proof=true
+          fi
+          if echo "$CHANGED" | grep -qE '^(src/lib/proof/|scripts/proof/|tests/fixtures/experiments/|package-lock\.json$)'; then
+            proof_runtime=true
+          fi
+          # PR touching only proof results (nightly): nothing to re-verify
+          if [ -n "$CHANGED" ] && ! echo "$CHANGED" | grep -qvE '^content/\.proof-results/'; then
+            proof=false
+          fi
+          echo "proof=$proof" >> "$GITHUB_OUTPUT"
+          echo "proof_runtime=$proof_runtime" >> "$GITHUB_OUTPUT"
 
   gate:
     needs: changes
@@ -68,14 +84,56 @@ jobs:
         run: npx playwright install-deps chromium
       - run: npx playwright test --grep @smoke --project=chromium
 
+  proof:
+    needs: changes
+    if: needs.changes.outputs.proof == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Restore spec and source fetches (only nightly saves this cache)
+        uses: actions/cache/restore@v6
+        with:
+          path: .cache/proof
+          key: proof-http-${{ github.run_id }}
+          restore-keys: proof-http-
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - name: Runner self-test (runtime changed)
+        if: needs.changes.outputs.proof_runtime == 'true'
+        run: npm run proof:selftest
+      - name: Build, run changed experiments, verify, aggregate (preview), gate
+        run: npm run proof:all -- --changed origin/${{ github.base_ref }}
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: proof-artifacts
+          path: artifacts/proof/
+          retention-days: 7
+
   ci-result:
-    needs: [changes, gate]
+    needs: [changes, gate, proof]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Fail if a required job failed or was cancelled
         run: |
-          echo "changes=${{ needs.changes.result }} gate=${{ needs.gate.result }}"
+          echo "changes=${{ needs.changes.result }} gate=${{ needs.gate.result }} proof=${{ needs.proof.result }}"
           if [ "${{ needs.changes.result }}" != "success" ]; then exit 1; fi
           if [ "${{ needs.gate.result }}" = "failure" ] || [ "${{ needs.gate.result }}" = "cancelled" ]; then exit 1; fi
+          if [ "${{ needs.proof.result }}" = "failure" ] || [ "${{ needs.proof.result }}" = "cancelled" ]; then exit 1; fi
