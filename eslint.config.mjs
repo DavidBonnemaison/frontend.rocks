@@ -20,6 +20,7 @@ export default defineConfig([
     'content/.proof-cache/**',
     'content/.proof-results/**',
     '.proof-build/**',
+    'tests/fixtures/sources/**',
   ]),
   {
     // README §3.14: multi-page navigation with plain <a> and cross-document View Transitions.
