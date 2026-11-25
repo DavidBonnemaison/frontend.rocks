@@ -17,9 +17,13 @@ import {
 } from '../src/lib/validators/autopsy-validator';
 import { validateConceptMdx, verifySourceUrls } from '../src/lib/validators/concept-validator';
 import { validateConceptGraph } from '../src/lib/validators/dag';
-import { checkProvenGuard, isPublished } from '../src/lib/publication';
+import { isPublished } from '../src/lib/publication';
 import { PRODUCTION_SYMPTOMS } from '../src/config/symptoms';
 import { CONTENT_DIR } from '../src/lib/paths';
+import { parseCliArgs } from '../src/lib/cli-args';
+import { getAllClaimsFiles } from '../src/lib/proof/claims-loader';
+import { getAllPageRefs } from '../src/lib/proof/page-registry';
+import { validateClaimsCorpus } from '../src/lib/validators/claims-validator';
 import { validateProgrammaticSeo } from '../src/lib/validators/seo-validator';
 
 const CONCEPTS_DIR = path.join(CONTENT_DIR, 'concepts');
@@ -30,9 +34,11 @@ const EVIDENCE_DIR = path.join(CONTENT_DIR, 'evidence');
 const PATHS_FILE = path.join(CONTENT_DIR, 'paths.json');
 
 async function main(): Promise<void> {
-  const checkUrls = process.argv.includes('--check-urls');
+  const args = parseCliArgs(process.argv.slice(2), { 'check-urls': 'boolean' });
+  const checkUrls = args['check-urls'] === true;
   const errors: string[] = [];
   const concepts: ConceptFrontmatter[] = [];
+  let claimsStats: { files: number; claims: number } | null = null;
 
   if (!fs.existsSync(CONCEPTS_DIR)) {
     console.error('❌ Missing content/concepts directory');
@@ -206,21 +212,30 @@ async function main(): Promise<void> {
     }
   }
 
-  // Proof guard: a page can be `proven` only once its claims file exists (replaced by the full check later).
-  const claimsExists = (id: string): boolean =>
-    fs.existsSync(path.join(CONTENT_DIR, 'claims', `${id}.claims.json`));
-  for (const e of checkProvenGuard(
-    [
-      ...concepts.map((c) => ({ id: c.id, proof_status: c.proof_status })),
-      ...autopsies.map((a) => ({ id: a.id, proof_status: a.proof_status })),
-    ],
-    claimsExists
-  )) {
-    errors.push(e);
+  // Validate Claims (content/claims)
+  try {
+    const claimsFiles = [...getAllClaimsFiles().values()];
+    const experimentsDir = path.join(CONTENT_DIR, 'experiments');
+    const experimentIds = new Set(
+      fs.existsSync(experimentsDir)
+        ? fs
+            .readdirSync(experimentsDir, { withFileTypes: true })
+            .filter((d) => d.isDirectory() && fs.existsSync(path.join(experimentsDir, d.name, 'experiment.ts')))
+            .map((d) => d.name)
+        : []
+    );
+    const { pages, collisions } = getAllPageRefs();
+    const claimsResult = validateClaimsCorpus({ claimsFiles, pages, collisions, experimentIds });
+    errors.push(...claimsResult.errors);
+    for (const w of claimsResult.warnings) console.warn(`⚠️  ${w}`);
+    claimsStats = claimsResult.stats;
+  } catch (err) {
+    errors.push(`[claims] ${err instanceof Error ? err.message : String(err)}`);
   }
+
   for (const s of PRODUCTION_SYMPTOMS) {
     if (isPublished(s.proof_status, s.slug)) {
-      errors.push(`[proof] symptom "${s.slug}" cannot be proven before EPIC-35`);
+      errors.push(`[proof] symptom "${s.slug}" cannot be proven before MDX migration`);
     }
   }
 
@@ -258,7 +273,7 @@ async function main(): Promise<void> {
   }
 
   console.log(
-    `✅ Content validation passed: ${concepts.length} concept(s), ${autopsies.length} autopsy(ies), ${seoResult.stats.vsPairCount} /vs/ pair(s) (max overlap ${(seoResult.stats.maxVsOverlap * 100).toFixed(1)}%), ${seoResult.stats.symptomCount} symptom(s) (max overlap ${(seoResult.stats.maxSymptomOverlap * 100).toFixed(1)}%), DAG acyclic, all schemas valid.`
+    `✅ Content validation passed: ${concepts.length} concept(s), ${autopsies.length} autopsy(ies), ${seoResult.stats.vsPairCount} /vs/ pair(s) (max overlap ${(seoResult.stats.maxVsOverlap * 100).toFixed(1)}%), ${seoResult.stats.symptomCount} symptom(s) (max overlap ${(seoResult.stats.maxSymptomOverlap * 100).toFixed(1)}%), ${claimsStats?.claims ?? 0} claim(s) in ${claimsStats?.files ?? 0} file(s), DAG acyclic, all schemas valid.`
   );
 }
 
