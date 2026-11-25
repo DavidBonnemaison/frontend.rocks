@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Claim } from '@/lib/proof/claim-schema';
+import { SourceQuote } from './SourceQuote';
 import { SpecQuote } from './SpecQuote';
 
 export interface ProofMdxContext {
@@ -25,5 +26,6 @@ export function resolveClaimRef(ctx: ProofMdxContext, ref: string): Claim | unde
 export function createProofMdxComponents(ctx: ProofMdxContext): MdxComponentMap {
   return {
     SpecQuote: (props: { claim: string }) => <SpecQuote ctx={ctx} claimSlug={props.claim} />,
+    SourceQuote: (props: { claim: string }) => <SourceQuote ctx={ctx} claimRef={props.claim} />,
   };
 }

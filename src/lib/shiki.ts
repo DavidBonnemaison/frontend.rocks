@@ -12,6 +12,9 @@ export const PRELOADED_LANGS = [
   'json',
   'http',
   'bash',
+  'cpp',
+  'rust',
+  'markdown',
 ] as const;
 
 let highlighterPromise: Promise<Highlighter> | null = null;

@@ -15,6 +15,9 @@ describe('Shiki server-side syntax highlighting', () => {
       json: '{"status": "ok", "count": 3}',
       http: 'HTTP/1.1 200 OK\nCache-Control: max-age=3600',
       bash: 'npm run build-prod && echo "done"',
+      cpp: 'bool ok(int x) { return x > 0; }',
+      rust: 'pub fn ok(x: i32) -> bool { x > 0 }',
+      markdown: '# Release 19.0\n\n- Added `useActionState`.',
     };
 
     for (const lang of PRELOADED_LANGS) {
