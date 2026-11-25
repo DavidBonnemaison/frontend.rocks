@@ -1,11 +1,11 @@
 // No `import 'server-only'`: that package throws outside the `react-server` condition (tsx, Vitest).
 // Exclusion from the client bundle is verified by grep and production build checks.
 import { createRequire } from 'node:module';
+import path from 'node:path';
 import type { CompatData } from '@mdn/browser-compat-data';
 import { features as defaultWebFeatures } from 'web-features';
+import { SITE_ROOT } from '../../paths';
 import { readInstalledPackageVersion } from './package-version';
-
-const require = createRequire(import.meta.url);
 
 export type BcdData = CompatData;
 export type WebFeaturesMap = typeof defaultWebFeatures;
@@ -20,7 +20,8 @@ export function getBcd(): BcdData {
   if (bcdOverride) return bcdOverride;
   if (!bcdCache) {
     // The package main export "." resolves to data.json. Do NOT require a subpath: it is not exported.
-    bcdCache = require('@mdn/browser-compat-data') as BcdData;
+    const req = createRequire(path.join(SITE_ROOT, 'package.json'));
+    bcdCache = req('@mdn/browser-compat-data') as BcdData;
   }
   return bcdCache;
 }
