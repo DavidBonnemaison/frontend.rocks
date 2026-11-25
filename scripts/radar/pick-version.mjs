@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -16,13 +17,42 @@ export function compareSemver(a, b) {
   return 0;
 }
 
+/** Reads the currently installed stable semver version from node_modules, or null if absent. */
+export function readInstalledVersion(pkg, rootDir = process.cwd()) {
+  const candidate = path.join(rootDir, 'node_modules', ...pkg.split('/'), 'package.json');
+  if (!fs.existsSync(candidate)) return null;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(candidate, 'utf-8'));
+    if (typeof parsed?.version === 'string' && STABLE_SEMVER_RE.test(parsed.version)) {
+      return parsed.version;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 /**
- * Picks the highest stable semver version from an `npm view <pkg> time --json` map
+ * Picks the highest stable semver version from an `npm view <pkg> time --json` payload
  * published at least `minAgeDays` days before `nowMs`.
+ * Accepts both the object form (npm <= 11) and the single-element array form (npm 12+).
  * Ignores prereleases (any version containing `-`) and metadata keys (`created`, `modified`).
+ * When `installedVersion` is provided, never downgrades below it.
+ *
+ * @param {Record<string, string> | Array<Record<string, string>>} timeMap
+ * @param {number} minAgeDays
+ * @param {number} [nowMs]
+ * @param {string | null} [installedVersion]
+ * @returns {string}
  */
-export function pickVersionFromTimeMap(timeMap, minAgeDays, nowMs = Date.now()) {
-  if (!timeMap || typeof timeMap !== 'object') {
+export function pickVersionFromTimeMap(
+  timeMap,
+  minAgeDays,
+  nowMs = Date.now(),
+  installedVersion = null,
+) {
+  const unwrapped = Array.isArray(timeMap) ? timeMap[timeMap.length - 1] : timeMap;
+  if (!unwrapped || typeof unwrapped !== 'object' || Array.isArray(unwrapped)) {
     throw new Error('Invalid time map');
   }
   if (!Number.isFinite(minAgeDays) || minAgeDays < 0) {
@@ -32,7 +62,7 @@ export function pickVersionFromTimeMap(timeMap, minAgeDays, nowMs = Date.now()) 
   const cutoffMs = nowMs - minAgeDays * 86_400_000;
   const eligible = [];
 
-  for (const [version, publishedAt] of Object.entries(timeMap)) {
+  for (const [version, publishedAt] of Object.entries(unwrapped)) {
     if (version === 'created' || version === 'modified') continue;
     if (version.includes('-')) continue;
     if (!STABLE_SEMVER_RE.test(version)) continue;
@@ -45,12 +75,22 @@ export function pickVersionFromTimeMap(timeMap, minAgeDays, nowMs = Date.now()) 
     }
   }
 
+  const validInstalled =
+    typeof installedVersion === 'string' && STABLE_SEMVER_RE.test(installedVersion)
+      ? installedVersion
+      : null;
+
   if (eligible.length === 0) {
+    if (validInstalled) return validInstalled;
     throw new Error(`No stable version published at least ${minAgeDays} day(s) ago`);
   }
 
   eligible.sort(compareSemver);
-  return eligible[eligible.length - 1];
+  const picked = eligible[eligible.length - 1];
+  if (validInstalled && compareSemver(validInstalled, picked) > 0) {
+    return validInstalled;
+  }
+  return picked;
 }
 
 function main() {
@@ -69,7 +109,8 @@ function main() {
     encoding: 'utf-8',
   });
   const timeMap = JSON.parse(raw);
-  const picked = pickVersionFromTimeMap(timeMap, minAgeDays);
+  const installed = readInstalledVersion(pkg);
+  const picked = pickVersionFromTimeMap(timeMap, minAgeDays, Date.now(), installed);
   process.stdout.write(`${picked}\n`);
 }
 

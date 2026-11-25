@@ -39,4 +39,30 @@ describe('radar pick-version', () => {
     };
     expect(() => pickVersionFromTimeMap(timeMap, 14, nowMs)).toThrow(/No stable version/);
   });
+
+  it('unwraps the single-element array returned by npm 12 `npm view <pkg> time --json`', () => {
+    const arrayPayload = [
+      {
+        created: '2020-01-01T00:00:00Z',
+        modified: '2026-11-24T00:00:00Z',
+        '8.1.8': '2026-11-02T14:21:45.545Z',
+        '8.1.9': '2026-11-12T14:13:18.900Z',
+        '8.1.10': '2026-11-19T14:43:54.298Z',
+      },
+    ];
+    expect(pickVersionFromTimeMap(arrayPayload, 14, nowMs)).toBe('8.1.8');
+  });
+
+  it('never downgrades below the currently installed version', () => {
+    const timeMap = {
+      '3.45.0': '2026-11-05T10:00:00Z', // 20 days old -> eligible
+      '3.47.0': '2026-11-19T20:41:12Z', // 6 days old -> too recent
+    };
+    expect(pickVersionFromTimeMap(timeMap, 14, nowMs, '3.47.0')).toBe('3.47.0');
+    expect(pickVersionFromTimeMap(timeMap, 14, nowMs, '3.44.0')).toBe('3.45.0');
+    expect(
+      pickVersionFromTimeMap({ '3.47.0': '2026-11-19T20:41:12Z' }, 14, nowMs, '3.47.0'),
+    ).toBe('3.47.0');
+  });
 });
+
