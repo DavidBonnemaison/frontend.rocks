@@ -2,7 +2,6 @@
 id: undo-redo-structural-sharing
 title: "Undo/Redo & Structural Sharing"
 domain: state-architecture
-maturity_status: baseline-widely
 summary_tldr: "Implements O(1) undo/redo stacks without deep-cloning megabytes of state by copy-on-write cloning only the modified ancestor path and reusing untouched subtree pointers."
 relations:
   - target_id: virtual-dom-reconciliation

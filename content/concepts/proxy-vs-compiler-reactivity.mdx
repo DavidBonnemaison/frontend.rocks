@@ -2,7 +2,6 @@
 id: proxy-vs-compiler-reactivity
 title: "Runtime Proxy Reactivity vs Static Compiler Graphs"
 domain: framework-internals
-maturity_status: baseline-widely
 summary_tldr: "Deep Proxy wrapping adds per-property trap overhead and hidden-class polymorphism, whereas static compilers rewrite assignments into direct DOM patches. Choosing between them trades runtime flexibility for zero-allocation update paths."
 relations:
   - target_id: proxy-reflect-internals

@@ -2,7 +2,6 @@
 id: idempotency-optimistic-queues
 title: "Outbox Queues, Idempotency Keys & Causal Ordering"
 domain: state-architecture
-maturity_status: baseline-widely
 summary_tldr: "Prevents duplicate charges and out-of-order server overwrites on flaky networks by persisting mutations in an IndexedDB FIFO outbox with UUID idempotency keys."
 relations:
   - target_id: optimistic-ui-rollback

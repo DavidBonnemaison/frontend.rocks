@@ -2,7 +2,6 @@
 id: isr-swr-edge-invalidation
 title: "Hybrid Rendering Topologies (SSG, SSR, ISR & Edge Cache)"
 domain: framework-internals
-maturity_status: baseline-widely
 summary_tldr: "Pure SSG breaks on 100,000-page catalogs with 40-minute builds, while uncached SSR melts origin databases under traffic spikes. ISR and tag-based edge invalidation serve static CDN hits while regenerating stale pages asynchronously."
 relations:
   - target_id: cdn-edge-cache-keys

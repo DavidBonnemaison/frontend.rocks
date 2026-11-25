@@ -2,7 +2,6 @@
 id: "signal-graph-topological-sort"
 title: "Fine-Grained Signals & Glitch-Free Topological Evaluation"
 domain: "framework-internals"
-maturity_status: "baseline-widely"
 summary_tldr: "Eliminates double-renders and torn intermediate state in diamond dependency graphs. Push-pull topological evaluation marks downstream nodes dirty in one pass and lazily recomputes only what effects actually read."
 relations:
   - target_id: "fine-grained-signals"

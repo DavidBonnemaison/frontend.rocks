@@ -2,7 +2,6 @@
 id: client-side-router-internals
 title: "Client-Side Router & Radix Tree Matching"
 domain: framework-internals
-maturity_status: baseline-widely
 summary_tldr: "Linear regex arrays stall route matching on large apps and leak stale navigation fetches. Radix-tree routers resolve paths in O(path_length), abort superseded loaders, and integrate with browser navigation primitives."
 relations:
   - target_id: url-as-state-store

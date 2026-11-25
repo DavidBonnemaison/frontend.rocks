@@ -2,7 +2,6 @@
 id: rpc-server-actions-closures
 title: "Server Actions & Serialized Closure Boundaries"
 domain: framework-internals
-maturity_status: baseline-newly
 summary_tldr: "Server Actions look like local async functions, yet every invocation crosses an unauthenticated HTTP boundary. Treating closures as free local scope leaks server secrets or crashes with non-serializable payload errors."
 relations:
   - target_id: structured-clone-algorithm

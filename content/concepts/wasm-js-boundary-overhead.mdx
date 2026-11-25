@@ -2,7 +2,6 @@
 id: wasm-js-boundary-overhead
 title: WebAssembly Linear Memory & JS Boundary Crossing Cost
 domain: web-apis
-maturity_status: baseline-widely
 summary_tldr: "Calling a Wasm function per pixel or per DOM node burns more CPU marshaling strings across the JS boundary than running pure JS. Batch workloads into shared Linear Memory ArrayBuffers to amortize trampoline and UTF-8 copy costs."
 relations:
   - target_id: typed-arrays-zero-copy

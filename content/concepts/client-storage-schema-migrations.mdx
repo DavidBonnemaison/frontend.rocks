@@ -2,7 +2,6 @@
 id: client-storage-schema-migrations
 title: "Client Storage Versioning & Zero-Downtime Migrations"
 domain: state-architecture
-maturity_status: baseline-widely
 summary_tldr: "Prevents hung IndexedDB upgrades and wiped user drafts during deploys by coordinating schema version bumps across open tabs with onversionchange and expand-and-contract migrations."
 relations:
   - target_id: indexeddb-transactions-quotas

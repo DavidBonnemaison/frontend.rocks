@@ -2,7 +2,6 @@
 id: zero-runtime-vs-runtime-css
 title: "Zero-Runtime Atomic CSS vs Dynamic Style Injection"
 domain: framework-internals
-maturity_status: baseline-widely
 summary_tldr: "Runtime CSS-in-JS recalculates hashes and mutates <style> tags during every render, triggering synchronous CSSOM invalidation. Zero-runtime compilers extract static atomic classes at build time and delegate dynamic values to CSS custom properties."
 relations:
   - target_id: dom-cssom-construction
