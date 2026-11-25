@@ -17,6 +17,12 @@ const EXPECTED: Record<string, Rule> = {
   'vacuous-absence': 'vacuous',
   'mutation-noop': 'vacuous',
   'wrong-expectation': 'fail',
+  'trusted-click': 'pass',
+  'prefers-reduced-motion': 'pass',
+  'react-vendor-render': 'pass',
+  'idb-versionchange': 'pass',
+  // Service worker: WebKit behavior is recorded without masking engine differences.
+  'sw-waiting': { chromium: 'pass', firefox: 'pass', webkit: ['pass', 'fail', 'vacuous'] },
 };
 
 function allowedStatuses(rule: Rule, engine: EngineId): Expected[] {

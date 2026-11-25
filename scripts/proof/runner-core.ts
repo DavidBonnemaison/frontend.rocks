@@ -1,6 +1,11 @@
-import type { Browser, BrowserContext, ConsoleMessage, Page } from '@playwright/test';
+import type { Browser, BrowserContext, ConsoleMessage, FrameLocator, Page } from '@playwright/test';
 import type { EngineId } from '../../src/lib/proof/claim-schema';
-import type { ConsoleEntry, RunVariant } from '../../src/lib/proof/define-experiment';
+import type {
+  ConsoleEntry,
+  Emulation,
+  InputStep,
+  RunVariant,
+} from '../../src/lib/proof/define-experiment';
 import type { ExperimentBundle } from '../../src/lib/proof/experiment-schema';
 import type { CaseResult, MeasuredObserved, VacuityResult } from '../../src/lib/proof/results-schema';
 import { mannWhitneyGreater, median } from '../../src/lib/proof/stats';
@@ -50,26 +55,111 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   });
 }
 
-function stableEmulationKey(emulation: Record<string, unknown> | undefined): string {
+function stableEmulationKey(emulation: Emulation | undefined): string {
   if (!emulation || Object.keys(emulation).length === 0) return '{}';
   const sorted: Record<string, unknown> = {};
   for (const k of Object.keys(emulation).sort()) {
-    if (emulation[k] !== undefined) sorted[k] = emulation[k];
+    const val = emulation[k as keyof Emulation];
+    if (val !== undefined) sorted[k] = val;
   }
   return JSON.stringify(sorted);
+}
+
+function buildContextOptions(
+  viewport: { width: number; height: number },
+  emulation: Emulation | undefined
+): Parameters<Browser['newContext']>[0] {
+  const opts: Parameters<Browser['newContext']>[0] = { viewport };
+  if (!emulation) return opts;
+  if (emulation.deviceScaleFactor !== undefined) opts.deviceScaleFactor = emulation.deviceScaleFactor;
+  if (emulation.colorScheme !== undefined) opts.colorScheme = emulation.colorScheme;
+  if (emulation.reducedMotion !== undefined) opts.reducedMotion = emulation.reducedMotion;
+  if (emulation.forcedColors !== undefined) opts.forcedColors = emulation.forcedColors;
+  if (emulation.hasTouch !== undefined) opts.hasTouch = emulation.hasTouch;
+  return opts;
+}
+
+async function verifyEmulation(
+  context: BrowserContext,
+  emulation: Emulation | undefined
+): Promise<string | null> {
+  if (!emulation || Object.keys(emulation).length === 0) return null;
+  const probe = await context.newPage();
+  try {
+    const applied = await probe.evaluate((e: Emulation) => ({
+      colorScheme: e.colorScheme ? matchMedia(`(prefers-color-scheme: ${e.colorScheme})`).matches : true,
+      reducedMotion: e.reducedMotion
+        ? matchMedia(`(prefers-reduced-motion: ${e.reducedMotion})`).matches
+        : true,
+      forcedColors: e.forcedColors ? matchMedia(`(forced-colors: ${e.forcedColors})`).matches : true,
+      deviceScaleFactor: e.deviceScaleFactor ? window.devicePixelRatio === e.deviceScaleFactor : true,
+      hasTouch: e.hasTouch === undefined ? true : (navigator.maxTouchPoints > 0) === e.hasTouch,
+    }), emulation);
+    const failed = Object.entries(applied)
+      .filter(([, ok]) => !ok)
+      .map(([name]) => name);
+    return failed.length > 0 ? `emulation not applied: ${failed.join(', ')}` : null;
+  } finally {
+    await probe.close();
+  }
+}
+
+async function replayInputSteps(
+  page: Page,
+  target: Page | FrameLocator,
+  box: { x: number; y: number },
+  steps: InputStep[]
+): Promise<void> {
+  for (const step of steps) {
+    switch (step.action) {
+      case 'click':
+        await target.locator(step.selector).click({
+          button: step.button,
+          clickCount: step.clickCount,
+        });
+        break;
+      case 'tap':
+        await target.locator(step.selector).tap();
+        break;
+      case 'press':
+        await page.keyboard.press(step.key);
+        break;
+      case 'type':
+        await target.locator(step.selector).pressSequentially(step.text);
+        break;
+      case 'move':
+        await page.mouse.move(box.x + step.from[0], box.y + step.from[1]);
+        await page.mouse.move(box.x + step.to[0], box.y + step.to[1], { steps: step.steps });
+        break;
+      case 'wheel':
+        await page.mouse.wheel(step.deltaX, step.deltaY);
+        break;
+      case 'wait':
+        await page.waitForTimeout(step.ms);
+        break;
+    }
+  }
 }
 
 interface HarnessContextEntry {
   context: BrowserContext;
   page: Page;
   engineConsole: ConsoleEntry[];
+  emulationError: string | null;
+}
+
+interface PageContextEntry {
+  context: BrowserContext;
+  emulationError: string | null;
 }
 
 class ContextPool {
   private readonly input: EngineRunInput;
   private readonly harnessContexts = new Map<string, HarnessContextEntry>();
-  private readonly serverContexts = new Map<string, BrowserContext>();
+  private readonly serverContexts = new Map<string, PageContextEntry>();
+  private readonly labContexts = new Map<string, PageContextEntry>();
   private readonly allowedOrigins: Set<string>;
+  private labRunSeq = 0;
 
   constructor(input: EngineRunInput) {
     this.input = input;
@@ -98,7 +188,10 @@ class ContextPool {
     });
   }
 
-  private async getHarnessContext(emulationKey: string): Promise<HarnessContextEntry> {
+  private async getHarnessContext(
+    emulationKey: string,
+    emulation: Emulation | undefined
+  ): Promise<HarnessContextEntry> {
     const existing = this.harnessContexts.get(emulationKey);
     if (existing) return existing;
 
@@ -107,8 +200,9 @@ class ContextPool {
       width: Math.max(1960, bundle.viewport.width + 40),
       height: Math.max(1240, bundle.viewport.height + 40),
     };
-    const context = await browser.newContext({ viewport });
+    const context = await browser.newContext(buildContextOptions(viewport, emulation));
     await this.installNetworkBlock(context);
+    const emulationError = await verifyEmulation(context, emulation);
 
     const page = await context.newPage();
     const engineConsole: ConsoleEntry[] = [];
@@ -120,25 +214,48 @@ class ContextPool {
       await page.exposeFunction('__frEngineConsole', () => engineConsole.splice(0));
     }
 
-    await page.goto(`${harnessOrigin}/index.html`, { waitUntil: 'load' });
-    await page.waitForFunction(
-      () => typeof (window as unknown as { __frHarness?: unknown }).__frHarness === 'object'
-    );
+    if (!emulationError) {
+      await page.goto(`${harnessOrigin}/index.html`, { waitUntil: 'load' });
+      await page.waitForFunction(
+        () => typeof (window as unknown as { __frHarness?: unknown }).__frHarness === 'object'
+      );
+    }
 
-    const entry: HarnessContextEntry = { context, page, engineConsole };
+    const entry: HarnessContextEntry = { context, page, engineConsole, emulationError };
     this.harnessContexts.set(emulationKey, entry);
     return entry;
   }
 
-  private async getServerContext(emulationKey: string): Promise<BrowserContext> {
+  private async getServerContext(
+    emulationKey: string,
+    emulation: Emulation | undefined
+  ): Promise<PageContextEntry> {
     const existing = this.serverContexts.get(emulationKey);
     if (existing) return existing;
 
     const { browser, bundle } = this.input;
-    const context = await browser.newContext({ viewport: { ...bundle.viewport } });
+    const context = await browser.newContext(buildContextOptions({ ...bundle.viewport }, emulation));
     await this.installNetworkBlock(context);
-    this.serverContexts.set(emulationKey, context);
-    return context;
+    const emulationError = await verifyEmulation(context, emulation);
+    const entry: PageContextEntry = { context, emulationError };
+    this.serverContexts.set(emulationKey, entry);
+    return entry;
+  }
+
+  private async getLabContext(
+    emulationKey: string,
+    emulation: Emulation | undefined
+  ): Promise<PageContextEntry> {
+    const existing = this.labContexts.get(emulationKey);
+    if (existing) return existing;
+
+    const { browser, bundle } = this.input;
+    const context = await browser.newContext(buildContextOptions({ ...bundle.viewport }, emulation));
+    await this.installNetworkBlock(context);
+    const emulationError = await verifyEmulation(context, emulation);
+    const entry: PageContextEntry = { context, emulationError };
+    this.labContexts.set(emulationKey, entry);
+    return entry;
   }
 
   async execute(
@@ -147,17 +264,39 @@ class ContextPool {
     mutated: boolean,
     expectKey: string | null
   ): Promise<RunResult> {
-    const { bundle, testServer, timeoutMs } = this.input;
+    const { bundle, testServer, labOrigin, timeoutMs } = this.input;
     const emulation = expectKey ? bundle.expect[expectKey]?.emulation : undefined;
     const emulationKey = stableEmulationKey(emulation);
+    const inputSteps = variant === 'blank' ? undefined : bundle.variants[variant].input;
 
-    if (bundle.host === 'origin') {
+    if (inputSteps?.some((s) => s.action === 'tap') && emulation?.hasTouch !== true) {
       return {
         ok: false,
-        error: 'FR_HOST_ORIGIN_UNSUPPORTED: host "origin" requires the lab executor',
+        error: 'tap requires emulation.hasTouch',
         trace: [],
         console: [],
       };
+    }
+
+    if (bundle.host === 'origin') {
+      if (!labOrigin) {
+        return {
+          ok: false,
+          error: 'FR_LAB_ORIGIN_MISSING: host "origin" requires labOrigin',
+          trace: [],
+          console: [],
+        };
+      }
+      return this.executeOnLab(
+        emulationKey,
+        emulation,
+        variant,
+        params,
+        mutated,
+        inputSteps,
+        labOrigin,
+        timeoutMs
+      );
     }
 
     if (bundle.network?.mode === 'server') {
@@ -169,40 +308,92 @@ class ContextPool {
           console: [],
         };
       }
-      return this.executeOnTestServer(emulationKey, variant, params, mutated, testServer, timeoutMs);
+      return this.executeOnTestServer(
+        emulationKey,
+        emulation,
+        variant,
+        params,
+        mutated,
+        testServer,
+        timeoutMs
+      );
     }
 
-    return this.executeOnHarness(emulationKey, variant, params, mutated, timeoutMs);
+    return this.executeOnHarness(
+      emulationKey,
+      emulation,
+      variant,
+      params,
+      mutated,
+      inputSteps,
+      timeoutMs
+    );
   }
 
   private async executeOnHarness(
     emulationKey: string,
+    emulation: Emulation | undefined,
     variant: RunVariant,
     params: ParamValues,
     mutated: boolean,
+    inputSteps: InputStep[] | undefined,
     timeoutMs: number
   ): Promise<RunResult> {
     try {
-      const entry = await this.getHarnessContext(emulationKey);
+      const entry = await this.getHarnessContext(emulationKey, emulation);
+      if (entry.emulationError) {
+        return { ok: false, error: entry.emulationError, trace: [], console: [] };
+      }
       entry.engineConsole.length = 0;
+      const awaitInput = Boolean(inputSteps && inputSteps.length > 0);
+      const effectiveTimeout = timeoutMs + (inputSteps ? 1000 * inputSteps.length : 0);
       const req = {
         bundle: this.input.bundle,
         variant,
         params,
         mutated,
-        timeoutMs,
+        awaitInput,
+        timeoutMs: effectiveTimeout,
       };
+
+      const pending = entry.page.evaluate(
+        (r: unknown) =>
+          (
+            window as unknown as {
+              __frHarness: { run(payload: unknown): Promise<RunResult> };
+            }
+          ).__frHarness.run(r),
+        req as unknown
+      );
+
+      if (awaitInput && inputSteps) {
+        const runIdHandle = await entry.page.waitForFunction(
+          () => (window as unknown as { __frHarnessWaiting: string | null }).__frHarnessWaiting,
+          undefined,
+          { timeout: timeoutMs }
+        );
+        const runId = (await runIdHandle.jsonValue()) as string;
+        const iframeSel = `iframe[data-run-id="${runId}"]`;
+        const box = (await entry.page.locator(iframeSel).boundingBox()) ?? { x: 0, y: 0 };
+        const frameTarget = entry.page.frameLocator(iframeSel);
+        try {
+          await replayInputSteps(entry.page, frameTarget, box, inputSteps);
+        } finally {
+          await entry.page.evaluate(
+            (id: string) =>
+              (
+                window as unknown as {
+                  __frHarness: { inputDone(runId: string): void };
+                }
+              ).__frHarness.inputDone(id),
+            runId
+          );
+        }
+      }
+
       const result = await withTimeout(
-        entry.page.evaluate(
-          (r: unknown) =>
-            (
-              window as unknown as {
-                __frHarness: { run(payload: unknown): Promise<RunResult> };
-              }
-            ).__frHarness.run(r),
-          req as unknown
-        ),
-        timeoutMs + 5000,
+        pending,
+        effectiveTimeout + 5000,
         `harness ${this.input.bundle.id}/${variant}`
       );
       return result;
@@ -216,16 +407,101 @@ class ContextPool {
     }
   }
 
+  private async executeOnLab(
+    emulationKey: string,
+    emulation: Emulation | undefined,
+    variant: RunVariant,
+    params: ParamValues,
+    mutated: boolean,
+    inputSteps: InputStep[] | undefined,
+    labOrigin: string,
+    timeoutMs: number
+  ): Promise<RunResult> {
+    const entry = await this.getLabContext(emulationKey, emulation);
+    if (entry.emulationError) {
+      return { ok: false, error: entry.emulationError, trace: [], console: [] };
+    }
+
+    const page = await entry.context.newPage();
+    try {
+      const runId = `lab-${++this.labRunSeq}`;
+      const awaitInput = Boolean(inputSteps && inputSteps.length > 0);
+      const effectiveTimeout = timeoutMs + (inputSteps ? 1000 * inputSteps.length : 0);
+
+      await page.goto(`${labOrigin}/x/${this.input.bundle.id}/host.html`, {
+        waitUntil: 'load',
+        timeout: timeoutMs,
+      });
+      await page.waitForFunction(
+        () => typeof (window as unknown as { __frLabRun?: unknown }).__frLabRun === 'function',
+        undefined,
+        { timeout: timeoutMs }
+      );
+
+      const req = {
+        channel: 'fr-proof',
+        type: 'fr:lab-run',
+        runId,
+        bundle: this.input.bundle,
+        variant,
+        params,
+        mutated,
+        awaitInput,
+      };
+      await page.evaluate((payload: unknown) => {
+        void (
+          window as unknown as { __frLabRun: (r: unknown) => Promise<void> }
+        ).__frLabRun(payload);
+      }, req as unknown);
+
+      if (awaitInput && inputSteps) {
+        await page.waitForFunction(
+          (id: string) =>
+            (window as unknown as { __frAwaitingInput?: string | null }).__frAwaitingInput === id,
+          runId,
+          { timeout: timeoutMs }
+        );
+        try {
+          await replayInputSteps(page, page, { x: 0, y: 0 }, inputSteps);
+        } finally {
+          await page.evaluate(() => {
+            (window as unknown as { __frInputDone?: () => void }).__frInputDone?.();
+          });
+        }
+      }
+
+      const handle = await page.waitForFunction(
+        () => (window as unknown as { __frResult?: RunResult }).__frResult,
+        undefined,
+        { timeout: effectiveTimeout }
+      );
+      return (await handle.jsonValue()) as RunResult;
+    } catch (err) {
+      return {
+        ok: false,
+        error: String((err as Error)?.message ?? err),
+        trace: [],
+        console: [],
+      };
+    } finally {
+      await page.close();
+    }
+  }
+
   private async executeOnTestServer(
     emulationKey: string,
+    emulation: Emulation | undefined,
     variant: RunVariant,
     params: ParamValues,
     mutated: boolean,
     testServer: TestServer,
     timeoutMs: number
   ): Promise<RunResult> {
-    const context = await this.getServerContext(emulationKey);
-    const page = await context.newPage();
+    const entry = await this.getServerContext(emulationKey, emulation);
+    if (entry.emulationError) {
+      return { ok: false, error: entry.emulationError, trace: [], console: [] };
+    }
+    const page = await entry.context.newPage();
     try {
       const url = `${testServer.selfOrigin}/__exp/${this.input.bundle.id}/${variant}?params=${encodeParams(params)}${mutated ? '&mutated=1' : ''}`;
       await page.goto(url, { waitUntil: 'load', timeout: timeoutMs });
@@ -256,10 +532,14 @@ class ContextPool {
       await entry.context.close();
     }
     this.harnessContexts.clear();
-    for (const ctx of this.serverContexts.values()) {
-      await ctx.close();
+    for (const entry of this.serverContexts.values()) {
+      await entry.context.close();
     }
     this.serverContexts.clear();
+    for (const entry of this.labContexts.values()) {
+      await entry.context.close();
+    }
+    this.labContexts.clear();
   }
 }
 
