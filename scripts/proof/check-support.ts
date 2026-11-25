@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { parseCliArgs } from '../../src/lib/cli-args';
 import { getAllAutopsies, getAllConcepts, type LoadedConcept } from '../../src/lib/content-loader';
 import { CONTENT_DIR, SITE_ROOT } from '../../src/lib/paths';
-import { writeProofArtifact } from '../../src/lib/proof/artifact-io';
+import { readProofArtifact, writeProofArtifact } from '../../src/lib/proof/artifact-io';
 import type {
   ClaimCheckResult,
   PageCheckResult,
@@ -24,8 +24,10 @@ import {
   resetClaimsCache,
 } from '../../src/lib/proof/claims-loader';
 import { getDataVersions, getWebFeatures } from '../../src/lib/proof/support/data';
+import { collectProvenYears } from '../../src/lib/proof/support/proven-years';
 import { renderSupportStatement } from '../../src/lib/proof/support/statements';
 import { verifySupportClaim, type SupportClaim } from '../../src/lib/proof/support/verify';
+import { lintSupportProse } from '../../src/lib/validators/support-lint';
 
 export interface WebFeatureSuggestion {
   conceptId: string;
@@ -202,10 +204,24 @@ export interface RunSupportCheckOptions {
   page?: string;
   claim?: string;
   outPath?: string;
+  artifactsDir?: string;
   write?: boolean;
   suggestWebFeatures?: boolean;
   strict?: boolean;
   now?: Date;
+}
+
+function readOptionalArtifact(
+  artifactsDir: string,
+  filename: string,
+  missingArtifacts: string[]
+): ProofArtifact | null {
+  const filePath = path.join(artifactsDir, filename);
+  if (!fs.existsSync(filePath)) {
+    missingArtifacts.push(filename);
+    return null;
+  }
+  return readProofArtifact(filePath);
 }
 
 export function runSupportCheck(options: RunSupportCheckOptions = {}): {
@@ -250,6 +266,18 @@ export function runSupportCheck(options: RunSupportCheckOptions = {}): {
     supportResultsById.set(claim.id, result);
   }
 
+  const artifactsDir = options.artifactsDir ?? path.join(SITE_ROOT, 'artifacts', 'proof');
+  const missingArtifacts: string[] = [];
+  const specArtifact = readOptionalArtifact(artifactsDir, 'spec-quotes.json', missingArtifacts);
+  const sourceArtifact = readOptionalArtifact(artifactsDir, 'source-quotes.json', missingArtifacts);
+
+  const provenYears = collectProvenYears({
+    claims: allClaimsById,
+    specArtifact,
+    sourceArtifact,
+    supportResults: supportResultsById,
+  });
+
   const pages: Record<string, PageCheckResult> = {};
 
   for (const concept of concepts) {
@@ -258,6 +286,18 @@ export function runSupportCheck(options: RunSupportCheckOptions = {}): {
     if (options.claim && splitClaimId(options.claim).pageId !== pageId) continue;
 
     const violations = checkConceptSupportRules(concept, allClaimsById);
+    const rawMdx = fs.readFileSync(concept.filePath, 'utf-8');
+    const lint = lintSupportProse(rawMdx, { pageId, provenYears, missingArtifacts });
+    for (const v of lint.violations) {
+      violations.push({
+        rule: `support-lint/${v.rule}`,
+        line: v.line,
+        column: v.column,
+        message: v.message,
+        excerpt: v.match || null,
+      });
+    }
+
     const pageClaimFailures = Object.values(claimResults).some(
       (r) => splitClaimId(r.claimId).pageId === pageId && r.status !== 'proven'
     );
@@ -267,7 +307,7 @@ export function runSupportCheck(options: RunSupportCheckOptions = {}): {
       status: violations.length > 0 || pageClaimFailures ? 'fail' : 'pass',
       enforced,
       violations,
-      stats: {},
+      stats: { 'support-lint-ignored': lint.ignored },
       foreignClaimIds: [],
     };
   }
@@ -277,16 +317,26 @@ export function runSupportCheck(options: RunSupportCheckOptions = {}): {
     if (options.page && pageId !== options.page) continue;
     if (options.claim && splitClaimId(options.claim).pageId !== pageId) continue;
 
+    const rawMdx = fs.readFileSync(autopsy.filePath, 'utf-8');
+    const lint = lintSupportProse(rawMdx, { pageId, provenYears, missingArtifacts });
+    const violations: PageViolation[] = lint.violations.map((v) => ({
+      rule: `support-lint/${v.rule}`,
+      line: v.line,
+      column: v.column,
+      message: v.message,
+      excerpt: v.match || null,
+    }));
+
     const pageClaimFailures = Object.values(claimResults).some(
       (r) => splitClaimId(r.claimId).pageId === pageId && r.status !== 'proven'
     );
     const enforced = autopsy.frontmatter.proof_status === 'proven';
     pages[pageId] = {
       pageId,
-      status: pageClaimFailures ? 'fail' : 'pass',
+      status: violations.length > 0 || pageClaimFailures ? 'fail' : 'pass',
       enforced,
-      violations: [],
-      stats: {},
+      violations,
+      stats: { 'support-lint-ignored': lint.ignored },
       foreignClaimIds: [],
     };
   }
