@@ -1,0 +1,59 @@
+name: Lab site deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'content/experiments/**'
+      - 'src/lib/proof/**'
+      - 'scripts/proof/build-lab-site.ts'
+      - 'scripts/proof/build-vendor.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lab-deploy
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run proof:build
+      - run: npm run proof:build-lab
+      - run: test ! -e dist-lab/netlify.toml && test ! -e dist-lab/netlify
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-lab
+          path: dist-lab/
+          include-hidden-files: true
+          retention-days: 1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist-lab
+          path: ${{ runner.temp }}/lab-deploy
+      - name: Deploy to Netlify (lab site)
+        working-directory: ${{ runner.temp }}/lab-deploy
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_LAB_SITE_ID: ${{ secrets.NETLIFY_LAB_SITE_ID }}
+        run: |
+          test ! -e netlify.toml
+          npx --yes netlify-cli@27.14.2 deploy --prod --no-build --dir . --site "$NETLIFY_LAB_SITE_ID"

@@ -4,7 +4,7 @@ import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 
 export interface StaticServerOptions {
-  host?: string;
+  host?: string | null;
   port?: number;
   headers?: (urlPath: string) => Record<string, string>;
 }
@@ -27,7 +27,7 @@ export async function startStaticServer(
   opts: StaticServerOptions = {}
 ): Promise<StaticServer> {
   const resolvedRoot = path.resolve(rootDir);
-  const host = opts.host ?? '127.0.0.1';
+  const host = opts.host === undefined ? '127.0.0.1' : opts.host;
   const port = opts.port ?? 0;
 
   const server = http.createServer((req, res) => {
@@ -78,11 +78,15 @@ export async function startStaticServer(
   });
 
   const boundPort = await new Promise<number>((resolve) => {
-    server.listen(port, host, () => resolve((server.address() as AddressInfo).port));
+    if (host === null) {
+      server.listen(port, () => resolve((server.address() as AddressInfo).port));
+    } else {
+      server.listen(port, host, () => resolve((server.address() as AddressInfo).port));
+    }
   });
 
   return {
-    origin: `http://${host}:${boundPort}`,
+    origin: `http://${host ?? '127.0.0.1'}:${boundPort}`,
     close: () => new Promise<void>((resolve) => server.close(() => resolve())),
   };
 }

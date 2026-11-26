@@ -1,6 +1,7 @@
 import type { ExperimentBundle } from '../experiment-schema';
 import { evaluateCase, type CaseEvaluation } from './evaluate';
-import { mountExperimentFrame, type MountedFrame } from './mount';
+import type { MountedFrame } from './mount';
+import { mountForBundle } from './mount-any';
 import type { RunResult } from './protocol';
 
 export type BrowserRunStatus = 'ran' | 'not-runnable' | 'blocked';
@@ -35,13 +36,10 @@ export function notRunnableReason(b: ExperimentBundle): NotRunnableReason | null
  */
 export async function runExperimentInBrowser(
   bundle: ExperimentBundle,
-  opts: { host: HTMLElement; signal?: AbortSignal; vendorBaseUrl?: string }
+  opts: { host: HTMLElement; signal?: AbortSignal; vendorBaseUrl?: string; labOrigin?: string }
 ): Promise<BrowserRunReport> {
   const reason = notRunnableReason(bundle);
   if (reason) return { status: 'not-runnable', reason, cases: {} };
-  if (bundle.host === 'origin') {
-    return { status: 'not-runnable', reason: 'host-origin', cases: {} };
-  }
 
   const exec = async (
     variant: 'treatment' | 'control' | 'blank',
@@ -51,12 +49,13 @@ export async function runExperimentInBrowser(
     if (opts.signal?.aborted) return { ok: false, error: 'FR_ABORTED', trace: [], console: [] };
     let frame: MountedFrame | undefined;
     try {
-      frame = await mountExperimentFrame(opts.host, {
+      frame = await mountForBundle(opts.host, {
         bundle,
         variant,
         params,
         mutated,
         vendorBaseUrl: opts.vendorBaseUrl,
+        labOrigin: opts.labOrigin,
       });
       return await frame.observe();
     } catch (err) {
