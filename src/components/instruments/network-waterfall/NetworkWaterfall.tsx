@@ -16,8 +16,9 @@ import {
 
 markInstrumentLoaded('network-waterfall');
 
-const BAR_SVG_W = 200;
-const BAR_SVG_H = 20;
+const BAR_SVG_W = 480;
+const BAR_SVG_H = 22;
+const BAR_PAD = 14;
 
 export default function NetworkWaterfall({
   observed,
@@ -50,7 +51,7 @@ export default function NetworkWaterfall({
 
   const domain = useMemo(() => computeWaterfallDomain(trace), [trace]);
   const scale = useMemo(
-    () => (domain ? createLinearScale(domain, [4, BAR_SVG_W - 4]) : null),
+    () => (domain ? createLinearScale(domain, [BAR_PAD, BAR_SVG_W - BAR_PAD]) : null),
     [domain],
   );
   const ticks = useMemo(() => (domain ? niceTicks(domain, 4) : []), [domain]);
@@ -104,29 +105,32 @@ export default function NetworkWaterfall({
             <th>Outcome</th>
             <th className="inst-nw-bar-cell">
               {domain ? (
-                <svg
-                  className="inst-svg"
-                  viewBox={`0 0 ${BAR_SVG_W} 16`}
-                  aria-hidden="true"
-                  focusable="false"
-                >
-                  <line
-                    x1="4"
-                    y1="14.5"
-                    x2={BAR_SVG_W - 4}
-                    y2="14.5"
-                    stroke="var(--inst-rule)"
-                    strokeWidth="0.5"
-                  />
-                  {ticks.map((tick) => {
-                    const x = Math.round(scale ? scale(tick) : 4) + 0.5;
-                    return (
-                      <text key={tick} x={x} y="10" textAnchor="middle" className="inst-svg-muted">
-                        {`${tick}ms`}
-                      </text>
-                    );
-                  })}
-                </svg>
+                <>
+                  <span className="inst-sr">Timeline (ms)</span>
+                  <svg
+                    className="inst-svg"
+                    viewBox={`0 0 ${BAR_SVG_W} 18`}
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <line
+                      x1={BAR_PAD}
+                      y1="16.5"
+                      x2={BAR_SVG_W - BAR_PAD}
+                      y2="16.5"
+                      stroke="var(--inst-rule)"
+                      strokeWidth="0.5"
+                    />
+                    {ticks.map((tick) => {
+                      const x = Math.round(scale ? scale(tick) : BAR_PAD) + 0.5;
+                      return (
+                        <text key={tick} x={x} y="11" textAnchor="middle" className="inst-svg-muted">
+                          {`${tick}ms`}
+                        </text>
+                      );
+                    })}
+                  </svg>
+                </>
               ) : (
                 'Order'
               )}
@@ -143,8 +147,8 @@ export default function NetworkWaterfall({
               req.outcome === 'blocked' ||
               (typeof req.outcome === 'number' && req.outcome >= 400);
 
-            let barX = 4;
-            let barW = BAR_SVG_W - 8;
+            let barX = BAR_PAD;
+            let barW = BAR_SVG_W - BAR_PAD * 2;
             if (scale && domain && tr) {
               barX = scale(tr.start);
               const endVal = tr.end !== null ? tr.end : domain[1];

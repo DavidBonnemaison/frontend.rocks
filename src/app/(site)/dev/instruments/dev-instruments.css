@@ -1,0 +1,118 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .dev-inst-page {
+    padding-block: var(--space-xl) var(--space-3xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xl);
+  }
+
+  .dev-inst-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+    padding-bottom: var(--space-l);
+    border-bottom: var(--rule-w) solid var(--color-rule);
+  }
+
+  .dev-inst-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-l);
+    padding: var(--space-s) var(--space-m);
+    border: var(--rule-w) solid var(--color-rule);
+    background: var(--color-paper-sunk);
+  }
+
+  .dev-inst-theme-group {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .dev-inst-theme-btn {
+    appearance: none;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    border: var(--rule-w) solid var(--color-rule);
+    font-family: var(--font-meta);
+    font-size: var(--step--2);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    padding: var(--space-2xs) var(--space-s);
+    cursor: pointer;
+    min-height: 30px;
+  }
+
+  .dev-inst-theme-btn[aria-pressed="true"] {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  .dev-inst-theme-btn:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  .dev-inst-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-family: var(--font-meta);
+    font-size: var(--step--2);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .dev-inst-toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-meta);
+    font-size: var(--step--2);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+  }
+
+  .dev-inst-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-l);
+    padding-top: var(--space-l);
+    border-top: var(--rule-w) solid var(--color-rule);
+  }
+
+  .dev-inst-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-m);
+  }
+
+  .dev-inst-cases {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-l);
+  }
+
+  .dev-inst-case {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .dev-inst-case-label {
+    font-family: var(--font-meta);
+    font-size: var(--step--2);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+    margin: 0;
+  }
+}

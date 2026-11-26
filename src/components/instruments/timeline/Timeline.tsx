@@ -11,12 +11,12 @@ import type { TimelineEvent, TimelineObserved, TimelineTrace, TimelineTraceEntry
 
 markInstrumentLoaded('timeline');
 
-const SVG_WIDTH = 640;
-const LANE_COL_W = 128;
+const SVG_WIDTH = 760;
+const LANE_COL_W = 132;
 const RIGHT_PAD = 24;
-const TOP_AXIS_H = 26;
-const LANE_ROW_H = 38;
-const BOTTOM_PAD = 12;
+const TOP_AXIS_H = 28;
+const LANE_ROW_H = 56;
+const BOTTOM_PAD = 14;
 
 interface EnrichedTimelineEvent extends TimelineEvent {
   orderIndex: number;
@@ -218,62 +218,92 @@ function TimelineTrack({
         })}
 
         {/* Events */}
-        {items.map((ev, idx) => {
-          const laneIdx = lanes.indexOf(ev.lane);
-          const yMid = TOP_AXIS_H + laneIdx * LANE_ROW_H + LANE_ROW_H / 2;
-          const active = variant === 'primary' && idx === activeIndex;
-          const stroke = statusStrokeVar(ev.status, active);
-          const xStart = hasTemporal && ev.t !== null ? scale(ev.t) : scale(idx);
-          const hasBar = hasTemporal && ev.t !== null && ev.duration !== null;
-          const barW = hasBar
-            ? Math.max(2, scale((ev.t ?? 0) + (ev.duration ?? 0)) - xStart)
-            : 0;
-          const fill =
-            ev.status === 'fail'
-              ? `url(#${hatchFailId})`
-              : ev.status === 'warn'
-                ? `url(#${hatchWarnId})`
-                : active
-                  ? 'var(--inst-paper-sunk)'
-                  : 'var(--inst-paper)';
-          const statusSuffix =
-            ev.status === 'fail' ? ' [FAIL]' : ev.status === 'warn' ? ' [WARN]' : '';
-          const shortLabel = `${truncateLabel(ev.label, 14)}${statusSuffix}`;
-          const labelNearRight = xStart > plotRight - 110;
+        {(() => {
+          const laneCounts = new Map<string, number>();
+          return items.map((ev, idx) => {
+            const laneIdx = lanes.indexOf(ev.lane);
+            const subIdx = laneCounts.get(ev.lane) ?? 0;
+            laneCounts.set(ev.lane, subIdx + 1);
+            const laneEventsCount = items.filter((i) => i.lane === ev.lane).length;
 
-          return (
-            <g key={`ev-${ev.seq}-${idx}`}>
-              {hasBar ? (
-                <rect
-                  x={Math.round(xStart) + 0.5}
-                  y={Math.round(yMid - 7) + 0.5}
-                  width={Math.round(barW)}
-                  height={14}
-                  fill={fill}
-                  stroke={stroke}
-                  strokeWidth={active ? 2 : 1}
-                  strokeDasharray={dashAttr}
-                />
-              ) : (
-                <polygon
-                  points={`${xStart},${yMid - 6} ${xStart + 6},${yMid} ${xStart},${yMid + 6} ${xStart - 6},${yMid}`}
-                  fill={fill}
-                  stroke={stroke}
-                  strokeWidth={active ? 2 : 1}
-                  strokeDasharray={dashAttr}
-                />
-              )}
-              <text
-                x={labelNearRight ? xStart - 8 : hasBar ? xStart + barW + 4 : xStart + 9}
-                y={yMid + 3}
-                textAnchor={labelNearRight ? 'end' : 'start'}
-                className="inst-svg-muted"
-              >
-                {shortLabel}
-              </text>
-            </g>
-          );
-        })}
+            const yLaneTop = TOP_AXIS_H + laneIdx * LANE_ROW_H;
+            const yMid =
+              laneEventsCount > 1
+                ? yLaneTop + (subIdx % 2 === 0 ? 18 : 40)
+                : yLaneTop + LANE_ROW_H / 2;
+
+            const active = variant === 'primary' && idx === activeIndex;
+            const stroke = statusStrokeVar(ev.status, active);
+            const xStart = hasTemporal && ev.t !== null ? scale(ev.t) : scale(idx);
+            const hasBar = hasTemporal && ev.t !== null && ev.duration !== null;
+            const barW = hasBar
+              ? Math.max(2, scale((ev.t ?? 0) + (ev.duration ?? 0)) - xStart)
+              : 0;
+            const fill =
+              ev.status === 'fail'
+                ? `url(#${hatchFailId})`
+                : ev.status === 'warn'
+                  ? `url(#${hatchWarnId})`
+                  : active
+                    ? 'var(--inst-paper-sunk)'
+                    : 'var(--inst-paper)';
+            const statusSuffix =
+              ev.status === 'fail' ? ' [FAIL]' : ev.status === 'warn' ? ' [WARN]' : '';
+            const shortLabel = `${truncateLabel(ev.label, 16)}${statusSuffix}`;
+            const approxLabelW = shortLabel.length * 6.5;
+
+            let labelX: number;
+            let anchor: 'start' | 'end';
+            if (hasBar) {
+              if (xStart + barW + 6 + approxLabelW <= plotRight) {
+                labelX = xStart + barW + 6;
+                anchor = 'start';
+              } else {
+                labelX = Math.max(plotLeft + 4, xStart - 6);
+                anchor = 'end';
+              }
+            } else if (xStart + 10 + approxLabelW <= plotRight) {
+              labelX = xStart + 10;
+              anchor = 'start';
+            } else {
+              labelX = xStart - 10;
+              anchor = 'end';
+            }
+
+            return (
+              <g key={`ev-${ev.seq}-${idx}`}>
+                {hasBar ? (
+                  <rect
+                    x={Math.round(xStart) + 0.5}
+                    y={Math.round(yMid - 6) + 0.5}
+                    width={Math.round(barW)}
+                    height={12}
+                    fill={fill}
+                    stroke={stroke}
+                    strokeWidth={active ? 2 : 1}
+                    strokeDasharray={dashAttr}
+                  />
+                ) : (
+                  <polygon
+                    points={`${xStart},${yMid - 5} ${xStart + 5},${yMid} ${xStart},${yMid + 5} ${xStart - 5},${yMid}`}
+                    fill={fill}
+                    stroke={stroke}
+                    strokeWidth={active ? 2 : 1}
+                    strokeDasharray={dashAttr}
+                  />
+                )}
+                <text
+                  x={labelX}
+                  y={yMid + 3}
+                  textAnchor={anchor}
+                  className="inst-svg-muted"
+                >
+                  {shortLabel}
+                </text>
+              </g>
+            );
+          });
+        })()}
       </svg>
     </div>
   );
@@ -339,7 +369,7 @@ export default function Timeline({
           disabled={stepper.index === 0}
           aria-label="Previous event"
         >
-          Prev
+          Previous
         </button>
         <button
           type="button"

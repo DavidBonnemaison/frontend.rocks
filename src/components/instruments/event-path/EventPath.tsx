@@ -58,7 +58,7 @@ export default function EventPath({
           disabled={stepper.index === 0}
           aria-label="Previous step"
         >
-          Prev
+          Previous
         </button>
         <button
           type="button"

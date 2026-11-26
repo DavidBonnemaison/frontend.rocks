@@ -385,3 +385,19 @@ describe('build-info.json', () => {
     });
   });
 });
+
+describe('/dev/ gallery SEO exclusions', () => {
+  it('disallows /dev/ in robots.txt and excludes /dev/ from llms.txt', () => {
+    const robots = buildRobotsTxt();
+    expect(robots).toContain('Disallow: /dev/');
+
+    const llms = buildLlmsTxt({
+      concepts: getAllConcepts(),
+      autopsies: getAllAutopsies(),
+      vsPairs: [],
+      productionSymptoms: PRODUCTION_SYMPTOMS,
+    });
+    expect(llms).not.toContain('/dev/');
+  });
+});
+

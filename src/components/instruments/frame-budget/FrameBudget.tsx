@@ -160,34 +160,6 @@ export default function FrameBudget({
                   strokeWidth="0.5"
                 />
 
-                {/* Refresh reference line */}
-                {frameStats.refreshMs !== null ? (
-                  <g>
-                    {(() => {
-                      const yRef =
-                        Math.round(
-                          framePlotBottom - (frameStats.refreshMs / maxFrameMs) * framePlotH,
-                        ) + 0.5;
-                      return (
-                        <>
-                          <line
-                            x1={framePlotLeft}
-                            y1={yRef}
-                            x2={framePlotRight}
-                            y2={yRef}
-                            stroke="var(--inst-rule)"
-                            strokeWidth="0.5"
-                            strokeDasharray="3 3"
-                          />
-                          <text x={framePlotLeft + 4} y={yRef - 4} className="inst-svg-muted">
-                            {`YOUR DISPLAY: ~${frameStats.refreshMs} MS PER FRAME`}
-                          </text>
-                        </>
-                      );
-                    })()}
-                  </g>
-                ) : null}
-
                 {/* Vertical frame interval bars */}
                 {frameStats.intervals.map((item) => {
                   const slotW = framePlotW / frameStats.intervals.length;
@@ -208,6 +180,39 @@ export default function FrameBudget({
                     />
                   );
                 })}
+
+                {/* Refresh reference line (drawn on top, label right-aligned to avoid tall drop bars) */}
+                {frameStats.refreshMs !== null ? (
+                  <g>
+                    {(() => {
+                      const yRef =
+                        Math.round(
+                          framePlotBottom - (frameStats.refreshMs / maxFrameMs) * framePlotH,
+                        ) + 0.5;
+                      return (
+                        <>
+                          <line
+                            x1={framePlotLeft}
+                            y1={yRef}
+                            x2={framePlotRight}
+                            y2={yRef}
+                            stroke="var(--inst-rule)"
+                            strokeWidth="0.5"
+                            strokeDasharray="3 3"
+                          />
+                          <text
+                            x={framePlotRight - 4}
+                            y={yRef - 5}
+                            textAnchor="end"
+                            className="inst-svg-muted"
+                          >
+                            {`YOUR DISPLAY: ~${frameStats.refreshMs} MS PER FRAME`}
+                          </text>
+                        </>
+                      );
+                    })()}
+                  </g>
+                ) : null}
 
                 {/* Long tasks band */}
                 {trace.longTasks.map((lt, idx) => {

@@ -508,6 +508,8 @@
   }
 
   .inst-bt-bar-track {
+    display: inline-block;
+    flex-shrink: 0;
     width: 80px;
     height: 6px;
     border: var(--inst-stroke) solid var(--inst-rule-soft);
@@ -515,6 +517,7 @@
   }
 
   .inst-bt-bar-fill {
+    display: block;
     height: 100%;
     background: var(--inst-ink);
   }
