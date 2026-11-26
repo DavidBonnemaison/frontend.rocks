@@ -33,6 +33,10 @@ import {
   buildClaimsBySlug,
   createProofMdxComponents,
 } from '@/components/proof/mdx-components';
+import { ProofChip } from '@/components/proof/ProofChip';
+import { ProofDegradedBanner } from '@/components/proof/ProofDegradedBanner';
+import { ProofPanel } from '@/components/proof/ProofPanel';
+import { summarizePageProof } from '@/lib/proof/page-proof';
 
 let cachedClaimsById: Map<string, Claim> | null = null;
 function getClaimsById(): Map<string, Claim> {
@@ -220,6 +224,8 @@ export default async function AutopsyDetailPage({
     });
 
   const jsonLd = buildAutopsyJsonLd(autopsy);
+  const proof = summarizePageProof(frontmatter.id, frontmatter.proof_status);
+  const showProof = proof !== null && proof.effectiveStatus !== 'unverified';
 
   return (
     <article className="autopsy-article">
@@ -271,11 +277,16 @@ export default async function AutopsyDetailPage({
             <Clock size={12} aria-hidden="true" />
             {frontmatter.reading_time_min} {UI_STRINGS.autopsies.readingTimeSuffix}
           </span>
+          {showProof && <ProofChip summary={proof} />}
         </div>
 
         <h1 style={{ margin: '0 0 14px', fontSize: 'clamp(1.65rem, 3vw, 2.2rem)', lineHeight: 1.2 }}>
           {frontmatter.title}
         </h1>
+
+        {showProof && proof.effectiveStatus === 'degraded' && (
+          <ProofDegradedBanner summary={proof} />
+        )}
 
         <div
           className="callout-card"
@@ -329,6 +340,8 @@ export default async function AutopsyDetailPage({
           caseFile={frontmatter.case_file}
         />
       </div>
+
+      {showProof && <ProofPanel summary={proof} />}
 
       {/* Primary Sources */}
       <section id="sources" aria-labelledby="sec-sources" style={{ marginTop: '2.5rem' }}>

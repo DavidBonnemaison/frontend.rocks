@@ -46,6 +46,10 @@ import {
   buildClaimsBySlug,
   createProofMdxComponents,
 } from '@/components/proof/mdx-components';
+import { ProofChip } from '@/components/proof/ProofChip';
+import { ProofDegradedBanner } from '@/components/proof/ProofDegradedBanner';
+import { ProofPanel } from '@/components/proof/ProofPanel';
+import { summarizePageProof } from '@/lib/proof/page-proof';
 
 let cachedClaimsById: Map<string, Claim> | null = null;
 function getClaimsById(): Map<string, Claim> {
@@ -457,6 +461,9 @@ export default async function ConceptPage({
     }
   }
 
+  const proof = summarizePageProof(frontmatter.id, frontmatter.proof_status);
+  const showProof = proof !== null && proof.effectiveStatus !== 'unverified';
+
   return (
     <div className="concept-layout">
       {isPublished(frontmatter.proof_status, frontmatter.id) && (
@@ -475,14 +482,22 @@ export default async function ConceptPage({
 
         <div className="concept-meta">
           <span className="badge">{formatDomainLabel(frontmatter.domain)}</span>
-          {frontmatter.maturity_status && (
-            <span className={`badge badge-${frontmatter.maturity_status}`}>
-              {formatMaturityLabel(frontmatter.maturity_status)}
-            </span>
+          {showProof ? (
+            <ProofChip summary={proof} />
+          ) : (
+            frontmatter.maturity_status && (
+              <span className={`badge badge-${frontmatter.maturity_status}`}>
+                {formatMaturityLabel(frontmatter.maturity_status)}
+              </span>
+            )
           )}
         </div>
 
         <h1 className="concept-title">{frontmatter.title}</h1>
+
+        {showProof && proof.effectiveStatus === 'degraded' && (
+          <ProofDegradedBanner summary={proof} />
+        )}
 
         {isObsolete && (
           <div className="obsolescence-banner" role="alert">
@@ -647,6 +662,8 @@ export default async function ConceptPage({
             </div>
           )}
         </section>
+
+        {showProof && <ProofPanel summary={proof} />}
 
         <section id="connections" className="section-block connections-section">
           <h2>{UI_STRINGS.sections.connectionsAndNextSteps}</h2>
