@@ -1,3 +1,6 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer legacy {
 .diagnose-page {
   max-width: 1040px;
   margin: 0 auto;
@@ -175,7 +178,7 @@
   border-radius: 10px;
   background: rgba(239, 68, 68, 0.12);
   border: 1px solid rgba(239, 68, 68, 0.45);
-  color: #fca5a5;
+  color: var(--danger);
   font-size: 0.92rem;
 }
 
@@ -248,7 +251,7 @@
 
 .diagnose-severity-critical {
   background: rgba(239, 68, 68, 0.16);
-  color: #fca5a5;
+  color: var(--danger);
   border: 1px solid rgba(239, 68, 68, 0.45);
 }
 
@@ -357,4 +360,5 @@
   background: var(--semantic-native-bg);
   border: 1px solid var(--semantic-native-border);
   color: var(--semantic-native-text);
+}
 }

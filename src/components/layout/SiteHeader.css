@@ -1,3 +1,6 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer legacy {
 /* Site Header, Mobile Navigation Drawer & Fluid Footer */
 
 .site-header .site-header-inner {
@@ -147,4 +150,5 @@
   flex-wrap: wrap;
   gap: 6px 10px;
   align-items: center;
+}
 }

@@ -1,3 +1,6 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer legacy {
 .detective-panel {
   margin: 0 0 28px;
   border-radius: var(--radius-md, 10px);
@@ -311,4 +314,5 @@
   .detective-option {
     padding: 10px 12px;
   }
+}
 }

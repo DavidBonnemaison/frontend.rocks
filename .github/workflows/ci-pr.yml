@@ -65,6 +65,9 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run validate:content
+      - run: npm run design:tokens:check
+      - run: npm run design:contrast
+      - run: npm run design:snapshots:check
       - name: Build (OG images skipped)
         run: npm run build-prod
         env:
@@ -125,15 +128,62 @@ jobs:
           path: artifacts/proof/
           retention-days: 7
 
+  visual:
+    needs: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: ui
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          if git diff --name-only "$BASE"...HEAD | grep -qE '^(src/|design/|tests/visual/|content/schematics/)'; then
+            echo "ui=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ui=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.ui.outputs.ui == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - if: steps.ui.outputs.ui == 'true'
+        run: npm ci
+      - if: steps.ui.outputs.ui == 'true'
+        name: Build (OG images skipped)
+        run: npm run build-prod
+        env:
+          EXPORTS_SKIP_OG: '1'
+      - if: steps.ui.outputs.ui == 'true'
+        name: Read Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - if: steps.ui.outputs.ui == 'true'
+        name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium
+      - if: steps.ui.outputs.ui == 'true' && steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.ui.outputs.ui == 'true' && steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - if: steps.ui.outputs.ui == 'true'
+        run: npx playwright test --project=visual
+
   ci-result:
-    needs: [changes, gate, proof]
+    needs: [changes, gate, proof, visual]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Fail if a required job failed or was cancelled
         run: |
-          echo "changes=${{ needs.changes.result }} gate=${{ needs.gate.result }} proof=${{ needs.proof.result }}"
+          echo "changes=${{ needs.changes.result }} gate=${{ needs.gate.result }} proof=${{ needs.proof.result }} visual=${{ needs.visual.result }}"
           if [ "${{ needs.changes.result }}" != "success" ]; then exit 1; fi
           if [ "${{ needs.gate.result }}" = "failure" ] || [ "${{ needs.gate.result }}" = "cancelled" ]; then exit 1; fi
           if [ "${{ needs.proof.result }}" = "failure" ] || [ "${{ needs.proof.result }}" = "cancelled" ]; then exit 1; fi
+          if [ "${{ needs.visual.result }}" = "failure" ] || [ "${{ needs.visual.result }}" = "cancelled" ]; then exit 1; fi

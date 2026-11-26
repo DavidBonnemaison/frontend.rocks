@@ -1,3 +1,6 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer legacy {
 /* Home Page Compaction & Semantic Signal Styling */
 
 .home-path-summary {
@@ -5,6 +8,14 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
+}
+
+@media (max-width: 48rem) {
+  .home-path-summary {
+    display: block;
+    -webkit-line-clamp: unset;
+    overflow: visible;
+  }
 }
 
 .home-path-progress {
@@ -161,4 +172,5 @@
   color: var(--semantic-native-text);
   background: var(--semantic-native-bg);
   border: 1px solid var(--semantic-native-border);
+}
 }

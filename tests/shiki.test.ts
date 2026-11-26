@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { highlightCode, PRELOADED_LANGS, resolveShikiLanguage, SHIKI_THEME } from '@/lib/shiki';
+import { highlightCode, PRELOADED_LANGS, resolveShikiLanguage, SHIKI_THEMES } from '@/lib/shiki';
 
 describe('Shiki server-side syntax highlighting', () => {
-  it('highlights all preloaded corpus languages with styled token spans', async () => {
+  it('highlights all preloaded corpus languages with dual-theme CSS variables', async () => {
     const samples: Record<string, string> = {
       ts: 'const count: number = 42;',
       tsx: 'export const Badge = () => <span className="ok">OK</span>;',
@@ -23,8 +23,10 @@ describe('Shiki server-side syntax highlighting', () => {
     for (const lang of PRELOADED_LANGS) {
       const { html, resolvedLang } = await highlightCode(samples[lang], lang);
       expect(resolvedLang).toBe(lang);
-      expect(html).toContain(`class="shiki ${SHIKI_THEME}"`);
-      expect(html).toContain('<span style="color:');
+      expect(html).toContain(SHIKI_THEMES.light);
+      expect(html).toContain(SHIKI_THEMES.dark);
+      expect(html).toContain('--shiki-light:');
+      expect(html).toContain('--shiki-dark:');
     }
   });
 

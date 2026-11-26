@@ -1,3 +1,6 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer legacy {
 .autopsy-article {
   padding: 24px 0 64px;
   max-width: 920px;
@@ -305,4 +308,4 @@
     gap: 4px;
   }
 }
-
+}

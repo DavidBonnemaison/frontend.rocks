@@ -1,0 +1,82 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .figure[data-size="prose"] {
+    max-width: var(--prose-max);
+  }
+
+  .figure[data-size="wide"] {
+    max-width: var(--container-max);
+  }
+
+  .figure-question {
+    font-family: var(--font-text);
+    font-size: var(--step-1);
+    line-height: var(--lh-snug);
+    margin: 0;
+  }
+
+  .figure-frame {
+    position: relative;
+    padding: var(--space-s);
+  }
+
+  .figure-frame::before,
+  .figure-frame::after,
+  .figure-corners::before,
+  .figure-corners::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--dur-3) var(--ease-out);
+  }
+
+  .figure-frame[data-revealed="true"]::before,
+  .figure-frame[data-revealed="true"]::after,
+  .figure-frame[data-revealed="true"] .figure-corners::before,
+  .figure-frame[data-revealed="true"] .figure-corners::after {
+    opacity: 1;
+  }
+
+  .figure-frame::before {
+    top: 0;
+    left: 0;
+    border-top: var(--rule-w) solid var(--color-ink);
+    border-left: var(--rule-w) solid var(--color-ink);
+  }
+
+  .figure-frame::after {
+    top: 0;
+    right: 0;
+    border-top: var(--rule-w) solid var(--color-ink);
+    border-right: var(--rule-w) solid var(--color-ink);
+  }
+
+  .figure-corners::before {
+    bottom: 0;
+    left: 0;
+    border-bottom: var(--rule-w) solid var(--color-ink);
+    border-left: var(--rule-w) solid var(--color-ink);
+  }
+
+  .figure-corners::after {
+    bottom: 0;
+    right: 0;
+    border-bottom: var(--rule-w) solid var(--color-ink);
+    border-right: var(--rule-w) solid var(--color-ink);
+  }
+
+  .figure-caption {
+    color: var(--color-ink-muted);
+  }
+}

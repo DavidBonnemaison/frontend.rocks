@@ -1,0 +1,47 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer layout {
+  .container {
+    width: min(100% - 2 * var(--gutter), var(--container-max));
+    margin-inline: auto;
+  }
+
+  .grid-12 {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--col-gap);
+  }
+
+  @media (width < 64rem) /* lg */ {
+    .grid-12 {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .grid-12 > * {
+      grid-column: 1 / -1 !important;
+    }
+  }
+
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--stack-gap, var(--space-m));
+  }
+
+  .cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--cluster-gap, var(--space-xs));
+  }
+
+  .ruled-list > * + * {
+    border-top: var(--rule-w) solid var(--color-rule);
+  }
+
+  .tiles {
+    display: grid;
+    gap: var(--space-xl) var(--col-gap);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--tile-min, 18rem)), 1fr));
+  }
+}

@@ -1,0 +1,90 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .nav-menu-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    min-height: 32px;
+    padding: 0 var(--space-xs);
+    border: var(--rule-w) solid transparent;
+    background: transparent;
+    color: var(--color-ink);
+    cursor: pointer;
+    transition: border-color var(--dur-1) var(--ease-out), background var(--dur-1) var(--ease-out);
+  }
+
+  .nav-menu-trigger:hover,
+  .nav-menu-trigger[aria-expanded="true"] {
+    background: var(--color-paper-sunk);
+  }
+
+  .nav-menu-trigger[data-active="true"] {
+    border-bottom-color: var(--color-ink);
+  }
+
+  .nav-menu-popover {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    border: var(--rule-w) solid var(--color-ink);
+    border-radius: var(--radius-0);
+    box-shadow: var(--shadow-pop);
+    padding: var(--space-s);
+    margin-top: var(--space-xs);
+    min-width: 18rem;
+    max-width: min(24rem, 100vw - 2 * var(--gutter));
+    position-area: bottom span-right;
+    position-try-fallbacks: flip-inline;
+  }
+
+  @supports not (anchor-name: --a) {
+    .nav-menu-popover {
+      position: fixed;
+      top: var(--header-h);
+      left: var(--gutter);
+      right: var(--gutter);
+    }
+  }
+
+  .nav-menu-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .nav-menu-item + .nav-menu-item {
+    border-top: var(--rule-w) solid var(--color-rule-soft);
+  }
+
+  .nav-menu-link {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
+    padding: var(--space-xs);
+    text-decoration: none;
+    color: var(--color-ink);
+  }
+
+  .nav-menu-link:hover {
+    background: var(--color-paper-sunk);
+  }
+
+  .nav-menu-title {
+    font-family: var(--font-display);
+    font-weight: var(--weight-semibold);
+  }
+
+  .nav-menu-desc {
+    color: var(--color-ink-muted);
+  }
+
+  .nav-menu-hub {
+    display: block;
+    margin-top: var(--space-xs);
+    padding-top: var(--space-xs);
+    border-top: var(--rule-w) solid var(--color-rule);
+    color: var(--color-ink);
+  }
+}

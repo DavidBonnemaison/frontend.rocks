@@ -1,3 +1,6 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer legacy {
 .source-quote {
   margin: 1.25rem 0;
 }
@@ -57,4 +60,5 @@
   .source-quote__license {
     display: none;
   }
+}
 }

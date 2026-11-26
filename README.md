@@ -41,6 +41,13 @@ Normative specification quotes can be checked locally with `npm run proof:verify
 
 `npm run lint` has a warning ratchet (`--max-warnings`). It can go down, never up.
 
+## Design system
+
+- **Tokens**: `design/tokens.json` is the single source of truth for colors (OKLCH), piece palette, typography, and schematic settings. Regenerate `src/styles/tokens.css` and `src/lib/design/tokens.generated.ts` with `npm run design:tokens` (`npm run design:tokens:check` verifies they are in sync; `npm run design:contrast` verifies WCAG AA ratios in light and dark themes).
+- **Measured schematics**: Experiments with a `schematic.json` generate committed geometry snapshots in `content/schematics/` via `npm run design:snapshots` (`npm run design:snapshots:check` verifies `sourceHash` freshness without launching a browser).
+- **Piece colors**: `npm run design:assign-pieces -- --kind autopsy` assigns `piece_color` frontmatter entries deterministically using the 4-piece rolling window rule.
+- **Component gallery & visual regression**: `/dev/components/` (`noindex`) renders every UI component in light and dark themes side by side. Reference screenshots live in `tests/visual/` (Linux-only). Update them in the official Playwright Linux container with `npm run visual:update`.
+
 ## Licenses
 
 Code is MIT, see `LICENSE`. Content and data are CC BY 4.0, see `LICENSE-CONTENT`.

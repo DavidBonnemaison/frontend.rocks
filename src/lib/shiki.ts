@@ -1,6 +1,9 @@
 import { createHighlighter, type Highlighter } from 'shiki';
 
-export const SHIKI_THEME = 'github-dark-default' as const;
+export const SHIKI_THEMES = {
+  light: 'github-light',
+  dark: 'github-dark-default',
+} as const;
 
 export const PRELOADED_LANGS = [
   'ts',
@@ -26,7 +29,7 @@ async function getHighlighter(): Promise<{
 }> {
   if (!highlighterPromise) {
     highlighterPromise = createHighlighter({
-      themes: [SHIKI_THEME],
+      themes: [SHIKI_THEMES.light, SHIKI_THEMES.dark],
       langs: [...PRELOADED_LANGS],
     });
   }
@@ -59,7 +62,8 @@ export async function highlightCode(
   const resolvedLang = resolveShikiLanguage(lang, loadedLangs);
   const html = highlighter.codeToHtml(code, {
     lang: resolvedLang,
-    theme: SHIKI_THEME,
+    themes: SHIKI_THEMES,
+    defaultColor: false,
   });
   return { html, resolvedLang };
 }

@@ -1,0 +1,27 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .theme-toggle-compact {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: var(--rule-w) solid var(--color-rule);
+    border-radius: var(--radius-0);
+    background: transparent;
+    color: var(--color-ink);
+    cursor: pointer;
+    transition: background var(--dur-1) var(--ease-out);
+  }
+
+  .theme-toggle-compact:hover {
+    background: var(--color-paper-sunk);
+  }
+}

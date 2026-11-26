@@ -4,8 +4,15 @@ import {
   PageProofStatusSchema,
   type PageProofStatus,
 } from './proof/claim-schema';
+import { PieceColorSchema, type PieceColor } from './design/piece-colors';
 
-export { PAGE_PROOF_STATUSES, PageProofStatusSchema, type PageProofStatus };
+export {
+  PAGE_PROOF_STATUSES,
+  PageProofStatusSchema,
+  type PageProofStatus,
+  PieceColorSchema,
+  type PieceColor,
+};
 
 export const DOMAIN_VALUES = [
   'rendering-pipeline',
@@ -355,6 +362,7 @@ export type AutopsyCaseFile = z.infer<typeof AutopsyCaseFileSchema>;
 export const AutopsyFrontmatterSchema = z.object({
   id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'id must be a lowercase kebab-case slug'),
   case_number: z.number().int().min(1).max(99),
+  piece_color: PieceColorSchema,
   title: z.string().min(5).max(160),
   symptom: z
     .string()

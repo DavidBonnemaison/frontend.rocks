@@ -1,0 +1,38 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .ui-dialog {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    border: var(--rule-w) solid var(--color-ink);
+    border-radius: var(--radius-0);
+    box-shadow: var(--shadow-pop);
+    padding: var(--space-l);
+    max-width: min(36rem, 100vw - 2 * var(--gutter));
+    width: 100%;
+    margin: auto;
+  }
+
+  .ui-dialog::backdrop {
+    background: color-mix(in oklch, var(--color-ink) 45%, transparent);
+  }
+
+  .ui-dialog-close {
+    position: absolute;
+    top: var(--space-s);
+    right: var(--space-s);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: var(--rule-w) solid var(--color-rule);
+    background: transparent;
+    color: var(--color-ink);
+    cursor: pointer;
+  }
+
+  .ui-dialog-close:hover {
+    background: var(--color-paper-sunk);
+  }
+}

@@ -151,11 +151,11 @@ function MdxBlock({
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1"
+                className="u-inline-row"
                 {...rest}
               >
                 <span>{children}</span>
-                <ArrowUpRight size={14} className="shrink-0" aria-hidden="true" />
+                <ArrowUpRight size={14} className="u-shrink-0" aria-hidden="true" />
               </a>
             );
           },

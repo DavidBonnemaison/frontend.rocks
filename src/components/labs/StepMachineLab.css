@@ -1,3 +1,6 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer legacy {
 /* Mobile-first & memory-inspector ergonomics for StepMachineLab */
 
 .lab-card[data-testid='lab-step-machine'] {
@@ -131,4 +134,5 @@
   .lab-card[data-testid='lab-step-machine'] .state-row {
     padding: 9px 10px;
   }
+}
 }

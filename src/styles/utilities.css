@@ -1,0 +1,22 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer utilities {
+  .u-inline-row {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+  }
+
+  .u-shrink-0 {
+    flex-shrink: 0;
+  }
+
+  .visually-hidden:not(:focus):not(:active) {
+    clip-path: inset(50%);
+    height: 1px;
+    width: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+  }
+}

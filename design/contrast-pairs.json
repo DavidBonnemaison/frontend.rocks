@@ -1,0 +1,24 @@
+{
+  "text": [
+    ["ink", "paper"],
+    ["ink", "paper-sunk"],
+    ["ink-muted", "paper"],
+    ["ink-muted", "paper-sunk"],
+    ["accent", "paper"],
+    ["accent", "paper-sunk"],
+    ["ok", "paper"],
+    ["warn", "paper"],
+    ["fail", "paper"],
+    ["ink", "device"],
+    ["ink-muted", "device"],
+    ["led", "device-inset"],
+    ["led-ok", "device-inset"]
+  ],
+  "ui": [
+    ["rule", "paper"],
+    ["focus", "paper"],
+    ["focus", "device"],
+    ["ink-faint", "paper"]
+  ],
+  "pieces": true
+}

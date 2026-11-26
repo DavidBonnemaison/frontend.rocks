@@ -57,3 +57,7 @@ yarn-error.log*
 /public/data/
 /dist-lab
 /dist-lab-dev
+
+# Non-Linux visual regression snapshots (reference snapshots are Linux-only)
+tests/visual/**/*-darwin.png
+tests/visual/**/*-win32.png

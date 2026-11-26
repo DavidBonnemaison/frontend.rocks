@@ -1,0 +1,44 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .data-table-wrap {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  .data-table caption {
+    text-align: left;
+    color: var(--color-ink-muted);
+    margin-bottom: var(--space-xs);
+  }
+
+  .data-table th {
+    padding: var(--space-xs) var(--space-s);
+    border-bottom: var(--rule-w) solid var(--color-ink);
+    color: var(--color-ink);
+    font-weight: var(--weight-medium);
+    white-space: nowrap;
+  }
+
+  .data-table td {
+    padding: var(--space-xs) var(--space-s);
+    border-bottom: var(--rule-w) solid var(--color-rule-soft);
+    vertical-align: top;
+  }
+
+  .data-table th[data-align="end"],
+  .data-table td[data-align="end"] {
+    text-align: right;
+  }
+
+  .data-table td[data-mono="true"] {
+    font-family: var(--font-meta);
+    font-size: var(--step--1);
+  }
+}

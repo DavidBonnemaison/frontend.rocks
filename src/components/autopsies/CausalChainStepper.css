@@ -1,3 +1,6 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer legacy {
 .causal-chain-wrapper {
   margin: 16px 0 24px;
   max-width: 100%;
@@ -93,4 +96,5 @@
   font-size: 0.78rem;
   line-height: 1.4;
   color: var(--text-muted);
+}
 }

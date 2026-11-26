@@ -1,0 +1,51 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    height: 22px;
+    padding: 0 6px;
+    border: var(--rule-w) solid var(--color-rule);
+    border-radius: var(--radius-s);
+    background: transparent;
+    color: var(--color-ink);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .chip[data-tone="ok"] {
+    border-color: var(--color-ok);
+    color: var(--color-ok);
+  }
+
+  .chip[data-tone="warn"] {
+    border-color: var(--color-warn);
+    color: var(--color-warn);
+  }
+
+  .chip[data-tone="fail"] {
+    border-color: var(--color-fail);
+    color: var(--color-fail);
+  }
+
+  .chip[data-tone="inverse"] {
+    background: var(--color-ink);
+    color: var(--color-paper);
+    border-color: var(--color-ink);
+  }
+
+  a.chip {
+    min-height: 24px;
+  }
+
+  a.chip:hover {
+    text-decoration: none;
+    background: var(--color-paper-sunk);
+  }
+
+  a.chip[data-tone="inverse"]:hover {
+    background: color-mix(in oklch, var(--color-ink) 85%, var(--color-paper));
+  }
+}
