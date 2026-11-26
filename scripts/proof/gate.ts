@@ -6,7 +6,7 @@ import { parseCliArgs } from '../../src/lib/cli-args';
 import { CONTENT_DIR, SITE_ROOT } from '../../src/lib/paths';
 import { ClaimsFileSchema, type Claim } from '../../src/lib/proof/claim-schema';
 import { getAllClaimsFiles } from '../../src/lib/proof/claims-loader';
-import { evaluateGate } from '../../src/lib/proof/gate';
+import { detectRunnerOutage, evaluateGate } from '../../src/lib/proof/gate';
 import { getAllPageRefs } from '../../src/lib/proof/page-registry';
 import {
   emptyProofResults,
@@ -206,18 +206,34 @@ function main(): void {
     JSON.stringify(outcome, null, 2) + '\n'
   );
 
+  const outage = args['report-only'] ? detectRunnerOutage(runReports) : null;
+  if (outage) {
+    console.error(`❌ ${outage}`);
+  }
+
   if (process.env.GITHUB_STEP_SUMMARY) {
+    const statusLabel = outage
+      ? 'fail (runner outage)'
+      : outcome.ok
+        ? 'pass'
+        : args['report-only']
+          ? 'report-only (errors recorded)'
+          : 'fail';
     const lines = [
       '## Proof gate',
       '',
-      `- **status**: ${outcome.ok ? 'pass' : args['report-only'] ? 'report-only (errors recorded)' : 'fail'}`,
+      `- **status**: ${statusLabel}`,
       `- **errors**: ${outcome.errors.length}`,
       `- **warnings**: ${outcome.warnings.length}`,
+      ...(outage ? [`- **outage**: ${outage}`] : []),
       '',
     ];
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n'));
   }
 
+  if (outage) {
+    process.exit(1);
+  }
   if (!outcome.ok && !args['report-only']) {
     console.error(`❌ Proof gate failed with ${outcome.errors.length} error(s).`);
     process.exit(1);

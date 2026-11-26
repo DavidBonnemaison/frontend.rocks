@@ -1,0 +1,94 @@
+name: Proof Deps
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: proof-deps-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: check
+        env:
+          ACTOR: ${{ github.actor }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$ACTOR" != "dependabot[bot]" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          BASE_PW=$(git show "$BASE:package-lock.json" 2>/dev/null | jq -r '.packages["node_modules/@playwright/test"].version // ""')
+          HEAD_PW=$(jq -r '.packages["node_modules/@playwright/test"].version // ""' package-lock.json 2>/dev/null || echo "")
+          if [ -n "$HEAD_PW" ] && [ "$BASE_PW" != "$HEAD_PW" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  verify:
+    needs: detect
+    if: needs.detect.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Resolve Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - name: Install browsers
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Install system deps only
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium firefox webkit
+      - name: Restore HTTP proof cache (only nightly saves this cache)
+        uses: actions/cache/restore@v6
+        with:
+          path: .cache/proof
+          key: proof-http-${{ github.run_id }}
+          restore-keys: proof-http-
+      - name: Run full proof suite against new engines
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: npm run proof:nightly -- --previous content/.proof-results/latest.json
+      - name: Job summary
+        if: always()
+        run: cat artifacts/proof-nightly/summary.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v7
+        with:
+          name: proof-deps
+          path: artifacts/proof-nightly/
+          retention-days: 7
+          if-no-files-found: error
+          include-hidden-files: true

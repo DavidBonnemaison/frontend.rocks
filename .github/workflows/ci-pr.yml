@@ -19,6 +19,8 @@ jobs:
       code: ${{ steps.f.outputs.code }}
       proof: ${{ steps.f.outputs.proof }}
       proof_runtime: ${{ steps.f.outputs.proof_runtime }}
+      engines: ${{ steps.f.outputs.engines }}
+      engines_only: ${{ steps.f.outputs.engines_only }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -46,8 +48,20 @@ jobs:
           if [ -n "$CHANGED" ] && ! echo "$CHANGED" | grep -qvE '^content/\.proof-results/'; then
             proof=false
           fi
+          BASE_PW=$(git show "$BASE:package-lock.json" 2>/dev/null | jq -r '.packages["node_modules/@playwright/test"].version // ""')
+          HEAD_PW=$(jq -r '.packages["node_modules/@playwright/test"].version // ""' package-lock.json 2>/dev/null || echo "")
+          engines=false
+          engines_only=false
+          if [ -n "$HEAD_PW" ] && [ "$BASE_PW" != "$HEAD_PW" ]; then
+            engines=true
+            if ! echo "$CHANGED" | grep -qE '^(content/|src/lib/proof/|scripts/proof/)'; then
+              engines_only=true
+            fi
+          fi
           echo "proof=$proof" >> "$GITHUB_OUTPUT"
           echo "proof_runtime=$proof_runtime" >> "$GITHUB_OUTPUT"
+          echo "engines=$engines" >> "$GITHUB_OUTPUT"
+          echo "engines_only=$engines_only" >> "$GITHUB_OUTPUT"
 
   gate:
     needs: changes
@@ -120,7 +134,14 @@ jobs:
         if: needs.changes.outputs.proof_runtime == 'true'
         run: npm run proof:selftest
       - name: Build, run changed experiments, verify, aggregate (preview), gate
-        run: npm run proof:all -- --changed origin/${{ github.base_ref }}
+        env:
+          ENGINES_ONLY: ${{ needs.changes.outputs.engines_only }}
+        run: |
+          if [ "$ENGINES_ONLY" = "true" ]; then
+            npm run proof:all -- --report-only
+          else
+            npm run proof:all -- --changed "origin/${{ github.base_ref }}"
+          fi
       - uses: actions/upload-artifact@v7
         if: always()
         with:
