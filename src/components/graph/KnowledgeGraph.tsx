@@ -43,19 +43,7 @@ const MIN_ZOOM = 0.15;
 const MAX_ZOOM = 2.5;
 const ZOOM_STEP = 0.2;
 
-const DOMAIN_COLORS: Record<Domain, string> = {
-  'rendering-pipeline': '#38bdf8',
-  'css-layout': '#a78bfa',
-  'js-runtime': '#f59e0b',
-  'dom-events': '#34d399',
-  'network-perf': '#fb7185',
-  'state-architecture': '#60a5fa',
-  'software-architecture': '#c084fc',
-  'web-apis': '#2dd4bf',
-  'security-a11y': '#f472b6',
-  'framework-internals': '#818cf8',
-  'testing-verification': '#fb923c',
-};
+const NODE_COLOR = 'var(--color-ink)';
 
 const EDGE_STYLES: Record<
   ConceptFrontmatter['relations'][number]['type'],
@@ -341,7 +329,7 @@ export function KnowledgeGraph({ nodes }: { nodes: GraphNodeData[] }) {
     return DOMAIN_VALUES.map((domain) => ({
       domain,
       label: formatDomainLabel(domain),
-      color: DOMAIN_COLORS[domain],
+      color: NODE_COLOR,
       nodes: (grouped.get(domain) ?? []).slice().sort((a, b) => a.title.localeCompare(b.title)),
     }));
   }, [positioned]);
@@ -546,9 +534,9 @@ export function KnowledgeGraph({ nodes }: { nodes: GraphNodeData[] }) {
             )}
           </div>
 
-          <Link href="/index-list" className="lab-btn inline-flex items-center gap-1" style={{ textDecoration: 'none' }}>
+          <Link href="/index-list" className="lab-btn u-inline-row" style={{ textDecoration: 'none' }}>
             <span>{UI_STRINGS.graph.indexLink}</span>
-            <ArrowRight size={14} className="shrink-0" aria-hidden="true" />
+            <ArrowRight size={14} className="u-shrink-0" aria-hidden="true" />
           </Link>
         </div>
       </div>
@@ -710,7 +698,7 @@ export function KnowledgeGraph({ nodes }: { nodes: GraphNodeData[] }) {
                   const dimmed = highlightedSet !== null && !highlightedSet.has(n.id);
                   const isSelected = activeId === n.id;
                   const isExplored = progressHydrated && exploredSet.has(n.id);
-                  const color = DOMAIN_COLORS[n.domain];
+                  const color = NODE_COLOR;
                   return (
                     <g
                       key={n.id}
@@ -1017,14 +1005,14 @@ export function KnowledgeGraph({ nodes }: { nodes: GraphNodeData[] }) {
               </div>
               <div className="graph-context-edge-titles">
                 <Link href={`/concepts/${activeEdge.from.id}`}>{activeEdge.from.title}</Link>
-                <ArrowRight size={14} className="inline shrink-0 mx-1" aria-hidden="true" />
+                <ArrowRight size={14} className="u-shrink-0" style={{ display: "inline", marginInline: "0.25rem" }} aria-hidden="true" />
                 <Link href={`/concepts/${activeEdge.to.id}`}>{activeEdge.to.title}</Link>
               </div>
               <p className="graph-context-note">{activeEdge.note}</p>
             </div>
-            <Link href={`/concepts/${activeEdge.from.id}`} className="lab-btn lab-btn-primary inline-flex items-center gap-1">
+            <Link href={`/concepts/${activeEdge.from.id}`} className="lab-btn lab-btn-primary u-inline-row">
               <span>{UI_STRINGS.graph.openConcept}</span>
-              <ArrowRight size={14} className="shrink-0" aria-hidden="true" />
+              <ArrowRight size={14} className="u-shrink-0" aria-hidden="true" />
             </Link>
           </div>
         ) : activeNode ? (
@@ -1047,9 +1035,9 @@ export function KnowledgeGraph({ nodes }: { nodes: GraphNodeData[] }) {
               <strong style={{ display: 'block', marginTop: '4px' }}>{activeNode.title}</strong>
               <p className="graph-context-note">{activeNode.summary_tldr}</p>
             </div>
-            <Link href={`/concepts/${activeNode.id}`} className="lab-btn lab-btn-primary inline-flex items-center gap-1">
+            <Link href={`/concepts/${activeNode.id}`} className="lab-btn lab-btn-primary u-inline-row">
               <span>{UI_STRINGS.graph.openConcept}</span>
-              <ArrowRight size={14} className="shrink-0" aria-hidden="true" />
+              <ArrowRight size={14} className="u-shrink-0" aria-hidden="true" />
             </Link>
           </div>
         ) : (

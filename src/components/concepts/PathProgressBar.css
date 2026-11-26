@@ -1,3 +1,6 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer legacy {
 .path-progress-bar {
   display: flex;
   flex-direction: column;
@@ -174,4 +177,5 @@
   font-family: var(--mono);
   font-size: 0.78rem;
   color: var(--semantic-native-text);
+}
 }

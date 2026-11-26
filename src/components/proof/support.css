@@ -1,3 +1,6 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer legacy {
 .support-badge {
   display: inline-flex;
   align-items: center;
@@ -83,4 +86,5 @@
 
 .support-date {
   font-variant-numeric: tabular-nums;
+}
 }

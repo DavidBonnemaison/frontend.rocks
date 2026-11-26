@@ -1,3 +1,6 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer legacy {
 .claim-marker {
   display: inline-flex;
   align-items: center;
@@ -35,4 +38,5 @@
 
 .story {
   /* Intentionally unstyled at this stage. */
+}
 }

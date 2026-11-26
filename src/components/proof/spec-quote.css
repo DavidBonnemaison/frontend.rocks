@@ -1,3 +1,6 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer legacy {
 .spec-quote {
   margin: 1.25rem 0;
   padding: 0.75rem 1rem;
@@ -46,4 +49,5 @@
 .spec-quote__verbatim {
   font-size: 0.75rem;
   color: var(--text-muted);
+}
 }

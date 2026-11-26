@@ -1,3 +1,6 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer legacy {
 .agents-page {
   padding: 32px 0 72px;
   max-width: 980px;
@@ -452,4 +455,5 @@
   .agents-interfaces-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
 }

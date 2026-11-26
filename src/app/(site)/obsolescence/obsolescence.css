@@ -1,3 +1,6 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer legacy {
 .radar-page {
   padding: 32px 0 64px;
   max-width: 880px;
@@ -144,4 +147,5 @@
   .radar-arrow-mobile {
     display: none;
   }
+}
 }

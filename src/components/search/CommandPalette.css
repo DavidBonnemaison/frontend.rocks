@@ -1,5 +1,9 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer legacy {
 @media (hover: none) {
   .cmd-kbd-hint {
     display: none;
   }
+}
 }

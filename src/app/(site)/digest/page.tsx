@@ -76,12 +76,13 @@ export default function DigestPage() {
                         href={entry.source_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-semibold"
+                        style={{ fontWeight: 'var(--weight-semibold)' }}
                       >
                         {entry.title}
                         <ArrowUpRight
                           size={14}
-                          className="inline-block align-text-bottom ml-1 shrink-0"
+                          className="u-shrink-0"
+                          style={{ display: 'inline-block', verticalAlign: 'text-bottom', marginLeft: '0.25rem' }}
                           aria-hidden="true"
                         />
                       </a>
