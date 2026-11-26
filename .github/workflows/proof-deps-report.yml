@@ -1,0 +1,43 @@
+name: Proof Deps Report
+
+on:
+  workflow_run:
+    workflows: ['Proof Deps']
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.pull_requests[0] != null }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: proof-deps
+          path: incoming
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Validate artifact (bash + jq only)
+        run: bash .github/scripts/validate-proof-artifact.sh incoming
+      - name: Comment PR, label behaviour changes, and enable auto-merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+        run: |
+          set -euo pipefail
+          gh pr comment "$PR_NUMBER" --body-file incoming/summary.md
+          if jq -e '(.regressions | length) > 0 or (.observedChanged | length) > 0' incoming/diff.json > /dev/null; then
+            gh label create proof-behaviour-change --color FBCA04 2>/dev/null || true
+            gh pr edit "$PR_NUMBER" --add-label proof-behaviour-change
+          fi
+          gh pr merge "$PR_NUMBER" --auto --squash --delete-branch

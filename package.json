@@ -34,6 +34,8 @@
     "proof:verify-sources": "tsx scripts/proof/verify-source-quotes.ts",
     "proof:support": "tsx scripts/proof/check-support.ts",
     "proof:coverage": "tsx scripts/proof/check-coverage.ts",
+    "proof:nightly": "tsx scripts/proof/nightly.ts --out artifacts/proof-nightly",
+    "proof:nightly-health": "tsx scripts/proof/nightly-health.ts",
     "design:tokens": "tsx scripts/design/build-tokens.ts",
     "design:tokens:check": "tsx scripts/design/build-tokens.ts --check",
     "design:contrast": "tsx scripts/design/check-contrast.ts",

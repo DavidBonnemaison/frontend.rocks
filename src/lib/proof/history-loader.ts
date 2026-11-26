@@ -59,7 +59,21 @@ function extractClaimObservation(
   const at = typeof record.at === 'string' ? record.at : typeof record.generatedAt === 'string' ? record.generatedAt : null;
   if (!at) return null;
 
-  // Format 1: per-claim line { claimId, status, at, engines? } or { id, status, at }
+  // Format 1a: nightly claim transition line { kind: 'claim', claimId, from, to, at, engines? }
+  if (
+    record.kind === 'claim' &&
+    record.claimId === claimId &&
+    typeof record.to === 'string' &&
+    VALID_STATUSES.has(record.to)
+  ) {
+    return {
+      at,
+      status: record.to as ClaimStatus,
+      engines: parseEngines(record.engines),
+    };
+  }
+
+  // Format 1b: per-claim line { claimId, status, at, engines? } or { id, status, at }
   const lineId =
     typeof record.claimId === 'string'
       ? record.claimId
@@ -170,7 +184,7 @@ export function getGlobalRunHistory(
       }
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) continue;
       const rec = parsed as Record<string, unknown>;
-      if (rec.type !== 'run') continue;
+      if (rec.kind !== 'run' && rec.type !== 'run') continue;
       const at = typeof rec.at === 'string' ? rec.at : typeof rec.generatedAt === 'string' ? rec.generatedAt : null;
       if (!at) continue;
 
@@ -179,6 +193,9 @@ export function getGlobalRunHistory(
 
       if (typeof rec.proven === 'number') {
         proven = rec.proven;
+      } else if (rec.totals && typeof rec.totals === 'object') {
+        const totals = rec.totals as Record<string, unknown>;
+        if (typeof totals.proven === 'number') proven = totals.proven;
       } else if (rec.byStatus && typeof rec.byStatus === 'object') {
         const bs = rec.byStatus as Record<string, unknown>;
         if (typeof bs.proven === 'number') proven = bs.proven;
@@ -189,6 +206,11 @@ export function getGlobalRunHistory(
 
       if (typeof rec.total === 'number') {
         total = rec.total;
+      } else if (rec.totals && typeof rec.totals === 'object') {
+        const vals = Object.values(rec.totals as Record<string, unknown>).filter(
+          (v): v is number => typeof v === 'number'
+        );
+        if (vals.length > 0) total = vals.reduce((a, b) => a + b, 0);
       } else if (rec.byStatus && typeof rec.byStatus === 'object') {
         const vals = Object.values(rec.byStatus as Record<string, unknown>).filter(
           (v): v is number => typeof v === 'number'

@@ -1,0 +1,108 @@
+name: Proof Nightly
+
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+    inputs:
+      engines:
+        description: 'Comma-separated engines'
+        required: false
+        default: 'chromium,firefox,webkit'
+      publish:
+        description: 'Open the results PR and sync issues'
+        type: boolean
+        default: true
+
+concurrency:
+  group: proof-nightly
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Resolve Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - name: Install browsers
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Install system deps only
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium firefox webkit
+      - name: HTTP proof cache (saved only here, on the default branch)
+        uses: actions/cache@v6
+        with:
+          path: .cache/proof
+          key: proof-http-${{ github.run_id }}
+          restore-keys: proof-http-
+      - name: Run nightly verification
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: npm run proof:nightly -- --engines "${{ inputs.engines || 'chromium,firefox,webkit' }}"
+      - name: Prune HTTP proof cache before it is saved
+        if: always()
+        run: find .cache/proof -type f -mtime +30 -delete 2>/dev/null || true
+      - name: Job summary
+        if: always()
+        run: cat artifacts/proof-nightly/summary.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v7
+        with:
+          name: proof-nightly
+          path: artifacts/proof-nightly/
+          retention-days: 7
+          if-no-files-found: error
+          include-hidden-files: true
+
+  publish:
+    needs: verify
+    if: ${{ github.event_name == 'schedule' || inputs.publish }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    concurrency:
+      group: proof-nightly-publish
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.NIGHTLY_PR_TOKEN }}
+          persist-credentials: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: proof-nightly
+          path: incoming
+      - name: Validate artifact (bash + jq only)
+        run: bash .github/scripts/validate-proof-artifact.sh incoming
+      - name: Open results PR
+        env:
+          GH_TOKEN: ${{ secrets.NIGHTLY_PR_TOKEN }}
+        run: bash .github/scripts/publish-nightly-pr.sh incoming
+      - name: Sync issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/sync-proof-issues.sh incoming/issues.json

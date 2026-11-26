@@ -41,6 +41,12 @@ Normative specification quotes can be checked locally with `npm run proof:verify
 
 `npm run lint` has a warning ratchet (`--max-warnings`). It can go down, never up.
 
+## Proof checks
+
+PR checks read results through `readCheckResults()`. A result missing from both the preview and `latest.json` is reported as not yet checked, never as a failure.
+
+Engine updates arrive weekly through Dependabot. Each update runs the full proof suite, is commented with the results, and merges once the required checks pass. Behaviour changes are labelled `proof-behaviour-change`.
+
 ## Design system
 
 - **Tokens**: `design/tokens.json` is the single source of truth for colors (OKLCH), piece palette, typography, and schematic settings. Regenerate `src/styles/tokens.css` and `src/lib/design/tokens.generated.ts` with `npm run design:tokens` (`npm run design:tokens:check` verifies they are in sync; `npm run design:contrast` verifies WCAG AA ratios in light and dark themes).

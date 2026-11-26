@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '04:00'
+    open-pull-requests-limit: 2
+    allow:
+      - dependency-name: '@playwright/test'
+      - dependency-name: 'playwright'
+    ignore:
+      - dependency-name: '@mdn/browser-compat-data'
+      - dependency-name: 'web-features'
+    groups:
+      engines:
+        patterns: ['@playwright/test', 'playwright']
+    labels: ['dependencies', 'engine-update']

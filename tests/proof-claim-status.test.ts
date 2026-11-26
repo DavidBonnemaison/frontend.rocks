@@ -378,6 +378,15 @@ describe('computeClaimResults', () => {
         'p/spec-1'
       ].status
     ).toBe('proven');
+    expect(
+      computeClaimResults(
+        baseInput({
+          claims: [claim],
+          verifierReports: makeArtifact('proven', false),
+          previous: { 'p/spec-1': prevProven },
+        })
+      )['p/spec-1'].status
+    ).toBe('proven');
     expect(computeClaimResults(baseInput({ claims: [claim] }))['p/spec-1'].status).toBe('pending');
   });
 

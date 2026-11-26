@@ -199,3 +199,47 @@ export function evaluateGate(input: GateInput): GateOutcome {
 
   return { ok: errors.length === 0, errors, warnings };
 }
+
+/**
+ * Detects a runner outage in `--report-only` mode:
+ * - an expected engine failed to start (absent from all run reports when at least one report exists);
+ * - or more than 20% of recorded experiment cases ended in `error`.
+ */
+export function detectRunnerOutage(
+  runReports: readonly ExperimentRunReport[],
+  expectedEngines: readonly EngineId[] = ENGINE_IDS
+): string | null {
+  if (runReports.length === 0) return null;
+
+  const presentEngines = new Set<EngineId>();
+  let totalCases = 0;
+  let errorCases = 0;
+
+  for (const report of runReports) {
+    for (const engine of ENGINE_IDS) {
+      if (report.engines[engine]) presentEngines.add(engine);
+    }
+    for (const expEntry of Object.values(report.experiments)) {
+      for (const engineMap of Object.values(expEntry.cases)) {
+        for (const engine of ENGINE_IDS) {
+          const caseRes = engineMap[engine];
+          if (!caseRes) continue;
+          totalCases += 1;
+          if (caseRes.status === 'error') errorCases += 1;
+        }
+      }
+    }
+  }
+
+  const missing = expectedEngines.filter((e) => !presentEngines.has(e));
+  if (missing.length > 0) {
+    return `runner outage: missing engine(s): ${missing.join(', ')}`;
+  }
+
+  if (totalCases > 0 && errorCases / totalCases > 0.2) {
+    return `runner outage: ${errorCases}/${totalCases} cases in error (> 20%)`;
+  }
+
+  return null;
+}
+
