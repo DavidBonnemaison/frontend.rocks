@@ -31,3 +31,15 @@
   for = "/vs/*"
   [headers.values]
     Vary = "Accept"
+
+[[headers]]
+  for = "/data/results.json"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/data/claims.json"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "public, max-age=3600"

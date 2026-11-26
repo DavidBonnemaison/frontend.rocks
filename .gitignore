@@ -54,5 +54,6 @@ yarn-error.log*
 /.cache/
 /.proof-build
 /public/experiments/
+/public/data/
 /dist-lab
 /dist-lab-dev
