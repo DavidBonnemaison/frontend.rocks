@@ -24,7 +24,9 @@ import { parseCliArgs } from '../src/lib/cli-args';
 import { getAllClaimsFiles } from '../src/lib/proof/claims-loader';
 import { getAllPageRefs } from '../src/lib/proof/page-registry';
 import { validateClaimsCorpus } from '../src/lib/validators/claims-validator';
+import { validateExperimentView } from '../src/lib/validators/experiment-view-validator';
 import { validateProgrammaticSeo } from '../src/lib/validators/seo-validator';
+import type { ExperimentDefinition } from '../src/lib/proof/define-experiment';
 
 const CONCEPTS_DIR = path.join(CONTENT_DIR, 'concepts');
 const AUTOPSIES_DIR = path.join(CONTENT_DIR, 'autopsies');
@@ -240,6 +242,41 @@ async function main(): Promise<void> {
     claimsStats = claimsResult.stats;
   } catch (err) {
     errors.push(`[claims] ${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  // Validate optional Experiment view.json files (static: schema, observedPath, frame-budget kind)
+  const experimentsDirForViews = path.join(CONTENT_DIR, 'experiments');
+  if (fs.existsSync(experimentsDirForViews)) {
+    for (const entry of fs.readdirSync(experimentsDirForViews, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const viewPath = path.join(experimentsDirForViews, entry.name, 'view.json');
+      if (!fs.existsSync(viewPath)) continue;
+      const expPath = path.join(experimentsDirForViews, entry.name, 'experiment.ts');
+      if (!fs.existsSync(expPath)) {
+        errors.push(`[experiments/${entry.name}/view.json] Missing sibling experiment.ts`);
+        continue;
+      }
+      try {
+        const rawView = JSON.parse(fs.readFileSync(viewPath, 'utf-8'));
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const mod = require(expPath) as { default?: ExperimentDefinition };
+        const expDef = mod.default;
+        if (!expDef) {
+          errors.push(`[experiments/${entry.name}/view.json] experiment.ts has no default export`);
+          continue;
+        }
+        const res = validateExperimentView(entry.name, rawView, expDef);
+        if (!res.ok) {
+          for (const e of res.errors) {
+            errors.push(`[experiments/${e.experimentId}/view.json] ${e.message}`);
+          }
+        }
+      } catch (err) {
+        errors.push(
+          `[experiments/${entry.name}/view.json] ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    }
   }
 
   for (const s of PRODUCTION_SYMPTOMS) {

@@ -290,6 +290,7 @@ export function buildRobotsTxt(): string {
   return [
     'User-agent: *',
     'Allow: /',
+    'Disallow: /dev/',
     '',
     'User-agent: OAI-SearchBot',
     'Allow: /',

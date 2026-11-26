@@ -54,5 +54,11 @@ export const PROOF_STEPS: ProofStep[] = [
     artifact: 'coverage.json',
   },
   { name: 'aggregate', script: 'scripts/proof/aggregate-results.ts' },
+  {
+    name: 'observations',
+    script: 'scripts/proof/check-observations.ts',
+    optional: true,
+    check: true,
+  },
   { name: 'gate', script: 'scripts/proof/gate.ts' },
 ];

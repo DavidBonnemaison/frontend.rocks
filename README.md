@@ -47,6 +47,7 @@ Normative specification quotes can be checked locally with `npm run proof:verify
 - **Measured schematics**: Experiments with a `schematic.json` generate committed geometry snapshots in `content/schematics/` via `npm run design:snapshots` (`npm run design:snapshots:check` verifies `sourceHash` freshness without launching a browser).
 - **Piece colors**: `npm run design:assign-pieces -- --kind autopsy` assigns `piece_color` frontmatter entries deterministically using the 4-piece rolling window rule.
 - **Component gallery & visual regression**: `/dev/components/` (`noindex`) renders every UI component in light and dark themes side by side. Reference screenshots live in `tests/visual/` (Linux-only). Update them in the official Playwright Linux container with `npm run visual:update`.
+- **Visualization instruments**: `src/components/instruments/` provides 8 lazy-loaded SVG/DOM instruments (`queue-view`, `timeline`, `layer-stack`, `box-tree`, `frame-budget`, `event-path`, `network-waterfall`, `diff-view`) bound to Experiments via optional `content/experiments/<id>/view.json` and previewed on `/dev/instruments/` (`noindex`, included in `tests/visual/`).
 
 ## Licenses
 
