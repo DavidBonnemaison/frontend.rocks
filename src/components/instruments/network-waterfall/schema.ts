@@ -1,23 +1,27 @@
 import { z } from 'zod';
 
-export const NetworkRequestSchema = z.object({
-  seq: z.number().int().nonnegative(),
-  method: z.string().max(10),
-  path: z.string().max(200),
-  outcome: z.union([
-    z.number().int(),
-    z.literal('aborted'),
-    z.literal('blocked'),
-    z.literal('pending'),
-  ]),
-  headers: z.record(z.string(), z.string()).optional(),
-});
+export const NetworkRequestSchema = z
+  .object({
+    seq: z.number().int().nonnegative(),
+    method: z.string().max(10),
+    path: z.string().max(200),
+    outcome: z.union([
+      z.number().int(),
+      z.literal('aborted'),
+      z.literal('blocked'),
+      z.literal('pending'),
+    ]),
+    headers: z.record(z.string(), z.string()).optional(),
+  })
+  .strict();
 
 export type NetworkRequest = z.infer<typeof NetworkRequestSchema>;
 
-export const NetworkObservedSchema = z.object({
-  requests: z.array(NetworkRequestSchema).max(200),
-});
+export const NetworkObservedSchema = z
+  .object({
+    requests: z.array(NetworkRequestSchema).max(200),
+  })
+  .strict();
 
 export type NetworkObserved = z.infer<typeof NetworkObservedSchema>;
 

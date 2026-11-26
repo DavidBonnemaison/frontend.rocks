@@ -1,20 +1,24 @@
 import { z } from 'zod';
 
-export const LayerNodeSchema = z.object({
-  id: z.string(),
-  label: z.string().max(40),
-  zIndex: z.union([z.number().int(), z.literal('auto')]),
-  createsStackingContext: z.boolean(),
-  parent: z.string().nullable(),
-  topLayer: z.boolean().default(false),
-});
+export const LayerNodeSchema = z
+  .object({
+    id: z.string(),
+    label: z.string().max(40),
+    zIndex: z.union([z.number().int(), z.literal('auto')]),
+    createsStackingContext: z.boolean(),
+    parent: z.string().nullable(),
+    topLayer: z.boolean().default(false),
+  })
+  .strict();
 
 export type LayerNode = z.infer<typeof LayerNodeSchema>;
 
-export const LayerStackObservedSchema = z.object({
-  nodes: z.array(LayerNodeSchema).min(1).max(40),
-  probe: z.object({ hitId: z.string().nullable() }).optional(),
-});
+export const LayerStackObservedSchema = z
+  .object({
+    nodes: z.array(LayerNodeSchema).min(1).max(40),
+    probe: z.object({ hitId: z.string().nullable() }).strict().optional(),
+  })
+  .strict();
 
 export type LayerStackObserved = z.infer<typeof LayerStackObservedSchema>;
 

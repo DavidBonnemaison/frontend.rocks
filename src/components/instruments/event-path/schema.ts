@@ -1,19 +1,23 @@
 import { z } from 'zod';
 
-export const EventPathStepSchema = z.object({
-  node: z.string().max(40),
-  phase: z.enum(['capture', 'target', 'bubble']),
-  listenersCalled: z.number().int().nonnegative(),
-  stopped: z.boolean().default(false),
-  targetSeenAs: z.string().max(40).optional(),
-});
+export const EventPathStepSchema = z
+  .object({
+    node: z.string().max(40),
+    phase: z.enum(['capture', 'target', 'bubble']),
+    listenersCalled: z.number().int().nonnegative(),
+    stopped: z.boolean().default(false),
+    targetSeenAs: z.string().max(40).optional(),
+  })
+  .strict();
 
 export type EventPathStep = z.infer<typeof EventPathStepSchema>;
 
-export const EventPathObservedSchema = z.object({
-  type: z.string().max(30),
-  steps: z.array(EventPathStepSchema).min(1).max(40),
-});
+export const EventPathObservedSchema = z
+  .object({
+    type: z.string().max(30),
+    steps: z.array(EventPathStepSchema).min(1).max(40),
+  })
+  .strict();
 
 export type EventPathObserved = z.infer<typeof EventPathObservedSchema>;
 

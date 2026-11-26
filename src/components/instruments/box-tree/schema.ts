@@ -9,18 +9,22 @@ export interface BoxNode {
 }
 
 export const BoxNodeSchema: z.ZodType<BoxNode> = z.lazy(() =>
-  z.object({
-    id: z.string(),
-    label: z.string().max(40),
-    display: z.string().max(30),
-    flags: z.array(z.string().max(30)).max(6).default([]),
-    children: z.array(BoxNodeSchema).max(30),
-  }),
+  z
+    .object({
+      id: z.string(),
+      label: z.string().max(40),
+      display: z.string().max(30),
+      flags: z.array(z.string().max(30)).max(6).default([]),
+      children: z.array(BoxNodeSchema).max(30),
+    })
+    .strict(),
 );
 
-export const BoxTreeObservedSchema = z.object({
-  root: BoxNodeSchema,
-});
+export const BoxTreeObservedSchema = z
+  .object({
+    root: BoxNodeSchema,
+  })
+  .strict();
 
 export type BoxTreeObserved = z.infer<typeof BoxTreeObservedSchema>;
 

@@ -18,7 +18,7 @@ export interface MeasuredSummary {
   pValue: number;
 }
 
-export interface InstrumentProps<O, T = never> {
+export interface InstrumentProps<O, T = unknown> {
   observed: O;
   compareObserved?: O;
   trace?: T;
