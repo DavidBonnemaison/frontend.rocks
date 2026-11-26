@@ -9,6 +9,7 @@ export interface SchematicProps {
   highlight?: string;
   figureNumber?: number;
   label: string;
+  bare?: boolean;
 }
 
 export function Schematic({
@@ -17,8 +18,9 @@ export function Schematic({
   highlight = 'var(--color-accent)',
   figureNumber,
   label,
+  bare = false,
 }: SchematicProps) {
-  const svg = renderSchematic({ snapshot, width, highlight, figureNumber });
+  const svg = renderSchematic({ snapshot, width, highlight, figureNumber, bare });
 
   return (
     <div

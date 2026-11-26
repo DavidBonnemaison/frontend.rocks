@@ -222,7 +222,7 @@ export default async function DevComponentsPage() {
               title="CSS Container Queries"
               description="Demo data: style elements based on their parent container inline size rather than the global viewport."
               meta={<Chip tone="ok">Proven</Chip>}
-              media={cq300 ? <Schematic snapshot={cq300} width={320} label="Demo data container schematic" /> : null}
+              media={cq300 ? <Schematic snapshot={cq300} width={320} label="Demo data container schematic" bare /> : null}
             />
             <Callout kind="advice">Demo data: prefer inline-size containment over full size containment.</Callout>
             <Callout kind="warning">Demo data: avoid container queries on elements whose size depends on their children.</Callout>
@@ -330,7 +330,7 @@ export default async function DevComponentsPage() {
               question="Demo data: How does @container reflow the card at 480 px?"
               caption="Demo data · container-query-inline-size"
             >
-              <Schematic snapshot={cq480} width={640} figureNumber={1} label="Demo data schematic cq-480" />
+              <Schematic snapshot={cq480} width={640} label="Demo data schematic cq-480" bare />
             </Figure>
           ) : (
             <p className="meta">Demo data: run npm run design:snapshots to render cq-480.</p>

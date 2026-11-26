@@ -220,7 +220,7 @@
     left: 2px;
     width: 16px;
     height: 16px;
-    background: var(--color-paper);
+    background: var(--fixed-paper);
     transition: transform var(--dur-1) var(--ease-out);
   }
 
@@ -382,6 +382,11 @@
   @supports (appearance: base-select) {
     .select-control-input {
       appearance: base-select;
+      padding-right: var(--space-s);
+    }
+
+    .select-control-icon {
+      display: none;
     }
   }
 

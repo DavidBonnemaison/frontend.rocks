@@ -2,9 +2,12 @@
 
 @layer components {
   .callout {
+    border: 0;
     border-top: var(--rule-w) solid var(--color-ink);
     border-bottom: var(--rule-w) solid var(--color-ink);
-    padding-block: var(--space-m);
+    border-radius: var(--radius-0);
+    background: transparent;
+    padding: var(--space-m) 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);

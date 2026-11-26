@@ -35,6 +35,7 @@ export function PieceBlock({
       width={size === 'hero' ? 640 : 400}
       highlight="var(--piece-on)"
       label={`${kicker} ${number}: ${title}`}
+      bare
     />
   ) : (
     <span className="piece-block-giant-num" aria-hidden="true">
