@@ -29,8 +29,45 @@ import { PUBLIC_DIR, SITE_ROOT } from '../src/lib/paths';
 import { parseCliArgs } from '../src/lib/cli-args';
 import { buildIndexNowPending } from '../src/lib/indexnow';
 import { buildAuditRulesCatalog, renderAuditCatalogMarkdown } from '../src/lib/audit-rules';
+import { experimentBuildDir } from '../src/lib/proof/experiment-bundles';
+import { getAllPublishedClaimEntries } from '../src/lib/proof/published-claims';
+import { buildPublicProofExports, stableJsonStringify } from '../src/lib/proof/public-export-schema';
+import { getProofResults } from '../src/lib/proof/results-loader';
 
 const PUBLIC_SKILL_REFS_DIR = path.join(process.cwd(), 'packages', 'public-skill', 'references');
+
+function exportProofData(): {
+  publishedClaims: ReturnType<typeof getAllPublishedClaimEntries>;
+  resultsCount: number;
+} {
+  const latest = getProofResults();
+  const publishedClaims = getAllPublishedClaimEntries();
+  const { resultsExport, claimsExport, publishedExperimentIds } = buildPublicProofExports({
+    siteUrl: SITE_URL,
+    latest,
+    publishedClaims,
+  });
+
+  const dataDir = path.join(PUBLIC_DIR, 'data');
+  fs.mkdirSync(dataDir, { recursive: true });
+  fs.writeFileSync(path.join(dataDir, 'results.json'), stableJsonStringify(resultsExport));
+  fs.writeFileSync(path.join(dataDir, 'claims.json'), stableJsonStringify(claimsExport));
+
+  // Copy compiled bundles for published experiments to public/experiments/ for on-click fallback (>200 KiB).
+  const buildDir = experimentBuildDir();
+  if (publishedExperimentIds.length > 0 && fs.existsSync(buildDir)) {
+    const publicExpDir = path.join(PUBLIC_DIR, 'experiments');
+    fs.mkdirSync(publicExpDir, { recursive: true });
+    for (const expId of publishedExperimentIds) {
+      const src = path.join(buildDir, `${expId}.json`);
+      if (fs.existsSync(src)) {
+        fs.copyFileSync(src, path.join(publicExpDir, `${expId}.json`));
+      }
+    }
+  }
+
+  return { publishedClaims, resultsCount: Object.keys(resultsExport.claims).length };
+}
 
 async function main(): Promise<void> {
   const args = parseCliArgs(process.argv.slice(2), { 'skip-og': 'boolean' });
@@ -234,10 +271,18 @@ ${rssItems}
       publishedCount: null,
     },
     {
+      entry: { loc: `${SITE_URL}/proof/`, changefreq: 'daily', priority: '0.6' },
+      publishedCount: null,
+    },
+    {
       entry: { loc: `${SITE_URL}/privacy/`, changefreq: 'monthly', priority: '0.3' },
       publishedCount: null,
     },
   ];
+
+  // 6b. Public proof exports (/data/results.json, /data/claims.json)
+  const { publishedClaims } = exportProofData();
+  const latestResults = getProofResults();
 
   const sitemapEntries: SitemapEntry[] = [
     ...listingEntries
@@ -274,6 +319,16 @@ ${rssItems}
       changefreq: 'monthly' as const,
       priority: '0.8',
     })),
+    ...publishedClaims.map((entry) => {
+      const [page, slug] = entry.claim.id.split('/');
+      const checkedAt = latestResults.claims[entry.claim.id]?.checkedAt;
+      return {
+        loc: `${SITE_URL}/claims/${page}/${slug}/`,
+        ...(checkedAt ? { lastmod: checkedAt.slice(0, 10) } : {}),
+        changefreq: 'monthly' as const,
+        priority: '0.3',
+      };
+    }),
   ];
   fs.writeFileSync(path.join(PUBLIC_DIR, 'sitemap.xml'), buildSitemapXml(sitemapEntries));
 

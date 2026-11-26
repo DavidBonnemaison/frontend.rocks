@@ -2,15 +2,16 @@ import type { PageProofStatus } from './schemas';
 import type { LoadedConcept, LoadedAutopsy } from './content-loader';
 import type { ProductionSymptomConfig } from '../config/symptoms';
 import type { VsPair } from './vs-pairs';
+import { getEffectivePageStatus } from './proof/page-status';
 
 /**
  * Single place that decides whether a page is published.
- * `pageId` is ignored for now: a later epic replaces the body with the effective
- * page status, which needs the id.
+ * When `pageId` is provided, delegates to `getEffectivePageStatus` (claims + latest.json + 7-day grace).
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function isPublished(status: PageProofStatus, pageId?: string): boolean {
-  return status === 'proven';
+  if (status !== 'proven') return false;
+  if (!pageId) return true;
+  return getEffectivePageStatus(pageId, status).status !== 'unverified';
 }
 
 export function publishedConcepts(all: LoadedConcept[]): LoadedConcept[] {
@@ -26,7 +27,7 @@ export function publishedSymptoms(all: ProductionSymptomConfig[]): ProductionSym
 }
 
 export function publishedVsPairs(all: VsPair[]): VsPair[] {
-  return all.filter((p) => isPublished(p.proof_status, p.slug));
+  return all.filter((p) => isPublished(p.proof_status, `vs-${p.slug}`));
 }
 
 /** A listing page is indexable when it shows at least one published item. */
@@ -54,7 +55,7 @@ export function vsPairStatus(
 }
 
 /**
- * Guard: until the proof engine exists, a page can be `proven` only if its
+ * Guard: a page can be marked `proven` only if its
  * `content/claims/<page-id>.claims.json` file exists. Returns error messages.
  */
 export function checkProvenGuard(
@@ -62,7 +63,7 @@ export function checkProvenGuard(
   claimsFileExists: (pageId: string) => boolean
 ): string[] {
   return pages
-    .filter((p) => isPublished(p.proof_status, p.id) && !claimsFileExists(p.id))
+    .filter((p) => p.proof_status === 'proven' && !claimsFileExists(p.id))
     .map(
       (p) =>
         `[proof] ${p.id} is marked proven but has no content/claims/${p.id}.claims.json`

@@ -164,6 +164,40 @@ export const UI_STRINGS = {
     enabled: 'On',
     disabled: 'Off',
   },
+  PROOF: {
+    chipClaims: (n: number) => `${n} claim${n === 1 ? '' : 's'}`,
+    chipProvenIn: 'proven in',
+    chipChecked: 'checked',
+    panelTitle: 'Proof',
+    panelIntro:
+      'Every factual sentence on this page is backed by one of the claims below. Experiments run in real browser engines; quotes are checked word for word against the source.',
+    colClaim: 'Claim',
+    colType: 'Type',
+    colProof: 'Proof',
+    status: {
+      pending: 'Not checked yet',
+      proven: 'Proven',
+      diverges: 'Engines disagree',
+      failed: 'Failing',
+      stale: 'Source changed, re-checking',
+    },
+    engineCell: {
+      pass: 'pass',
+      fail: 'fail',
+      error: 'inconclusive',
+      missing: 'no result yet',
+      'not-run': 'out of scope',
+    },
+    type: {
+      observable: 'Experiment',
+      measured: 'Measurement',
+      normative: 'Spec quote',
+      implementation: 'Engine source',
+      support: 'Compat data',
+      derived: 'Derived',
+    },
+    methodLink: 'How proofs work',
+  },
 } as const;
 
 export function formatMaturityLabel(status: string | null | undefined): string {

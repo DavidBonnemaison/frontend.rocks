@@ -27,6 +27,8 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             <span aria-hidden="true">·</span>
             <a href="/rss.xml">RSS</a>
             <span aria-hidden="true">·</span>
+            <a href="/proof/">How proofs work</a>
+            <span aria-hidden="true">·</span>
             <a href="/privacy/">Privacy</a>
           </nav>
         </div>
