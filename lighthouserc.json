@@ -6,7 +6,8 @@
         "http://localhost/index.html",
         "http://localhost/concepts/browser-rendering-pipeline/index.html",
         "http://localhost/autopsies/double-payment-race-condition/index.html",
-        "http://localhost/diagnose/index.html"
+        "http://localhost/diagnose/index.html",
+        "http://localhost/proof/index.html"
       ],
       "numberOfRuns": 1,
       "settings": {
