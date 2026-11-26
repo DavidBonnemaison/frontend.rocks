@@ -1,0 +1,31 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer tokens {
+  :root {
+    --bg: var(--color-paper);
+    --surface: var(--color-paper);
+    --surface-2: var(--color-paper-sunk);
+    --border: var(--color-rule-soft);
+    --text: var(--color-ink);
+    --text-muted: var(--color-ink-muted);
+    --accent: var(--color-accent);
+    --accent-dim: color-mix(in oklch, var(--color-accent) 14%, transparent);
+    --ok: var(--color-ok);
+    --warn: var(--color-warn);
+    --danger: var(--color-fail);
+    --mono: var(--font-meta);
+    --sans: var(--font-text);
+    --semantic-native-bg: color-mix(in oklch, var(--color-ok) 12%, transparent);
+    --semantic-native-text: var(--color-ok);
+    --semantic-native-border: color-mix(in oklch, var(--color-ok) 42%, transparent);
+    --semantic-newly-bg: color-mix(in oklch, var(--color-focus) 12%, transparent);
+    --semantic-newly-text: var(--color-focus);
+    --semantic-newly-border: color-mix(in oklch, var(--color-focus) 40%, transparent);
+    --semantic-experimental-bg: color-mix(in oklch, var(--color-warn) 12%, transparent);
+    --semantic-experimental-text: var(--color-warn);
+    --semantic-experimental-border: color-mix(in oklch, var(--color-warn) 40%, transparent);
+    --semantic-legacy-bg: color-mix(in oklch, var(--color-fail) 12%, transparent);
+    --semantic-legacy-text: var(--color-fail);
+    --semantic-legacy-border: color-mix(in oklch, var(--color-fail) 42%, transparent);
+  }
+}
