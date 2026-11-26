@@ -89,4 +89,46 @@ describe('history-loader', () => {
       { at: '2026-11-02T02:00:00Z', proven: 15, total: 16 },
     ]);
   });
+
+  it('parses nightly JSONL format (kind: run with totals, kind: claim with to)', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fr-history-nightly-'));
+    dirs.push(dir);
+    fs.writeFileSync(
+      path.join(dir, '2026-12.jsonl'),
+      [
+        JSON.stringify({
+          kind: 'run',
+          at: '2026-12-01T02:17:00Z',
+          engines: { chromium: '143.0.0.0', firefox: '145.0', webkit: '26.0' },
+          playwright: '1.65.1',
+          os: 'linux',
+          distro: 'ubuntu-24.04',
+          totals: { proven: 40, diverges: 1, failed: 0, stale: 2, pending: 0 },
+          durationMs: 250000,
+          infraErrors: 0,
+        }),
+        JSON.stringify({
+          kind: 'claim',
+          at: '2026-12-01T02:17:00Z',
+          claimId: 'css-container-queries/c1',
+          from: 'proven',
+          to: 'diverges',
+          engines: { chromium: 'pass', firefox: 'pass', webkit: 'fail' },
+        }),
+      ].join('\n') + '\n'
+    );
+
+    expect(getGlobalRunHistory(90, dir)).toEqual([
+      { at: '2026-12-01T02:17:00Z', proven: 40, total: 43 },
+    ]);
+    expect(getClaimHistory('css-container-queries/c1', 20, dir)).toEqual([
+      {
+        at: '2026-12-01T02:17:00Z',
+        from: null,
+        to: 'diverges',
+        engines: { chromium: 'pass', firefox: 'pass', webkit: 'fail' },
+      },
+    ]);
+  });
 });
+

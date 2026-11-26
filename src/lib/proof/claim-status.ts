@@ -222,13 +222,25 @@ function evaluateVerifierClaim(claim: Claim, input: ComputeInput): ClaimResult {
         detail: entry.message,
       };
     }
+    if (prev) {
+      return {
+        status: prev.status,
+        proofKind: claim.proof.kind,
+        engines: null,
+        checkedAt: prev.checkedAt,
+        provenSince: prev.provenSince,
+        failingSince: prev.failingSince,
+        reason: prev.reason,
+        detail: `claim unavailable in ${artifactKind}, previous status kept`,
+      };
+    }
     return {
       status: 'pending',
       proofKind: claim.proof.kind,
       engines: null,
       checkedAt: null,
       provenSince: null,
-      failingSince: prev?.failingSince ?? null,
+      failingSince: null,
       reason: null,
       detail: `claim not checked by ${artifactKind}`,
     };

@@ -1,0 +1,79 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`nightly issues and PR body > generates open, day-7 comment (once), and close actions matching exact snapshots 1`] = `
+{
+  "close": [
+    {
+      "comment": "Back to proven on 2026-12-08 (Chromium 143, Firefox 145, WebKit 26).",
+      "key": "proof-regression:event-loop-tasks-microtasks/microtasks-drain-before-next-task",
+    },
+  ],
+  "comment": [
+    {
+      "body": "Day 7: the page css-container-queries is now shown as unverified and removed from the index until this claim is proven again.",
+      "key": "proof-regression:css-container-queries/applies-at-container-width",
+    },
+  ],
+  "open": [
+    {
+      "body": "<!-- key: proof-regression:css-container-queries/applies-at-container-width -->
+
+Claim: \`css-container-queries/applies-at-container-width\`
+Permalink: https://frontend.rocks/claims/css-container-queries/applies-at-container-width/
+Statement: A container query matches against the inline size of the nearest size container.
+Status: \`proven\` -> \`diverges\`
+
+Engines:
+- Chromium 143.0.7499.4: \`pass\`
+- Firefox 145.0: \`pass\`
+- WebKit 26.0: \`fail\`
+
+Detail: webkit returned 1 column instead of 2
+
+If this is not resolved within 7 days, the page is shown as unverified and removed from the index.",
+      "key": "proof-regression:css-container-queries/applies-at-container-width",
+      "labels": [
+        "proof-regression",
+        "automated",
+      ],
+      "title": "[proof] css-container-queries/applies-at-container-width now diverges",
+    },
+  ],
+}
+`;
+
+exports[`nightly issues and PR body > generates open, day-7 comment (once), and close actions matching exact snapshots 2`] = `
+"## Nightly proof results (2026-12-08)
+
+### Totals
+
+- **proven**: 1
+- **diverges**: 1
+- **failed**: 0
+- **stale**: 0
+- **pending**: 0
+- **infraErrors**: 0
+
+### Engines
+
+- Chromium: \`143.0.7499.4\`
+- Firefox: \`145.0\`
+- WebKit: \`26.0\`
+
+### Regressions
+
+- \`css-container-queries/applies-at-container-width\`: \`proven\` -> \`diverges\`
+
+### Recoveries
+
+- \`event-loop-tasks-microtasks/microtasks-drain-before-next-task\`: \`diverges\` -> \`proven\`
+
+### Demoted pages (7+ days failing)
+
+- \`css-container-queries\` (\`content/concepts/css-container-queries.mdx\`): \`css-container-queries/applies-at-container-width\`
+
+### Promoted pages (repaired)
+
+- None
+"
+`;
