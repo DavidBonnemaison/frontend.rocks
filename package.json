@@ -31,6 +31,7 @@
     "proof:verify-specs": "tsx scripts/proof/verify-spec-quotes.ts",
     "proof:verify-sources": "tsx scripts/proof/verify-source-quotes.ts",
     "proof:support": "tsx scripts/proof/check-support.ts",
+    "proof:coverage": "tsx scripts/proof/check-coverage.ts",
     "check:all": "npm run typecheck && npm run lint && npm run test && npm run validate:content"
   },
   "dependencies": {

@@ -1,0 +1,38 @@
+.claim-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0.25rem;
+  vertical-align: super;
+  font-size: 0.7em;
+  line-height: 1;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.advice {
+  border-left: 3px solid var(--accent);
+  padding-left: 0.875rem;
+  margin: 1rem 0;
+}
+
+.advice__label {
+  display: block;
+  font-size: 0.75em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+}
+
+.advice--inline {
+  border-left: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.story {
+  /* Intentionally unstyled at this stage. */
+}
