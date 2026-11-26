@@ -1,0 +1,58 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .sidenote-ref {
+    display: inline;
+  }
+
+  .sidenote-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    min-height: 24px;
+    padding: 0 var(--space-3xs);
+    border: 0;
+    background: transparent;
+    font-family: var(--font-meta);
+    font-size: var(--step--2);
+    color: var(--color-accent);
+    vertical-align: super;
+    line-height: 1;
+  }
+
+  .sidenote {
+    font-family: var(--font-text);
+    font-style: italic;
+    font-size: var(--step--1);
+    line-height: var(--lh-ui);
+    color: var(--color-ink-muted);
+  }
+
+  @media (width < 68.75rem) /* xl */ {
+    .sidenote[data-open="false"] {
+      display: none;
+    }
+
+    .sidenote[data-open="true"] {
+      display: block;
+      margin-block: var(--space-xs);
+      padding-left: var(--space-s);
+      border-left: var(--rule-w) solid var(--color-rule);
+    }
+  }
+
+  @media (width >= 68.75rem) /* xl */ {
+    .sidenote-toggle {
+      pointer-events: none;
+      cursor: default;
+    }
+
+    .sidenote {
+      display: inline-block;
+      margin-left: var(--space-s);
+      padding-left: var(--space-s);
+      border-left: var(--rule-w) solid var(--color-rule-soft);
+    }
+  }
+}

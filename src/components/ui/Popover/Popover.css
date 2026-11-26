@@ -1,0 +1,45 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .ui-popover-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    min-height: 24px;
+    border: var(--rule-w) solid var(--color-rule);
+    background: transparent;
+    color: var(--color-ink);
+    padding: 0 var(--space-xs);
+    cursor: pointer;
+  }
+
+  .ui-popover {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    border: var(--rule-w) solid var(--color-ink);
+    border-radius: var(--radius-0);
+    box-shadow: var(--shadow-pop);
+    padding: var(--space-s);
+    margin: var(--space-xs);
+    max-width: min(26rem, 100vw - 2 * var(--gutter));
+  }
+
+  .ui-popover[data-placement="top"] {
+    position-area: top span-right;
+    position-try-fallbacks: flip-block, flip-inline;
+  }
+
+  .ui-popover[data-placement="bottom"] {
+    position-area: bottom span-right;
+    position-try-fallbacks: flip-block, flip-inline;
+  }
+
+  @supports not (anchor-name: --a) {
+    .ui-popover {
+      position: fixed;
+      inset: auto var(--gutter) var(--gutter) var(--gutter);
+      width: auto;
+    }
+  }
+}

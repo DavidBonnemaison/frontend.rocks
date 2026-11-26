@@ -1,0 +1,42 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .ui-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+  }
+
+  .ui-tabs-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .ui-tabs-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 0 var(--space-s);
+    border: var(--rule-w) solid var(--color-rule);
+    border-radius: var(--radius-0);
+    background: transparent;
+    color: var(--color-ink);
+    cursor: pointer;
+    transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+  }
+
+  .ui-tabs-tab:hover {
+    background: var(--color-paper-sunk);
+  }
+
+  .ui-tabs-tab[aria-selected="true"] {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  .ui-tabs-panel {
+    padding-top: var(--space-xs);
+  }
+}

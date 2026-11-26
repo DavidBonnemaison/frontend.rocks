@@ -1,0 +1,14 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .domain-label {
+    color: var(--color-ink-muted);
+    text-decoration: none;
+  }
+
+  a.domain-label:hover {
+    color: var(--color-ink);
+    text-decoration: underline;
+    text-decoration-color: var(--color-accent);
+  }
+}

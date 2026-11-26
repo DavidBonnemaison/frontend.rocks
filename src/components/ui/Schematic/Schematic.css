@@ -1,0 +1,15 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .schematic {
+    display: block;
+    width: 100%;
+    color: inherit;
+  }
+
+  .schematic svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+}

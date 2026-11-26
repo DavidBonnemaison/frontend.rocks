@@ -1,0 +1,102 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .ui-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    font-family: var(--font-meta);
+    font-size: var(--step--1);
+    font-weight: var(--weight-medium);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+    border-radius: var(--radius-0);
+    border: var(--rule-w) solid transparent;
+    text-decoration: none;
+    white-space: nowrap;
+    min-width: 24px;
+    min-height: 24px;
+    cursor: pointer;
+    transition:
+      background var(--dur-1) var(--ease-out),
+      color var(--dur-1) var(--ease-out),
+      border-color var(--dur-1) var(--ease-out),
+      translate var(--dur-1) var(--ease-out);
+  }
+
+  .ui-button[data-size="sm"] {
+    height: 32px;
+    padding-inline: 12px;
+  }
+
+  .ui-button[data-size="md"] {
+    height: 40px;
+    padding-inline: 16px;
+  }
+
+  .ui-button[data-variant="primary"] {
+    background: var(--color-ink);
+    color: var(--color-paper);
+    border-color: var(--color-ink);
+  }
+
+  .ui-button[data-variant="primary"]:hover:not(:disabled) {
+    background: color-mix(in oklch, var(--color-ink) 85%, var(--color-paper));
+  }
+
+  .ui-button[data-variant="primary"]:active:not(:disabled) {
+    translate: 0 1px;
+  }
+
+  .ui-button[data-variant="secondary"] {
+    background: transparent;
+    color: var(--color-ink);
+    border-color: var(--color-rule);
+  }
+
+  .ui-button[data-variant="secondary"]:hover:not(:disabled) {
+    background: var(--color-paper-sunk);
+  }
+
+  .ui-button[data-variant="secondary"]:active:not(:disabled) {
+    translate: 0 1px;
+  }
+
+  .ui-button[data-variant="ghost"] {
+    background: transparent;
+    color: var(--color-ink);
+  }
+
+  .ui-button[data-variant="ghost"]:hover:not(:disabled) {
+    background: var(--color-paper-sunk);
+  }
+
+  .ui-button[data-variant="ghost"]:active:not(:disabled) {
+    translate: 0 1px;
+  }
+
+  .ui-button[data-variant="link"] {
+    background: transparent;
+    color: inherit;
+    height: auto;
+    padding-inline: 0;
+    text-transform: none;
+    letter-spacing: normal;
+    font-family: inherit;
+    text-decoration-line: underline;
+    text-decoration-color: var(--color-accent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+
+  .ui-button[data-variant="link"]:hover:not(:disabled) {
+    text-decoration-thickness: 2px;
+  }
+
+  .ui-button:disabled,
+  .ui-button[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}

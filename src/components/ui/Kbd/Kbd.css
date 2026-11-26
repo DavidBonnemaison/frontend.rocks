@@ -1,0 +1,14 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .ui-kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: var(--rule-w) solid var(--color-rule);
+    border-radius: var(--radius-0);
+    padding: 0 4px;
+    background: var(--color-paper);
+    color: var(--color-ink);
+  }
+}

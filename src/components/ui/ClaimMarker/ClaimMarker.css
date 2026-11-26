@@ -1,0 +1,131 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .claim-marker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    margin-left: var(--space-3xs);
+    border: 0;
+    background: transparent;
+    vertical-align: middle;
+    cursor: pointer;
+  }
+
+  .claim-marker-dot {
+    display: block;
+    width: 6px;
+    height: 6px;
+    transition: opacity var(--dur-1) var(--ease-out);
+  }
+
+  .claim-marker[data-status="proven"] .claim-marker-dot {
+    background: var(--color-ok);
+    opacity: 0.6;
+  }
+
+  .claim-marker[data-status="proven"]:hover .claim-marker-dot,
+  .claim-marker[data-status="proven"]:focus-visible .claim-marker-dot {
+    opacity: 1;
+  }
+
+  .claim-marker[data-status="diverges"] .claim-marker-dot,
+  .claim-marker[data-status="stale"] .claim-marker-dot {
+    background: transparent;
+    border: 1.5px solid var(--color-warn);
+  }
+
+  .claim-marker[data-status="failed"] .claim-marker-dot {
+    background: transparent;
+    border: 1.5px solid var(--color-fail);
+  }
+
+  .claim-marker[data-status="pending"] .claim-marker-dot {
+    background: transparent;
+    border: 1.5px solid var(--color-ink-muted);
+  }
+
+  .claim-popover {
+    position-area: top span-right;
+    position-try-fallbacks: flip-block, flip-inline;
+    margin: var(--space-xs);
+    width: min(26rem, 100vw - 2 * var(--gutter));
+    background: var(--color-paper);
+    color: var(--color-ink);
+    border: var(--rule-w) solid var(--color-ink);
+    border-radius: var(--radius-0);
+    box-shadow: var(--shadow-pop);
+    padding: var(--space-m);
+  }
+
+  @supports not (anchor-name: --a) {
+    .claim-popover {
+      position: fixed;
+      inset: auto var(--gutter) var(--gutter) var(--gutter);
+      width: auto;
+    }
+  }
+
+  .claim-popover-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  .claim-popover-item + .claim-popover-item {
+    padding-top: var(--space-s);
+    border-top: var(--rule-w) solid var(--color-rule-soft);
+  }
+
+  .claim-popover-statement {
+    font-family: var(--font-text);
+    font-size: var(--step--1);
+    line-height: var(--lh-ui);
+    margin: 0 0 var(--space-2xs);
+  }
+
+  .claim-popover-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--color-ink-muted);
+  }
+
+  .claim-popover-status[data-status="proven"] {
+    color: var(--color-ok);
+  }
+
+  .claim-popover-status[data-status="diverges"],
+  .claim-popover-status[data-status="stale"] {
+    color: var(--color-warn);
+  }
+
+  .claim-popover-status[data-status="failed"] {
+    color: var(--color-fail);
+  }
+
+  .claim-popover-engines {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .claim-popover-engine[data-result="pass"] {
+    color: var(--color-ok);
+  }
+
+  .claim-popover-engine[data-result="fail"] {
+    color: var(--color-fail);
+  }
+
+  .claim-popover-engine[data-result="error"] {
+    color: var(--color-warn);
+  }
+}

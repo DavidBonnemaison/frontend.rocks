@@ -20,7 +20,7 @@ test.describe('Code blocks', () => {
 
     const shikiPre = codeShell.locator('pre.shiki');
     await expect(shikiPre).toBeVisible();
-    const highlightedSpans = shikiPre.locator('span[style*="color:"]');
+    const highlightedSpans = shikiPre.locator('span[style*="--shiki-light:"]');
     expect(await highlightedSpans.count()).toBeGreaterThan(0);
 
     const copyBtn = codeShell.getByTestId('copy-code-button');

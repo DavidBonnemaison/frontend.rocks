@@ -1,0 +1,39 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .meta-block {
+    border-top: var(--rule-w) solid var(--color-rule);
+    margin: 0;
+  }
+
+  .meta-block-row {
+    display: grid;
+    grid-template-columns: 8rem minmax(0, 1fr);
+    gap: var(--space-xs);
+    padding-block: var(--space-xs);
+    border-bottom: var(--rule-w) solid var(--color-rule-soft);
+    align-items: baseline;
+  }
+
+  .meta-block-key {
+    color: var(--color-ink-muted);
+  }
+
+  .meta-block-value {
+    color: var(--color-ink);
+    margin: 0;
+  }
+
+  .meta-block[data-compact="true"] {
+    border-top: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2xs);
+    color: var(--color-ink-muted);
+  }
+
+  .meta-block-sep {
+    color: var(--color-ink-muted);
+  }
+}
