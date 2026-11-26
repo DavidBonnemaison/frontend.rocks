@@ -36,6 +36,7 @@ import {
 import { ProofChip } from '@/components/proof/ProofChip';
 import { ProofDegradedBanner } from '@/components/proof/ProofDegradedBanner';
 import { ProofPanel } from '@/components/proof/ProofPanel';
+import { buildBrowserProofPayload } from '@/lib/proof/browser-proof-payload';
 import { summarizePageProof } from '@/lib/proof/page-proof';
 
 let cachedClaimsById: Map<string, Claim> | null = null;
@@ -341,7 +342,9 @@ export default async function AutopsyDetailPage({
         />
       </div>
 
-      {showProof && <ProofPanel summary={proof} />}
+      {showProof && (
+        <ProofPanel summary={proof} browserProof={buildBrowserProofPayload(frontmatter.id)} />
+      )}
 
       {/* Primary Sources */}
       <section id="sources" aria-labelledby="sec-sources" style={{ marginTop: '2.5rem' }}>

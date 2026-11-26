@@ -1,9 +1,11 @@
 import React from 'react';
 import Link from 'next/link';
 import type { ClaimProofRow, EngineCellStatus, PageProofSummary } from '@/lib/proof/page-proof.types';
+import type { BrowserProofPayload } from '@/lib/proof/browser-proof-payload';
 import { ENGINE_ORDER, engineLabel } from '@/lib/proof/engine-labels';
 import { UI_STRINGS } from '@/lib/ui-strings';
 import { ProofPanelTracker } from './ProofPanelTracker';
+import { RunProofsButton } from './RunProofsButton';
 import './proof.css';
 
 const fmt = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', timeZone: 'UTC' });
@@ -49,9 +51,11 @@ function externalLinkLabel(proofKind: ClaimProofRow['proofKind']): string {
 
 export function ProofPanel({
   summary,
+  browserProof,
   actions,
 }: {
   summary: PageProofSummary;
+  browserProof?: BrowserProofPayload;
   actions?: React.ReactNode;
 }) {
   const s = UI_STRINGS.PROOF;
@@ -69,6 +73,9 @@ export function ProofPanel({
       </div>
       <p className="proof-panel-intro">{s.panelIntro}</p>
 
+      {browserProof && browserProof.items.some((item) => item.notRunnable === null) && (
+        <RunProofsButton items={browserProof.items} bundles={browserProof.bundles} />
+      )}
       {actions}
 
       <div className="proof-table-scroll" tabIndex={0} role="region" aria-label="Proof table">

@@ -49,6 +49,7 @@ import {
 import { ProofChip } from '@/components/proof/ProofChip';
 import { ProofDegradedBanner } from '@/components/proof/ProofDegradedBanner';
 import { ProofPanel } from '@/components/proof/ProofPanel';
+import { buildBrowserProofPayload } from '@/lib/proof/browser-proof-payload';
 import { summarizePageProof } from '@/lib/proof/page-proof';
 
 let cachedClaimsById: Map<string, Claim> | null = null;
@@ -663,7 +664,9 @@ export default async function ConceptPage({
           )}
         </section>
 
-        {showProof && <ProofPanel summary={proof} />}
+        {showProof && (
+          <ProofPanel summary={proof} browserProof={buildBrowserProofPayload(frontmatter.id)} />
+        )}
 
         <section id="connections" className="section-block connections-section">
           <h2>{UI_STRINGS.sections.connectionsAndNextSteps}</h2>
