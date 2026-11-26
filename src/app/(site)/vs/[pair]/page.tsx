@@ -59,10 +59,10 @@ export async function generateMetadata({
   return {
     title,
     description,
-    robots: robotsForStatus(pair.proof_status, pair.slug),
+    robots: robotsForStatus(pair.proof_status, `vs-${pair.slug}`),
     alternates: {
       canonical: canonicalUrl,
-      ...(isPublished(pair.proof_status, pair.slug) ? { types: { 'text/markdown': `${SITE_URL}/vs/${pair.slug}.md` } } : {}),
+      ...(isPublished(pair.proof_status, `vs-${pair.slug}`) ? { types: { 'text/markdown': `${SITE_URL}/vs/${pair.slug}.md` } } : {}),
     },
     openGraph: {
       title,
@@ -137,7 +137,7 @@ export default async function VsComparisonPage({
 
   return (
     <article className="concept-article" style={{ maxWidth: '900px', margin: '0 auto', padding: '32px 0' }}>
-      {isPublished(pair.proof_status, pair.slug) && (
+      {isPublished(pair.proof_status, `vs-${pair.slug}`) && (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

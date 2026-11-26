@@ -1,0 +1,49 @@
+{
+  "pageId": "sample-concept",
+  "claims": [
+    {
+      "id": "sample-concept/container-applies",
+      "type": "observable",
+      "statement": "A size container matches inline-size queries once its inline dimension reaches 480px.",
+      "scope": {
+        "engines": ["chromium", "webkit"]
+      },
+      "proof": {
+        "kind": "experiment",
+        "experimentId": "sample-container-query",
+        "expectKeys": ["applies-at-480"]
+      }
+    },
+    {
+      "id": "sample-concept/spec-containment",
+      "type": "normative",
+      "statement": "Size containment prevents descendants from affecting the container's own intrinsic size.",
+      "proof": {
+        "kind": "spec-quote",
+        "url": "https://drafts.csswg.org/css-contain-3/",
+        "anchor": "size-container",
+        "quote": "A query container for size queries must establish inline-size or size containment."
+      }
+    },
+    {
+      "id": "sample-concept/bcd-support",
+      "type": "support",
+      "statement": "CSS container-type is supported across modern desktop browsers according to BCD.",
+      "proof": {
+        "kind": "bcd",
+        "bcdKey": "css.properties.container-type",
+        "webFeatureId": "container-queries"
+      }
+    },
+    {
+      "id": "sample-concept/derived-summary",
+      "type": "derived",
+      "statement": "Because size containment isolates intrinsic sizing, container queries avoid cyclic layout.",
+      "proof": {
+        "kind": "derived",
+        "from": ["sample-concept/container-applies", "sample-concept/spec-containment"],
+        "reasoning": "Combining the observed query match with the spec containment requirement prevents circular sizing."
+      }
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-12-01T02:41:44.000Z",
+  "runner": {
+    "playwright": "1.65.1",
+    "node": "24.0.0",
+    "os": "linux",
+    "react": "19.3.1"
+  },
+  "engines": {
+    "chromium": "159.0.8154.6",
+    "firefox": "159.0",
+    "webkit": "27.2"
+  },
+  "experiments": {
+    "sample-container-query": {
+      "applies-at-480": {
+        "chromium": {
+          "status": "pass",
+          "observed": { "treatment": { "columns": 2 }, "control": { "columns": 1 } },
+          "presented": null,
+          "error": null
+        },
+        "webkit": {
+          "status": "pass",
+          "observed": { "treatment": { "columns": 2 }, "control": { "columns": 1 } },
+          "presented": null,
+          "error": null
+        }
+      }
+    }
+  },
+  "experimentMeta": {},
+  "claims": {
+    "sample-concept/container-applies": {
+      "status": "proven",
+      "proofKind": "experiment",
+      "engines": { "chromium": "pass", "webkit": "pass" },
+      "checkedAt": "2026-12-01T02:41:44.000Z",
+      "provenSince": "2026-11-20T02:00:00.000Z",
+      "failingSince": null,
+      "reason": null,
+      "detail": null
+    },
+    "sample-concept/spec-containment": {
+      "status": "proven",
+      "proofKind": "spec-quote",
+      "engines": null,
+      "checkedAt": "2026-12-01T02:41:44.000Z",
+      "provenSince": "2026-11-20T02:00:00.000Z",
+      "failingSince": null,
+      "reason": null,
+      "detail": null
+    },
+    "sample-concept/bcd-support": {
+      "status": "proven",
+      "proofKind": "bcd",
+      "engines": null,
+      "checkedAt": "2026-12-01T02:41:44.000Z",
+      "provenSince": "2026-11-20T02:00:00.000Z",
+      "failingSince": null,
+      "reason": null,
+      "detail": null
+    },
+    "sample-concept/derived-summary": {
+      "status": "proven",
+      "proofKind": "derived",
+      "engines": null,
+      "checkedAt": "2026-12-01T02:41:44.000Z",
+      "provenSince": "2026-11-20T02:00:00.000Z",
+      "failingSince": null,
+      "reason": null,
+      "detail": null
+    }
+  },
+  "pages": {},
+  "demotedPages": {}
+}

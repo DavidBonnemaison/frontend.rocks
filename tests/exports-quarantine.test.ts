@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { selectPublishableContent } from '@/lib/publishable-content';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { LoadedConcept } from '@/lib/content-loader';
 import type { ConceptFrontmatter, PageProofStatus } from '@/lib/schemas';
 import type { ProductionSymptomConfig } from '@/config/symptoms';
@@ -40,7 +42,81 @@ const contrast = (target: string) => [
   { target_id: target, type: 'contrasts_with' as const, note: 'Synthetic contrast note for tests.' },
 ];
 
+let tmpDir: string;
+
+function writeProvenFixture(dir: string, pageIds: string[]): void {
+  const claimsDir = path.join(dir, 'claims');
+  const resultsDir = path.join(dir, '.proof-results');
+  fs.mkdirSync(claimsDir, { recursive: true });
+  fs.mkdirSync(resultsDir, { recursive: true });
+
+  const claimsResults: Record<string, unknown> = {};
+  for (const pageId of pageIds) {
+    const claimId = `${pageId}/fact`;
+    fs.writeFileSync(
+      path.join(claimsDir, `${pageId}.claims.json`),
+      JSON.stringify({
+        pageId,
+        claims: [
+          {
+            id: claimId,
+            type: 'normative',
+            statement: `Canonical proven statement for ${pageId} fixture.`,
+            proof: {
+              kind: 'spec-quote',
+              url: 'https://drafts.csswg.org/css-contain-3/',
+              anchor: 'size-container',
+              quote: 'A query container for size queries must establish inline-size containment.',
+            },
+          },
+        ],
+      })
+    );
+    claimsResults[claimId] = {
+      status: 'proven',
+      proofKind: 'spec-quote',
+      engines: null,
+      checkedAt: '2026-12-01T00:00:00.000Z',
+      provenSince: '2026-11-01T00:00:00.000Z',
+      failingSince: null,
+      reason: null,
+      detail: null,
+    };
+  }
+
+  fs.writeFileSync(
+    path.join(resultsDir, 'latest.json'),
+    JSON.stringify({
+      schemaVersion: 1,
+      generatedAt: '2026-12-01T00:00:00.000Z',
+      runner: { playwright: '1.65.1', node: '24.0.0', os: 'linux', react: null },
+      engines: { chromium: '159.0', firefox: '159.0', webkit: '27.2' },
+      experiments: {},
+      experimentMeta: {},
+      claims: claimsResults,
+      pages: {},
+      demotedPages: {},
+    })
+  );
+}
+
 describe('selectPublishableContent', () => {
+  let selectPublishableContent: typeof import('@/lib/publishable-content').selectPublishableContent;
+
+  beforeAll(async () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fr-quarantine-test-'));
+    writeProvenFixture(tmpDir, ['a', 'b', 'vs-a-vs-b']);
+    vi.stubEnv('FRONTEND_ROCKS_CONTENT_DIR', tmpDir);
+    vi.resetModules();
+    ({ selectPublishableContent } = await import('@/lib/publishable-content'));
+  });
+
+  afterAll(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
   it('returns a pair only when both concepts are proven', () => {
     const out = selectPublishableContent({
       concepts: [
