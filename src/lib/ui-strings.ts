@@ -198,6 +198,14 @@ export const UI_STRINGS = {
     },
     methodLink: 'How proofs work',
   },
+  INSTRUMENTS: {
+    queueViewLegend: 'Reconstructed from the order recorded in your browser',
+    layerStackDeclaredLabel: 'Declared order',
+    layerStackDisagree: 'The declared order disagrees with what your browser hit',
+    frameBudgetNotEnoughFrames: 'Not enough frames recorded',
+    noDataAtPath: (path: string) => `No data at path "${path}"`,
+    emptyObservation: 'No observations recorded.',
+  },
 } as const;
 
 export function formatMaturityLabel(status: string | null | undefined): string {
