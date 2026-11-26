@@ -178,6 +178,7 @@ describe('validateAutopsyMdx (EPIC-15 narrative format)', () => {
   const validNarrativeAutopsy = `---
 id: sample-autopsy
 case_number: 99
+piece_color: saffron
 title: "Autopsy #99: Sample Narrative Incident"
 symptom: "Sample production failure symptom for unit validation."
 failure_mode: main-thread-freeze

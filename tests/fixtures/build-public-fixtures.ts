@@ -88,6 +88,7 @@ const autopsy = {
   frontmatter: {
     id: 'fixture-autopsy',
     case_number: 1,
+    piece_color: 'saffron',
     title: 'Fixture Autopsy: a blocked open that never resolves',
     symptom: 'A synthetic request hangs forever when a second tab keeps the old version open.',
     failure_mode: 'cascading-latency',

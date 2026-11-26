@@ -7,7 +7,23 @@ export default defineConfig({
   workers: process.env.CI ? 2 : undefined,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.002,
+      animations: 'disabled',
+    },
+  },
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'visual',
+      testDir: './tests/visual',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 800 },
+      },
+    },
+  ],
   use: {
     baseURL: 'http://127.0.0.1:4173',
     headless: true,

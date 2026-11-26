@@ -1,0 +1,34 @@
+{
+  "snapshots": [
+    {
+      "id": "cq-480",
+      "variant": "treatment",
+      "params": { "w": 480 },
+      "boxes": [
+        { "key": "slot", "selector": ".slot", "label": ".slot", "dashed": true },
+        { "key": "card", "selector": ".card", "label": ".card" },
+        { "key": "media", "selector": ".media", "label": ".media", "highlight": true },
+        { "key": "p", "selector": "p", "label": "p" }
+      ],
+      "dimensions": [
+        { "fromKey": "slot", "toKey": "slot", "axis": "x", "label": "480 px" }
+      ],
+      "caption": "Container at 480 px (2 columns)"
+    },
+    {
+      "id": "cq-300",
+      "variant": "treatment",
+      "params": { "w": 300 },
+      "boxes": [
+        { "key": "slot", "selector": ".slot", "label": ".slot", "dashed": true },
+        { "key": "card", "selector": ".card", "label": ".card" },
+        { "key": "media", "selector": ".media", "label": ".media", "highlight": true },
+        { "key": "p", "selector": "p", "label": "p" }
+      ],
+      "dimensions": [
+        { "fromKey": "slot", "toKey": "slot", "axis": "x", "label": "300 px" }
+      ],
+      "caption": "Container at 300 px (1 column)"
+    }
+  ]
+}

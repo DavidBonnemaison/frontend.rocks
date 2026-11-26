@@ -1,0 +1,69 @@
+{
+  "id": "cq-300",
+  "source": {
+    "experimentId": "container-query-inline-size",
+    "variant": "treatment",
+    "params": {
+      "w": 300
+    }
+  },
+  "engine": {
+    "name": "chromium",
+    "version": "159.0.8154.6"
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "boxes": [
+    {
+      "key": "slot",
+      "label": ".slot",
+      "x": 0,
+      "y": 0,
+      "w": 300,
+      "h": 88,
+      "dashed": true
+    },
+    {
+      "key": "card",
+      "label": ".card",
+      "x": 0,
+      "y": 0,
+      "w": 300,
+      "h": 88
+    },
+    {
+      "key": "media",
+      "label": ".media",
+      "x": 0,
+      "y": 0,
+      "w": 300,
+      "h": 24,
+      "highlight": true
+    },
+    {
+      "key": "p",
+      "label": "p",
+      "x": 0,
+      "y": 48,
+      "w": 300,
+      "h": 24
+    }
+  ],
+  "dimensions": [
+    {
+      "from": [
+        0,
+        0
+      ],
+      "to": [
+        300,
+        0
+      ],
+      "label": "300 px"
+    }
+  ],
+  "caption": "Container at 300 px (1 column) · Measured in Chromium 159.0.8154.6",
+  "sourceHash": "9234986b83d307e2198a09a0c2fd43885909a6e4e670708d16e7257c2c73b899"
+}

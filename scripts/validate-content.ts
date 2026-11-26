@@ -207,6 +207,18 @@ async function main(): Promise<void> {
         errors.push(`[autopsies/cast-diversity] ${e}`);
       }
     }
+
+    const orderedAutopsies = [...autopsies].sort((a, b) => a.case_number - b.case_number);
+    for (let i = 0; i < orderedAutopsies.length; i++) {
+      const current = orderedAutopsies[i];
+      const prev4 = orderedAutopsies.slice(Math.max(0, i - 4), i);
+      const clash = prev4.find((p) => p.piece_color === current.piece_color);
+      if (clash) {
+        console.warn(
+          `⚠️  [autopsies/piece-color] #${current.case_number} (${current.id}) reuses "${current.piece_color}" from #${clash.case_number} (${clash.id}) within the previous 4 pieces`
+        );
+      }
+    }
   }
 
   // Validate Claims (content/claims)
