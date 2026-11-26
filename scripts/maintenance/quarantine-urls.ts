@@ -21,7 +21,7 @@ export function buildQuarantineUrls(input: {
     concepts: concepts.filter((c) => isPublished(c.frontmatter.proof_status, c.frontmatter.id)).length,
     autopsies: autopsies.filter((a) => isPublished(a.frontmatter.proof_status, a.frontmatter.id)).length,
     symptoms: symptoms.filter((s) => isPublished(s.proof_status, s.slug)).length,
-    vsPairs: vsPairs.filter((p) => isPublished(p.proof_status, p.slug)).length,
+    vsPairs: vsPairs.filter((p) => isPublished(p.proof_status, `vs-${p.slug}`)).length,
   };
 
   const urls: string[] = [
@@ -35,7 +35,7 @@ export function buildQuarantineUrls(input: {
       .filter((s) => !isPublished(s.proof_status, s.slug))
       .map((s) => `${SITE_URL}/symptoms/${s.slug}/`),
     ...vsPairs
-      .filter((p) => !isPublished(p.proof_status, p.slug))
+      .filter((p) => !isPublished(p.proof_status, `vs-${p.slug}`))
       .map((p) => `${SITE_URL}/vs/${p.slug}/`),
   ];
 
