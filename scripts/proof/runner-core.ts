@@ -818,3 +818,17 @@ export async function runExperimentInEngine(input: EngineRunInput): Promise<Engi
     await pool.closeAll();
   }
 }
+
+export async function runSingleVariantInEngine(
+  input: EngineRunInput,
+  variant: RunVariant,
+  params: ParamValues,
+  expectKey: string | null,
+): Promise<RunResult> {
+  const pool = new ContextPool(input);
+  try {
+    return await pool.execute(variant, params, false, expectKey);
+  } finally {
+    await pool.closeAll();
+  }
+}

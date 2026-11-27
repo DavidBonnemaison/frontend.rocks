@@ -72,6 +72,7 @@ export default function CodeEditor({
 }: CodeEditorProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
+  const lastEmittedRef = useRef<string>(value);
   const onChangeRef = useRef(onChange);
   const onEscapeRef = useRef(onEscape);
 
@@ -109,7 +110,9 @@ export default function CodeEditor({
         EditorView.contentAttributes.of({ 'aria-label': label }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
-            onChangeRef.current(update.state.doc.toString());
+            const next = update.state.doc.toString();
+            lastEmittedRef.current = next;
+            onChangeRef.current(next);
           }
         }),
       ],
@@ -117,6 +120,7 @@ export default function CodeEditor({
 
     const view = new EditorView({ state, parent: host });
     viewRef.current = view;
+    lastEmittedRef.current = value;
     view.focus();
 
     return () => {
@@ -127,8 +131,10 @@ export default function CodeEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language, label]);
 
-  // Keep external resets in sync with the editor document.
+  // Keep external resets in sync with the editor document without clobbering rapid typing.
   useEffect(() => {
+    if (value === lastEmittedRef.current) return;
+    lastEmittedRef.current = value;
     const view = viewRef.current;
     if (!view) return;
     const current = view.state.doc.toString();

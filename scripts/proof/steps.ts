@@ -60,5 +60,17 @@ export const PROOF_STEPS: ProofStep[] = [
     optional: true,
     check: true,
   },
+  {
+    name: 'recorded-results',
+    script: 'scripts/proof/check-recorded-results.ts',
+    optional: true,
+    check: true,
+  },
+  {
+    name: 'challenges',
+    script: 'scripts/proof/check-challenges.ts',
+    optional: true,
+    check: true,
+  },
   { name: 'gate', script: 'scripts/proof/gate.ts' },
 ];
