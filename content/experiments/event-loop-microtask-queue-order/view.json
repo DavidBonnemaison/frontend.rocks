@@ -1,0 +1,6 @@
+{
+  "instrument": "queue-view",
+  "observedPath": "",
+  "compare": "side-by-side",
+  "smoke": true
+}

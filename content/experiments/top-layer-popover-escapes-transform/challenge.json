@@ -1,0 +1,8 @@
+{
+  "goal": "Promote #menu into the top layer so it paints above the z-index: 10 header.",
+  "startFrom": "control",
+  "editable": "js",
+  "expectKey": "popover-beats-header",
+  "hint": "Keep the popover attribute and call menu.showPopover().",
+  "forbid": ["zIndex", "header"]
+}

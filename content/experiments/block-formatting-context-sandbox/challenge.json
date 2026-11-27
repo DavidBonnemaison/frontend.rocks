@@ -1,0 +1,8 @@
+{
+  "goal": "Make .bfc-parent enclose the floated child and stop top-margin collapse without setting a fixed height.",
+  "startFrom": "control",
+  "editable": "css",
+  "expectKey": "encloses-float-and-margin",
+  "hint": "Change display: block to display: flow-root on .bfc-parent.",
+  "forbid": ["height", "min-height", "overflow"]
+}
