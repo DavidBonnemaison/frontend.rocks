@@ -9,6 +9,7 @@ export interface SlideSwitchProps {
   offLabel: string;
   onLabel: string;
   checked: boolean;
+  testId?: string;
   onChange(v: boolean): void;
 }
 
@@ -18,6 +19,7 @@ export function SlideSwitch({
   offLabel,
   onLabel,
   checked,
+  testId,
   onChange,
 }: SlideSwitchProps) {
   return (
@@ -31,6 +33,7 @@ export function SlideSwitch({
           type="checkbox"
           role="switch"
           className="slide-switch-input"
+          data-testid={testId}
           aria-label={label}
           aria-checked={checked}
           checked={checked}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Experiment } from '@/components/experiments/Experiment';
 import type { Claim } from '@/lib/proof/claim-schema';
 import type { SupportEvent } from '@/lib/proof/support/dates';
 import { Advice } from './Advice';
@@ -15,6 +16,9 @@ export interface ProofMdxContext {
   claimsBySlug: Map<string, Claim>;
   /** Full claim id -> Claim, across all pages (for cross-page references). */
   claimsById: Map<string, Claim>;
+  pageKind?: 'concept' | 'autopsy' | 'symptom' | 'vs' | 'deep-dive' | 'myth' | 'changelog';
+  reproExperimentId?: string;
+  pieceColor?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,6 +42,13 @@ export function createProofMdxComponents(ctx: ProofMdxContext): MdxComponentMap 
     ),
     Advice: (props: { children: React.ReactNode }) => <Advice>{props.children}</Advice>,
     Story: (props: { children: React.ReactNode }) => <Story>{props.children}</Story>,
+    Experiment: (props: {
+      id: string;
+      layout?: 'single' | 'side-by-side';
+      figureNumber?: number;
+      initialParams?: Record<string, number | boolean | string>;
+      initialVariant?: 'treatment' | 'control';
+    }) => <Experiment {...props} ctx={ctx} />,
     SpecQuote: (props: { claim: string }) => <SpecQuote ctx={ctx} claimSlug={props.claim} />,
     SourceQuote: (props: { claim: string }) => <SourceQuote ctx={ctx} claimRef={props.claim} />,
     Support: (props: {

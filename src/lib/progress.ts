@@ -210,3 +210,71 @@ export function resetProgressStoreForTests(): void {
     }
   }
 }
+
+export const CHALLENGES_STORAGE_KEY = 'fr-challenges';
+export const CHALLENGE_DRAFT_PREFIX = 'fr-challenge-draft:';
+
+export function getSolvedChallenges(): Record<string, boolean> {
+  const storage = getSafeStorage();
+  if (!storage) return {};
+  try {
+    const raw = storage.getItem(CHALLENGES_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    const out: Record<string, boolean> = {};
+    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+      if (v === true) out[k] = true;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+export function isChallengeSolved(experimentId: string): boolean {
+  return getSolvedChallenges()[experimentId] === true;
+}
+
+export function markChallengeSolved(experimentId: string): void {
+  const storage = getSafeStorage();
+  if (!storage) return;
+  try {
+    const current = getSolvedChallenges();
+    current[experimentId] = true;
+    storage.setItem(CHALLENGES_STORAGE_KEY, JSON.stringify(current));
+  } catch {
+    // Ignore SecurityError / QuotaExceededError.
+  }
+}
+
+export function getChallengeDraft(experimentId: string): string | null {
+  const storage = getSafeStorage();
+  if (!storage) return null;
+  try {
+    return storage.getItem(`${CHALLENGE_DRAFT_PREFIX}${experimentId}`);
+  } catch {
+    return null;
+  }
+}
+
+export function saveChallengeDraft(experimentId: string, code: string): void {
+  const storage = getSafeStorage();
+  if (!storage) return;
+  try {
+    storage.setItem(`${CHALLENGE_DRAFT_PREFIX}${experimentId}`, code);
+  } catch {
+    // Ignore SecurityError / QuotaExceededError.
+  }
+}
+
+export function clearChallengeDraft(experimentId: string): void {
+  const storage = getSafeStorage();
+  if (!storage) return;
+  try {
+    storage.removeItem(`${CHALLENGE_DRAFT_PREFIX}${experimentId}`);
+  } catch {
+    // Ignore SecurityError / QuotaExceededError.
+  }
+}
+

@@ -1,8 +1,9 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { Experiment } from '@/components/experiments/Experiment';
 import { loadExperimentBundle, loadExperimentIndex } from '@/lib/proof/experiment-bundles';
-import { AtelierView } from './atelier-view';
+import { AtelierRunAll } from './atelier-run-all';
 
 export async function generateStaticParams() {
   return loadExperimentIndex().map((entry) => ({ id: entry.id }));
@@ -40,12 +41,20 @@ export default async function ExperimentAtelierPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  let bundle;
+  let loaded;
   try {
-    bundle = loadExperimentBundle(id);
+    loaded = loadExperimentBundle(id);
   } catch {
     notFound();
   }
 
-  return <AtelierView bundle={bundle} />;
+  const { view: _view, ...bundle } = loaded;
+  void _view;
+
+  return (
+    <main className="container" style={{ maxWidth: '1040px', margin: '0 auto', padding: '2rem 1rem' }}>
+      <Experiment id={id} layout="side-by-side" />
+      <AtelierRunAll bundle={bundle} />
+    </main>
+  );
 }

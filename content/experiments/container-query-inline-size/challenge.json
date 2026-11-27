@@ -1,0 +1,8 @@
+{
+  "goal": "Make the card switch to two columns at 480 px without touching the viewport.",
+  "startFrom": "control",
+  "editable": "css",
+  "expectKey": "two-columns-at-480",
+  "hint": "Declare container-type: inline-size on .slot so the @container rule applies.",
+  "forbid": ["@media", "grid-template-columns"]
+}

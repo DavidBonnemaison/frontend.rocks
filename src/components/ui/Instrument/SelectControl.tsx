@@ -9,10 +9,18 @@ export interface SelectControlProps {
   label: string;
   options: string[];
   value: string;
+  testId?: string;
   onChange(v: string): void;
 }
 
-export function SelectControl({ id, label, options, value, onChange }: SelectControlProps) {
+export function SelectControl({
+  id,
+  label,
+  options,
+  value,
+  testId,
+  onChange,
+}: SelectControlProps) {
   return (
     <div className="select-control">
       <label htmlFor={id} className="select-control-label caps">
@@ -22,6 +30,7 @@ export function SelectControl({ id, label, options, value, onChange }: SelectCon
         <select
           id={id}
           className="select-control-input meta"
+          data-testid={testId}
           value={value}
           onChange={(e) => onChange(e.target.value)}
         >
