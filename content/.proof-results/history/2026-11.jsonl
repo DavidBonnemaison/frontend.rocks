@@ -170,3 +170,4 @@
 {"kind":"claim","at":"2026-11-27T10:50:29.507Z","claimId":"web-animations-api/spec-4-1-timing-model-1","from":null,"to":"failed"}
 {"kind":"claim","at":"2026-11-27T10:50:29.507Z","claimId":"web-crypto-subtle/spec-web-cryptography-api-14-subtlecrypto-int-1","from":null,"to":"failed"}
 {"kind":"claim","at":"2026-11-27T10:50:29.507Z","claimId":"zero-runtime-vs-runtime-css/spec-6-4-1-cssstylesheet-insertrule-1","from":null,"to":"failed"}
+{"kind":"run","at":"2026-11-28T10:21:43.677Z","engines":{"chromium":"159.0.8154.6","firefox":"159.0","webkit":"27.2"},"playwright":"1.65.1","os":"linux","distro":"ubuntu-26.04","totals":{"proven":0,"diverges":0,"failed":171,"stale":0,"pending":0},"durationMs":117979,"infraErrors":0}
