@@ -1,7 +1,7 @@
 {
   "claims": {
     "a11y-tree-queries-vs-dom-selectors/spec-4-3-accessible-name-and-description-comp-1": {
-      "checkedAt": "2026-11-27T10:50:43.368Z",
+      "checkedAt": "2026-11-28T10:23:03.534Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim a11y-tree-queries-vs-dom-selectors/spec-4-3-accessible-name-and-description-comp-1",
       "engines": null,
       "failingSince": null,
@@ -11,7 +11,7 @@
       "status": "failed"
     },
     "a11y-tree-queries-vs-dom-selectors/spec-5-1-1-exclusion-from-the-accessibility-t-2": {
-      "checkedAt": "2026-11-27T10:50:43.368Z",
+      "checkedAt": "2026-11-28T10:23:03.534Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim a11y-tree-queries-vs-dom-selectors/spec-5-1-1-exclusion-from-the-accessibility-t-2",
       "engines": null,
       "failingSince": null,
@@ -21,7 +21,7 @@
       "status": "failed"
     },
     "abortcontroller-cancellation/spec-3-2-interface-abortcontroller-1": {
-      "checkedAt": "2026-11-27T10:50:43.368Z",
+      "checkedAt": "2026-11-28T10:23:03.534Z",
       "detail": "Quote not found verbatim in normative text of #interface-abortcontroller.",
       "engines": null,
       "failingSince": null,
@@ -31,7 +31,7 @@
       "status": "failed"
     },
     "accessibility-tree-aria/spec-wai-aria-1-2-1-2-accessibility-tree-1": {
-      "checkedAt": "2026-11-27T10:50:44.596Z",
+      "checkedAt": "2026-11-28T10:23:04.304Z",
       "detail": "Anchor \"#intro_ria_accessibility_tree\" not found in specification.",
       "engines": null,
       "failingSince": null,
@@ -41,7 +41,7 @@
       "status": "failed"
     },
     "actor-over-worker-architecture/spec-10-1-2-processing-model-1": {
-      "checkedAt": "2026-11-27T10:50:45.152Z",
+      "checkedAt": "2026-11-28T10:23:04.696Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim actor-over-worker-architecture/spec-10-1-2-processing-model-1",
       "engines": null,
       "failingSince": null,
@@ -51,7 +51,7 @@
       "status": "failed"
     },
     "async-clipboard-activation/spec-clipboard-api-and-events-6-2-1-writetext-1": {
-      "checkedAt": "2026-11-27T10:50:45.152Z",
+      "checkedAt": "2026-11-28T10:23:04.696Z",
       "detail": "Quote not found verbatim in normative text of #dom-clipboard-writetext.",
       "engines": null,
       "failingSince": null,
@@ -61,7 +61,7 @@
       "status": "failed"
     },
     "async-determinism-fake-timers/spec-8-6-timers-timer-initialization-steps-1": {
-      "checkedAt": "2026-11-27T10:50:45.772Z",
+      "checkedAt": "2026-11-28T10:23:05.406Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim async-determinism-fake-timers/spec-8-6-timers-timer-initialization-steps-1",
       "engines": null,
       "failingSince": null,
@@ -71,7 +71,7 @@
       "status": "failed"
     },
     "async-determinism-fake-timers/spec-vitest-fake-timers-advancetimersbytimeas-2": {
-      "checkedAt": "2026-11-27T10:50:45.772Z",
+      "checkedAt": "2026-11-28T10:23:05.406Z",
       "detail": "vitest.dev/api/vi.html is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -81,7 +81,7 @@
       "status": "failed"
     },
     "beacon-api-visibilitychange/spec-beacon-api-3-1-sendbeacon-method-1": {
-      "checkedAt": "2026-11-27T10:50:45.773Z",
+      "checkedAt": "2026-11-28T10:23:05.406Z",
       "detail": "Quote not found verbatim in normative text of #sendbeacon-method.",
       "engines": null,
       "failingSince": null,
@@ -91,7 +91,7 @@
       "status": "failed"
     },
     "bfcache-navigation/spec-7-4-session-history-and-navigation-1": {
-      "checkedAt": "2026-11-27T10:50:46.719Z",
+      "checkedAt": "2026-11-28T10:23:06.392Z",
       "detail": "Quote not found verbatim in normative text of #history-traversal.",
       "engines": null,
       "failingSince": null,
@@ -101,7 +101,7 @@
       "status": "failed"
     },
     "block-formatting-context/spec-3-2-block-formatting-contexts-1": {
-      "checkedAt": "2026-11-27T10:50:47.368Z",
+      "checkedAt": "2026-11-28T10:23:06.755Z",
       "detail": "Quote not found verbatim in normative text of #block-formatting-context.",
       "engines": null,
       "failingSince": null,
@@ -111,7 +111,7 @@
       "status": "failed"
     },
     "broadcast-channel-web-locks/spec-html-living-standard-9-5-broadcasting-to-1": {
-      "checkedAt": "2026-11-27T10:50:47.643Z",
+      "checkedAt": "2026-11-28T10:23:07.026Z",
       "detail": "Quote not found verbatim in normative text of #broadcasting-to-other-browsing-contexts.",
       "engines": null,
       "failingSince": null,
@@ -121,7 +121,7 @@
       "status": "failed"
     },
     "broadcast-channel-web-locks/spec-web-locks-api-4-lock-managers-2": {
-      "checkedAt": "2026-11-27T10:50:47.825Z",
+      "checkedAt": "2026-11-28T10:23:07.475Z",
       "detail": "Quote not found verbatim in normative text of #api-lock-manager.",
       "engines": null,
       "failingSince": null,
@@ -131,7 +131,7 @@
       "status": "failed"
     },
     "browser-rendering-pipeline/spec-8-1-7-3-update-the-rendering-1": {
-      "checkedAt": "2026-11-27T10:50:48.034Z",
+      "checkedAt": "2026-11-28T10:23:07.558Z",
       "detail": "Quote not found verbatim in normative text of #update-the-rendering.",
       "engines": null,
       "failingSince": null,
@@ -141,7 +141,7 @@
       "status": "failed"
     },
     "browser-top-layer/spec-6-top-layer-1": {
-      "checkedAt": "2026-11-27T10:50:49.155Z",
+      "checkedAt": "2026-11-28T10:23:08.610Z",
       "detail": "Quote not found verbatim in normative text of #top-layer.",
       "engines": null,
       "failingSince": null,
@@ -151,7 +151,7 @@
       "status": "failed"
     },
     "cdn-edge-cache-keys/spec-rfc-9111-section-4-1-calculating-cache-k-1": {
-      "checkedAt": "2026-11-27T10:50:49.662Z",
+      "checkedAt": "2026-11-28T10:23:09.032Z",
       "detail": "www.rfc-editor.org/rfc/rfc9111 is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -161,7 +161,7 @@
       "status": "failed"
     },
     "cdn-edge-cache-keys/spec-rfc-9211-the-cache-status-http-response-2": {
-      "checkedAt": "2026-11-27T10:50:49.662Z",
+      "checkedAt": "2026-11-28T10:23:09.032Z",
       "detail": "www.rfc-editor.org/rfc/rfc9211 is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -171,7 +171,7 @@
       "status": "failed"
     },
     "client-side-router-internals/spec-7-2-7-the-navigation-api-1": {
-      "checkedAt": "2026-11-27T10:50:49.662Z",
+      "checkedAt": "2026-11-28T10:23:09.032Z",
       "detail": "Section #navigation-api declares itself non-normative.",
       "engines": null,
       "failingSince": null,
@@ -181,7 +181,7 @@
       "status": "failed"
     },
     "client-storage-schema-migrations/spec-idbdatabase-versionchange-event-2": {
-      "checkedAt": "2026-11-27T10:50:50.468Z",
+      "checkedAt": "2026-11-28T10:23:09.853Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/API/IDBDatabase/versionchange_event is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -191,7 +191,7 @@
       "status": "failed"
     },
     "client-storage-schema-migrations/spec-w3c-indexeddb-3-0-upgrade-transaction-1": {
-      "checkedAt": "2026-11-27T10:50:50.177Z",
+      "checkedAt": "2026-11-28T10:23:09.637Z",
       "detail": "Quote not found verbatim in normative text of #upgrade-transaction-steps.",
       "engines": null,
       "failingSince": null,
@@ -201,7 +201,7 @@
       "status": "failed"
     },
     "command-pattern-event-sourcing-ui/spec-event-sourcing-pattern-1": {
-      "checkedAt": "2026-11-27T10:50:50.468Z",
+      "checkedAt": "2026-11-28T10:23:09.853Z",
       "detail": "martinfowler.com/eaaDev/EventSourcing.html is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -211,7 +211,7 @@
       "status": "failed"
     },
     "command-pattern-event-sourcing-ui/spec-pure-reducers-serializable-actions-2": {
-      "checkedAt": "2026-11-27T10:50:50.468Z",
+      "checkedAt": "2026-11-28T10:23:09.853Z",
       "detail": "redux.js.org/understanding/thinking-in-redux/three-principles is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -221,7 +221,7 @@
       "status": "failed"
     },
     "compression-brotli-dictionaries/spec-rfc-7932-brotli-compressed-data-format-1": {
-      "checkedAt": "2026-11-27T10:50:50.468Z",
+      "checkedAt": "2026-11-28T10:23:09.853Z",
       "detail": "www.rfc-editor.org/rfc/rfc7932 is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -231,7 +231,7 @@
       "status": "failed"
     },
     "compression-brotli-dictionaries/spec-rfc-9842-compression-dictionary-transpor-2": {
-      "checkedAt": "2026-11-27T10:50:50.468Z",
+      "checkedAt": "2026-11-28T10:23:09.853Z",
       "detail": "www.rfc-editor.org/rfc/rfc9842 is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -241,7 +241,7 @@
       "status": "failed"
     },
     "concurrent-rendering-lanes/spec-section-4-the-prioritized-task-schedulin-1": {
-      "checkedAt": "2026-11-27T10:50:50.468Z",
+      "checkedAt": "2026-11-28T10:23:09.853Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim concurrent-rendering-lanes/spec-section-4-the-prioritized-task-schedulin-1",
       "engines": null,
       "failingSince": null,
@@ -251,7 +251,7 @@
       "status": "failed"
     },
     "content-visibility/spec-4-suppressing-an-element-s-contents-the-1": {
-      "checkedAt": "2026-11-27T10:50:50.468Z",
+      "checkedAt": "2026-11-28T10:23:09.854Z",
       "detail": "Quote not found verbatim in normative text of #content-visibility.",
       "engines": null,
       "failingSince": null,
@@ -261,7 +261,7 @@
       "status": "failed"
     },
     "core-web-vitals-mechanics/spec-w3c-event-timing-interaction-to-next-pai-2": {
-      "checkedAt": "2026-11-27T10:50:50.718Z",
+      "checkedAt": "2026-11-28T10:23:10.031Z",
       "detail": "Anchor \"#sec-inp\" not found in specification.",
       "engines": null,
       "failingSince": null,
@@ -271,7 +271,7 @@
       "status": "failed"
     },
     "core-web-vitals-mechanics/spec-w3c-largest-contentful-paint-1": {
-      "checkedAt": "2026-11-27T10:50:50.718Z",
+      "checkedAt": "2026-11-28T10:23:10.031Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim core-web-vitals-mechanics/spec-w3c-largest-contentful-paint-1",
       "engines": null,
       "failingSince": null,
@@ -281,7 +281,7 @@
       "status": "failed"
     },
     "cors-preflight-samesite/spec-fetch-living-standard-4-5-cors-preflight-1": {
-      "checkedAt": "2026-11-27T10:50:51.397Z",
+      "checkedAt": "2026-11-28T10:23:10.733Z",
       "detail": "Quote not found verbatim in normative text of #cors-preflight-fetch-0.",
       "engines": null,
       "failingSince": null,
@@ -291,7 +291,7 @@
       "status": "failed"
     },
     "cross-origin-isolation-coop-coep/spec-html-living-standard-7-2-4-cross-origin-1": {
-      "checkedAt": "2026-11-27T10:50:52.298Z",
+      "checkedAt": "2026-11-28T10:23:11.339Z",
       "detail": "Quote not found verbatim in normative text of #cross-origin-opener-policies.",
       "engines": null,
       "failingSince": null,
@@ -301,7 +301,7 @@
       "status": "failed"
     },
     "cross-tab-leader-election/spec-broadcastchannel-api-2": {
-      "checkedAt": "2026-11-27T10:50:52.522Z",
+      "checkedAt": "2026-11-28T10:23:11.451Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -311,7 +311,7 @@
       "status": "failed"
     },
     "cross-tab-leader-election/spec-w3c-web-locks-api-lock-requests-1": {
-      "checkedAt": "2026-11-27T10:50:52.522Z",
+      "checkedAt": "2026-11-28T10:23:11.451Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim cross-tab-leader-election/spec-w3c-web-locks-api-lock-requests-1",
       "engines": null,
       "failingSince": null,
@@ -321,7 +321,7 @@
       "status": "failed"
     },
     "csp-nonces-strict-dynamic/spec-content-security-policy-level-3-8-3-stri-1": {
-      "checkedAt": "2026-11-27T10:50:52.522Z",
+      "checkedAt": "2026-11-28T10:23:11.451Z",
       "detail": "Section #strict-dynamic-usage declares itself non-normative.",
       "engines": null,
       "failingSince": null,
@@ -331,7 +331,7 @@
       "status": "failed"
     },
     "css-anchor-positioning/spec-3-anchor-positioning-1": {
-      "checkedAt": "2026-11-27T10:50:52.777Z",
+      "checkedAt": "2026-11-28T10:23:11.784Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim css-anchor-positioning/spec-3-anchor-positioning-1",
       "engines": null,
       "failingSince": null,
@@ -341,7 +341,7 @@
       "status": "failed"
     },
     "css-cascade-layers/spec-6-4-cascade-layers-1": {
-      "checkedAt": "2026-11-27T10:50:52.777Z",
+      "checkedAt": "2026-11-28T10:23:11.784Z",
       "detail": "Quote not found verbatim in normative text of #layering.",
       "engines": null,
       "failingSince": null,
@@ -351,7 +351,7 @@
       "status": "failed"
     },
     "css-container-queries/spec-css-containment-module-level-3-1": {
-      "checkedAt": "2026-11-27T10:50:52.971Z",
+      "checkedAt": "2026-11-28T10:23:11.904Z",
       "detail": "Quote not found verbatim in normative text of #container-queries.",
       "engines": null,
       "failingSince": null,
@@ -361,7 +361,7 @@
       "status": "failed"
     },
     "css-containment/spec-3-types-of-containment-1": {
-      "checkedAt": "2026-11-27T10:50:53.888Z",
+      "checkedAt": "2026-11-28T10:23:12.868Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim css-containment/spec-3-types-of-containment-1",
       "engines": null,
       "failingSince": null,
@@ -371,7 +371,7 @@
       "status": "failed"
     },
     "css-custom-properties-cascade/spec-3-using-cascading-variables-the-var-nota-1": {
-      "checkedAt": "2026-11-27T10:50:53.888Z",
+      "checkedAt": "2026-11-28T10:23:12.868Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim css-custom-properties-cascade/spec-3-using-cascading-variables-the-var-nota-1",
       "engines": null,
       "failingSince": null,
@@ -381,7 +381,7 @@
       "status": "failed"
     },
     "css-grid-track-sizing/spec-12-3-track-sizing-algorithm-1": {
-      "checkedAt": "2026-11-27T10:50:53.888Z",
+      "checkedAt": "2026-11-28T10:23:12.868Z",
       "detail": "Quote not found verbatim in normative text of #algo-track-sizing.",
       "engines": null,
       "failingSince": null,
@@ -391,7 +391,7 @@
       "status": "failed"
     },
     "css-has-selector/spec-4-2-the-relational-pseudo-class-has-1": {
-      "checkedAt": "2026-11-27T10:50:55.049Z",
+      "checkedAt": "2026-11-28T10:23:13.940Z",
       "detail": "Quote not found verbatim in normative text of #relational.",
       "engines": null,
       "failingSince": null,
@@ -401,7 +401,7 @@
       "status": "failed"
     },
     "css-houdini-property/spec-2-registering-custom-properties-1": {
-      "checkedAt": "2026-11-27T10:50:56.043Z",
+      "checkedAt": "2026-11-28T10:23:14.965Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim css-houdini-property/spec-2-registering-custom-properties-1",
       "engines": null,
       "failingSince": null,
@@ -411,7 +411,7 @@
       "status": "failed"
     },
     "css-logical-properties/spec-2-flow-relative-values-and-properties-1": {
-      "checkedAt": "2026-11-27T10:50:56.043Z",
+      "checkedAt": "2026-11-28T10:23:14.965Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim css-logical-properties/spec-2-flow-relative-values-and-properties-1",
       "engines": null,
       "failingSince": null,
@@ -421,7 +421,7 @@
       "status": "failed"
     },
     "css-nesting-and-scope/spec-2-nesting-style-rules-1": {
-      "checkedAt": "2026-11-27T10:50:56.043Z",
+      "checkedAt": "2026-11-28T10:23:14.965Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim css-nesting-and-scope/spec-2-nesting-style-rules-1",
       "engines": null,
       "failingSince": null,
@@ -431,7 +431,7 @@
       "status": "failed"
     },
     "css-scroll-snap/spec-4-scroll-snap-model-1": {
-      "checkedAt": "2026-11-27T10:50:56.043Z",
+      "checkedAt": "2026-11-28T10:23:14.965Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim css-scroll-snap/spec-4-scroll-snap-model-1",
       "engines": null,
       "failingSince": null,
@@ -441,7 +441,7 @@
       "status": "failed"
     },
     "css-specificity-inheritance/spec-17-calculating-a-selector-s-specificity-1": {
-      "checkedAt": "2026-11-27T10:50:56.043Z",
+      "checkedAt": "2026-11-28T10:23:14.965Z",
       "detail": "Quote not found verbatim in normative text of #specificity-rules.",
       "engines": null,
       "failingSince": null,
@@ -451,7 +451,7 @@
       "status": "failed"
     },
     "css-stacking-context/spec-appendix-e-elaborate-description-of-stac-1": {
-      "checkedAt": "2026-11-27T10:50:56.050Z",
+      "checkedAt": "2026-11-28T10:23:14.969Z",
       "detail": "Quote not found verbatim in normative text of #elaborate-stacking-contexts.",
       "engines": null,
       "failingSince": null,
@@ -461,7 +461,7 @@
       "status": "failed"
     },
     "css-subgrid/spec-2-subgrids-1": {
-      "checkedAt": "2026-11-27T10:50:57.127Z",
+      "checkedAt": "2026-11-28T10:23:16.115Z",
       "detail": "Quote not found verbatim in normative text of #subgrids.",
       "engines": null,
       "failingSince": null,
@@ -471,7 +471,7 @@
       "status": "failed"
     },
     "custom-elements-lifecycle/spec-4-13-4-custom-element-reactions-1": {
-      "checkedAt": "2026-11-27T10:50:57.134Z",
+      "checkedAt": "2026-11-28T10:23:16.120Z",
       "detail": "Quote not found verbatim in normative text of #custom-element-reactions.",
       "engines": null,
       "failingSince": null,
@@ -481,7 +481,7 @@
       "status": "failed"
     },
     "debounce-throttle-raf-coalescing/spec-mdn-requestanimationframe-2": {
-      "checkedAt": "2026-11-27T10:50:58.301Z",
+      "checkedAt": "2026-11-28T10:23:17.196Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -491,7 +491,7 @@
       "status": "failed"
     },
     "debounce-throttle-raf-coalescing/spec-whatwg-html-requestanimationframe-1": {
-      "checkedAt": "2026-11-27T10:50:57.657Z",
+      "checkedAt": "2026-11-28T10:23:16.521Z",
       "detail": "Quote not found verbatim in normative text of #animation-frames.",
       "engines": null,
       "failingSince": null,
@@ -501,7 +501,7 @@
       "status": "failed"
     },
     "dedicated-web-workers/spec-html-living-standard-10-2-3-dedicated-wo-1": {
-      "checkedAt": "2026-11-27T10:50:58.301Z",
+      "checkedAt": "2026-11-28T10:23:17.196Z",
       "detail": "Quote not found verbatim in normative text of #dedicated-workers-and-the-worker-interface.",
       "engines": null,
       "failingSince": null,
@@ -511,7 +511,7 @@
       "status": "failed"
     },
     "device-pixel-ratio-subpixel/spec-6-1-absolute-lengths-1": {
-      "checkedAt": "2026-11-27T10:50:59.342Z",
+      "checkedAt": "2026-11-28T10:23:18.271Z",
       "detail": "Quote not found verbatim in normative text of #reference-pixel.",
       "engines": null,
       "failingSince": null,
@@ -521,7 +521,7 @@
       "status": "failed"
     },
     "dom-cssom-construction/spec-13-2-parsing-html-documents-1": {
-      "checkedAt": "2026-11-27T10:50:59.569Z",
+      "checkedAt": "2026-11-28T10:23:18.483Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim dom-cssom-construction/spec-13-2-parsing-html-documents-1",
       "engines": null,
       "failingSince": null,
@@ -531,7 +531,7 @@
       "status": "failed"
     },
     "dom-event-propagation/spec-2-9-dispatching-events-1": {
-      "checkedAt": "2026-11-27T10:50:59.569Z",
+      "checkedAt": "2026-11-28T10:23:18.483Z",
       "detail": "Quote not found verbatim in normative text of #dispatching-events.",
       "engines": null,
       "failingSince": null,
@@ -541,7 +541,7 @@
       "status": "failed"
     },
     "dom-xss-trusted-types/spec-trusted-types-4-2-require-trusted-types-1": {
-      "checkedAt": "2026-11-27T10:50:59.589Z",
+      "checkedAt": "2026-11-28T10:23:18.499Z",
       "detail": "Quote not found verbatim in normative text of #trusted-types-csp-directive.",
       "engines": null,
       "failingSince": null,
@@ -551,7 +551,7 @@
       "status": "failed"
     },
     "dynamic-viewport-units/spec-6-1-2-viewport-percentage-lengths-1": {
-      "checkedAt": "2026-11-27T10:50:59.789Z",
+      "checkedAt": "2026-11-28T10:23:18.777Z",
       "detail": "Quote not found verbatim in normative text of #viewport-relative-lengths.",
       "engines": null,
       "failingSince": null,
@@ -561,7 +561,7 @@
       "status": "failed"
     },
     "early-hints-103/spec-rfc-8297-section-2-http-status-code-103-1": {
-      "checkedAt": "2026-11-27T10:50:59.799Z",
+      "checkedAt": "2026-11-28T10:23:18.783Z",
       "detail": "www.rfc-editor.org/rfc/rfc8297 is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -571,7 +571,7 @@
       "status": "failed"
     },
     "early-hints-103/spec-whatwg-html-processing-link-headers-in-1-2": {
-      "checkedAt": "2026-11-27T10:50:59.799Z",
+      "checkedAt": "2026-11-28T10:23:18.783Z",
       "detail": "Anchor \"#early-hints\" not found in specification.",
       "engines": null,
       "failingSince": null,
@@ -581,7 +581,7 @@
       "status": "failed"
     },
     "es-modules-live-bindings/spec-16-2-1-6-3-resolveexport-1": {
-      "checkedAt": "2026-11-27T10:51:00.411Z",
+      "checkedAt": "2026-11-28T10:23:19.249Z",
       "detail": "Use https://tc39.es/ecma262/multipage/<page>.html (the single page is 7.8 MB).",
       "engines": null,
       "failingSince": null,
@@ -591,7 +591,7 @@
       "status": "failed"
     },
     "event-loop-tasks-microtasks/spec-8-1-7-3-perform-a-microtask-checkpoint-1": {
-      "checkedAt": "2026-11-27T10:51:00.411Z",
+      "checkedAt": "2026-11-28T10:23:19.249Z",
       "detail": "Quote not found verbatim in normative text of #perform-a-microtask-checkpoint.",
       "engines": null,
       "failingSince": null,
@@ -601,7 +601,7 @@
       "status": "failed"
     },
     "execution-context-call-stack/spec-9-4-execution-contexts-1": {
-      "checkedAt": "2026-11-27T10:51:00.419Z",
+      "checkedAt": "2026-11-28T10:23:19.256Z",
       "detail": "Use https://tc39.es/ecma262/multipage/<page>.html (the single page is 7.8 MB).",
       "engines": null,
       "failingSince": null,
@@ -611,7 +611,7 @@
       "status": "failed"
     },
     "fine-grained-signals/spec-tc39-signals-proposal-stage-1-1": {
-      "checkedAt": "2026-11-27T10:51:00.419Z",
+      "checkedAt": "2026-11-28T10:23:19.256Z",
       "detail": "github.com/tc39/proposal-signals is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -621,7 +621,7 @@
       "status": "failed"
     },
     "finite-state-machines-ui/spec-stately-xstate-finite-state-machines-2": {
-      "checkedAt": "2026-11-27T10:51:00.419Z",
+      "checkedAt": "2026-11-28T10:23:19.256Z",
       "detail": "stately.ai/docs/state-machines-and-statecharts is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -631,7 +631,7 @@
       "status": "failed"
     },
     "finite-state-machines-ui/spec-w3c-scxml-state-chart-xml-1": {
-      "checkedAt": "2026-11-27T10:51:00.419Z",
+      "checkedAt": "2026-11-28T10:23:19.256Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim finite-state-machines-ui/spec-w3c-scxml-state-chart-xml-1",
       "engines": null,
       "failingSince": null,
@@ -641,7 +641,7 @@
       "status": "failed"
     },
     "flexbox-intrinsic-sizing/spec-4-5-implied-minimum-size-of-flex-items-1": {
-      "checkedAt": "2026-11-27T10:51:00.419Z",
+      "checkedAt": "2026-11-28T10:23:19.256Z",
       "detail": "Quote not found verbatim in normative text of #min-size-auto.",
       "engines": null,
       "failingSince": null,
@@ -651,7 +651,7 @@
       "status": "failed"
     },
     "font-loading-cls/spec-css-fonts-module-level-4-font-display-1": {
-      "checkedAt": "2026-11-27T10:51:00.750Z",
+      "checkedAt": "2026-11-28T10:23:19.561Z",
       "detail": "Quote not found verbatim in normative text of #font-display-desc.",
       "engines": null,
       "failingSince": null,
@@ -661,7 +661,7 @@
       "status": "failed"
     },
     "font-loading-cls/spec-css-fonts-module-level-5-metric-override-2": {
-      "checkedAt": "2026-11-27T10:51:01.687Z",
+      "checkedAt": "2026-11-28T10:23:20.493Z",
       "detail": "Anchor \"#font-size-adjust-desc\" not found in specification.",
       "engines": null,
       "failingSince": null,
@@ -671,7 +671,7 @@
       "status": "failed"
     },
     "gpu-compositor-layers/spec-css-will-change-module-level-1-1": {
-      "checkedAt": "2026-11-27T10:51:02.549Z",
+      "checkedAt": "2026-11-28T10:23:21.365Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim gpu-compositor-layers/spec-css-will-change-module-level-1-1",
       "engines": null,
       "failingSince": null,
@@ -681,7 +681,7 @@
       "status": "failed"
     },
     "headless-ui-state-primitives/spec-aria-authoring-practices-guide-menu-dial-1": {
-      "checkedAt": "2026-11-27T10:51:02.549Z",
+      "checkedAt": "2026-11-28T10:23:21.365Z",
       "detail": "www.w3.org/WAI/ARIA/apg/patterns/ is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -691,7 +691,7 @@
       "status": "failed"
     },
     "hexagonal-ports-adapters-ui/spec-ecma-262-16-2-modules-2": {
-      "checkedAt": "2026-11-27T10:51:02.549Z",
+      "checkedAt": "2026-11-28T10:23:21.365Z",
       "detail": "Use https://tc39.es/ecma262/multipage/<page>.html (the single page is 7.8 MB).",
       "engines": null,
       "failingSince": null,
@@ -701,7 +701,7 @@
       "status": "failed"
     },
     "hexagonal-ports-adapters-ui/spec-intent-ports-and-adapters-1": {
-      "checkedAt": "2026-11-27T10:51:02.549Z",
+      "checkedAt": "2026-11-28T10:23:21.365Z",
       "detail": "alistair.cockburn.us/hexagonal-architecture/ is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -711,7 +711,7 @@
       "status": "failed"
     },
     "hexagonal-ports-adapters-ui/spec-object-types-structural-interfaces-3": {
-      "checkedAt": "2026-11-27T10:51:02.549Z",
+      "checkedAt": "2026-11-28T10:23:21.365Z",
       "detail": "www.typescriptlang.org/docs/handbook/2/objects.html is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -721,7 +721,7 @@
       "status": "failed"
     },
     "hierarchical-statecharts-actors/spec-3-13-selecting-and-executing-transitions-1": {
-      "checkedAt": "2026-11-27T10:51:02.549Z",
+      "checkedAt": "2026-11-28T10:23:21.365Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim hierarchical-statecharts-actors/spec-3-13-selecting-and-executing-transitions-1",
       "engines": null,
       "failingSince": null,
@@ -731,7 +731,7 @@
       "status": "failed"
     },
     "hierarchical-statecharts-actors/spec-stately-docs-actor-model-2": {
-      "checkedAt": "2026-11-27T10:51:02.549Z",
+      "checkedAt": "2026-11-28T10:23:21.365Z",
       "detail": "stately.ai/docs/actors is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -741,7 +741,7 @@
       "status": "failed"
     },
     "http-caching-directives/spec-mdn-http-caching-directives-2": {
-      "checkedAt": "2026-11-27T10:51:02.549Z",
+      "checkedAt": "2026-11-28T10:23:21.365Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -751,7 +751,7 @@
       "status": "failed"
     },
     "http-caching-directives/spec-rfc-9111-section-5-2-cache-control-1": {
-      "checkedAt": "2026-11-27T10:51:02.549Z",
+      "checkedAt": "2026-11-28T10:23:21.365Z",
       "detail": "www.rfc-editor.org/rfc/rfc9111 is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -761,7 +761,7 @@
       "status": "failed"
     },
     "http2-http3-multiplexing/spec-rfc-9113-section-5-streams-and-multiplex-1": {
-      "checkedAt": "2026-11-27T10:51:02.549Z",
+      "checkedAt": "2026-11-28T10:23:21.365Z",
       "detail": "www.rfc-editor.org/rfc/rfc9113 is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -771,7 +771,7 @@
       "status": "failed"
     },
     "http2-http3-multiplexing/spec-rfc-9114-section-4-1-http-3-request-resp-2": {
-      "checkedAt": "2026-11-27T10:51:02.549Z",
+      "checkedAt": "2026-11-28T10:23:21.365Z",
       "detail": "www.rfc-editor.org/rfc/rfc9114 is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -781,7 +781,7 @@
       "status": "failed"
     },
     "hydration-mismatch-mechanics/spec-hydrating-server-rendered-html-recoverin-1": {
-      "checkedAt": "2026-11-27T10:51:02.549Z",
+      "checkedAt": "2026-11-28T10:23:21.365Z",
       "detail": "react.dev/reference/react-dom/client/hydrateRoot is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -791,7 +791,7 @@
       "status": "failed"
     },
     "idempotency-optimistic-queues/spec-ietf-idempotency-key-http-header-1": {
-      "checkedAt": "2026-11-27T10:51:02.549Z",
+      "checkedAt": "2026-11-28T10:23:21.365Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim idempotency-optimistic-queues/spec-ietf-idempotency-key-http-header-1",
       "engines": null,
       "failingSince": null,
@@ -801,7 +801,7 @@
       "status": "failed"
     },
     "idempotency-optimistic-queues/spec-web-crypto-api-randomuuid-2": {
-      "checkedAt": "2026-11-27T10:51:02.549Z",
+      "checkedAt": "2026-11-28T10:23:21.365Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/API/Crypto/randomUUID is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -811,7 +811,7 @@
       "status": "failed"
     },
     "import-maps-runtime-graphs/spec-8-1-6-5-import-maps-1": {
-      "checkedAt": "2026-11-27T10:51:02.549Z",
+      "checkedAt": "2026-11-28T10:23:21.365Z",
       "detail": "Quote not found verbatim in normative text of #import-maps.",
       "engines": null,
       "failingSince": null,
@@ -821,7 +821,7 @@
       "status": "failed"
     },
     "indexeddb-transactions-quotas/spec-indexeddb-api-3-0-2-4-transactions-1": {
-      "checkedAt": "2026-11-27T10:51:02.561Z",
+      "checkedAt": "2026-11-28T10:23:21.374Z",
       "detail": "Anchor \"#transaction-lifetime-concept\" not found in specification.",
       "engines": null,
       "failingSince": null,
@@ -831,7 +831,7 @@
       "status": "failed"
     },
     "inert-attribute-focus/spec-6-3-the-inert-attribute-1": {
-      "checkedAt": "2026-11-27T10:51:02.573Z",
+      "checkedAt": "2026-11-28T10:23:21.384Z",
       "detail": "Quote not found verbatim in normative text of #the-inert-attribute.",
       "engines": null,
       "failingSince": null,
@@ -841,7 +841,7 @@
       "status": "failed"
     },
     "intersection-observer/spec-4-processing-model-1": {
-      "checkedAt": "2026-11-27T10:51:02.930Z",
+      "checkedAt": "2026-11-28T10:23:21.709Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim intersection-observer/spec-4-processing-model-1",
       "engines": null,
       "failingSince": null,
@@ -851,7 +851,7 @@
       "status": "failed"
     },
     "isr-swr-edge-invalidation/spec-5-2-2-10-s-maxage-1": {
-      "checkedAt": "2026-11-27T10:51:02.930Z",
+      "checkedAt": "2026-11-28T10:23:21.709Z",
       "detail": "datatracker.ietf.org/doc/html/rfc9111 is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -861,7 +861,7 @@
       "status": "failed"
     },
     "js-floating-positioning-engines/spec-cssom-view-module-getboundingclientrect-1": {
-      "checkedAt": "2026-11-27T10:51:02.930Z",
+      "checkedAt": "2026-11-28T10:23:21.709Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -871,7 +871,7 @@
       "status": "failed"
     },
     "js-garbage-collection/spec-v8-orinoco-generational-gc-1": {
-      "checkedAt": "2026-11-27T10:51:02.930Z",
+      "checkedAt": "2026-11-28T10:23:21.709Z",
       "detail": "v8.dev/blog/trash-talk is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -881,7 +881,7 @@
       "status": "failed"
     },
     "js-memory-leaks-retainers/spec-reachability-and-retainer-paths-1": {
-      "checkedAt": "2026-11-27T10:51:02.930Z",
+      "checkedAt": "2026-11-28T10:23:21.709Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/JavaScript/Memory_management is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -891,7 +891,7 @@
       "status": "failed"
     },
     "js-resize-observer-pattern/spec-resizeobserver-lifetime-1": {
-      "checkedAt": "2026-11-27T10:51:02.930Z",
+      "checkedAt": "2026-11-28T10:23:21.709Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim js-resize-observer-pattern/spec-resizeobserver-lifetime-1",
       "engines": null,
       "failingSince": null,
@@ -901,7 +901,7 @@
       "status": "failed"
     },
     "layout-thrashing/spec-forced-synchronous-layouts-1": {
-      "checkedAt": "2026-11-27T10:51:02.930Z",
+      "checkedAt": "2026-11-28T10:23:21.709Z",
       "detail": "web.dev/articles/avoid-large-complex-layouts-and-layout-thrashing is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -911,7 +911,7 @@
       "status": "failed"
     },
     "local-first-sync-crdt/spec-crdt-specification-strong-eventual-consi-1": {
-      "checkedAt": "2026-11-27T10:51:02.930Z",
+      "checkedAt": "2026-11-28T10:23:21.709Z",
       "detail": "crdt.tech/papers.html is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -921,7 +921,7 @@
       "status": "failed"
     },
     "local-first-sync-crdt/spec-mdn-indexeddb-api-2": {
-      "checkedAt": "2026-11-27T10:51:02.930Z",
+      "checkedAt": "2026-11-28T10:23:21.709Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -931,7 +931,7 @@
       "status": "failed"
     },
     "long-tasks-and-inp/spec-3-1-performancelongtasktiming-1": {
-      "checkedAt": "2026-11-27T10:51:02.930Z",
+      "checkedAt": "2026-11-28T10:23:21.709Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim long-tasks-and-inp/spec-3-1-performancelongtasktiming-1",
       "engines": null,
       "failingSince": null,
@@ -941,7 +941,7 @@
       "status": "failed"
     },
     "microfrontend-isolation-models/spec-8-1-7-3-import-maps-1": {
-      "checkedAt": "2026-11-27T10:51:02.930Z",
+      "checkedAt": "2026-11-28T10:23:21.709Z",
       "detail": "Quote not found verbatim in normative text of #import-maps.",
       "engines": null,
       "failingSince": null,
@@ -951,7 +951,7 @@
       "status": "failed"
     },
     "mutation-observer/spec-4-3-mutation-observers-1": {
-      "checkedAt": "2026-11-27T10:51:02.941Z",
+      "checkedAt": "2026-11-28T10:23:21.718Z",
       "detail": "Quote not found verbatim in normative text of #mutation-observers.",
       "engines": null,
       "failingSince": null,
@@ -961,7 +961,7 @@
       "status": "failed"
     },
     "native-dialog-element/spec-4-11-4-the-dialog-element-1": {
-      "checkedAt": "2026-11-27T10:51:02.967Z",
+      "checkedAt": "2026-11-28T10:23:21.737Z",
       "detail": "Quote not found verbatim in normative text of #dom-dialog-showmodal.",
       "engines": null,
       "failingSince": null,
@@ -971,7 +971,7 @@
       "status": "failed"
     },
     "network-interception-har-replay/spec-4-4-handle-fetch-1": {
-      "checkedAt": "2026-11-27T10:51:03.778Z",
+      "checkedAt": "2026-11-28T10:23:22.467Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim network-interception-har-replay/spec-4-4-handle-fetch-1",
       "engines": null,
       "failingSince": null,
@@ -981,7 +981,7 @@
       "status": "failed"
     },
     "network-interception-har-replay/spec-playwright-har-replay-2": {
-      "checkedAt": "2026-11-27T10:51:03.778Z",
+      "checkedAt": "2026-11-28T10:23:22.467Z",
       "detail": "playwright.dev/docs/mock is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -991,7 +991,7 @@
       "status": "failed"
     },
     "normalized-vs-document-caches/spec-document-keyed-query-caching-2": {
-      "checkedAt": "2026-11-27T10:51:03.778Z",
+      "checkedAt": "2026-11-28T10:23:22.467Z",
       "detail": "tanstack.com/query/latest/docs/framework/react/guides/caching is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1001,7 +1001,7 @@
       "status": "failed"
     },
     "normalized-vs-document-caches/spec-normalized-cache-architecture-1": {
-      "checkedAt": "2026-11-27T10:51:03.778Z",
+      "checkedAt": "2026-11-28T10:23:22.467Z",
       "detail": "www.apollographql.com/docs/react/caching/overview is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1011,7 +1011,7 @@
       "status": "failed"
     },
     "opfs-origin-private-fs/spec-file-system-living-standard-5-origin-pri-1": {
-      "checkedAt": "2026-11-27T10:51:03.778Z",
+      "checkedAt": "2026-11-28T10:23:22.467Z",
       "detail": "Quote not found verbatim in normative text of #origin-private-file-system.",
       "engines": null,
       "failingSince": null,
@@ -1021,7 +1021,7 @@
       "status": "failed"
     },
     "optimistic-ui-rollback/spec-react-useoptimistic-speculative-mutation-1": {
-      "checkedAt": "2026-11-27T10:51:04.411Z",
+      "checkedAt": "2026-11-28T10:23:22.794Z",
       "detail": "react.dev/reference/react/useOptimistic is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1031,7 +1031,7 @@
       "status": "failed"
     },
     "optimistic-ui-rollback/spec-tanstack-query-snapshot-rollback-2": {
-      "checkedAt": "2026-11-27T10:51:04.411Z",
+      "checkedAt": "2026-11-28T10:23:22.794Z",
       "detail": "tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1041,7 +1041,7 @@
       "status": "failed"
     },
     "paint-rasterization/spec-renderingng-architecture-paint-raster-1": {
-      "checkedAt": "2026-11-27T10:51:04.411Z",
+      "checkedAt": "2026-11-28T10:23:22.794Z",
       "detail": "developer.chrome.com/docs/chromium/renderingng-architecture is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1051,7 +1051,7 @@
       "status": "failed"
     },
     "passive-event-listeners/spec-2-9-addeventlisteneroptions-passive-1": {
-      "checkedAt": "2026-11-27T10:51:04.411Z",
+      "checkedAt": "2026-11-28T10:23:22.794Z",
       "detail": "Quote not found verbatim in normative text of #dom-addeventlisteneroptions-passive.",
       "engines": null,
       "failingSince": null,
@@ -1061,7 +1061,7 @@
       "status": "failed"
     },
     "performance-observer-rum/spec-mdn-performanceobserver-observe-2": {
-      "checkedAt": "2026-11-27T10:51:04.618Z",
+      "checkedAt": "2026-11-28T10:23:22.927Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver/observe is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1071,7 +1071,7 @@
       "status": "failed"
     },
     "performance-observer-rum/spec-w3c-performance-timeline-performanceobse-1": {
-      "checkedAt": "2026-11-27T10:51:04.434Z",
+      "checkedAt": "2026-11-28T10:23:22.811Z",
       "detail": "Quote not found verbatim in normative text of #dom-performanceobserver.",
       "engines": null,
       "failingSince": null,
@@ -1081,7 +1081,7 @@
       "status": "failed"
     },
     "pointer-events-touch-action/spec-9-1-the-touch-action-css-property-1": {
-      "checkedAt": "2026-11-27T10:51:04.618Z",
+      "checkedAt": "2026-11-28T10:23:22.927Z",
       "detail": "Quote not found verbatim in normative text of #the-touch-action-css-property.",
       "engines": null,
       "failingSince": null,
@@ -1091,7 +1091,7 @@
       "status": "failed"
     },
     "popover-api-light-dismiss/spec-6-11-the-popover-attribute-1": {
-      "checkedAt": "2026-11-27T10:51:12.444Z",
+      "checkedAt": "2026-11-28T10:23:29.354Z",
       "detail": "Quote not found verbatim in normative text of #the-popover-attribute.",
       "engines": null,
       "failingSince": null,
@@ -1101,7 +1101,7 @@
       "status": "failed"
     },
     "preload-scanner-hints/spec-2-6-8-fetch-priority-attributes-1": {
-      "checkedAt": "2026-11-27T10:51:13.003Z",
+      "checkedAt": "2026-11-28T10:23:29.634Z",
       "detail": "Quote not found verbatim in normative text of #fetch-priority-attributes.",
       "engines": null,
       "failingSince": null,
@@ -1111,7 +1111,7 @@
       "status": "failed"
     },
     "promises-async-await-internals/spec-27-7-5-3-await-value-1": {
-      "checkedAt": "2026-11-27T10:51:13.602Z",
+      "checkedAt": "2026-11-28T10:23:30.429Z",
       "detail": "Use https://tc39.es/ecma262/multipage/<page>.html (the single page is 7.8 MB).",
       "engines": null,
       "failingSince": null,
@@ -1121,7 +1121,7 @@
       "status": "failed"
     },
     "prototype-chain-lookup/spec-10-1-8-1-ordinaryget-o-p-receiver-1": {
-      "checkedAt": "2026-11-27T10:51:13.602Z",
+      "checkedAt": "2026-11-28T10:23:30.429Z",
       "detail": "Use https://tc39.es/ecma262/multipage/<page>.html (the single page is 7.8 MB).",
       "engines": null,
       "failingSince": null,
@@ -1131,7 +1131,7 @@
       "status": "failed"
     },
     "proxy-reflect-internals/spec-10-5-proxy-object-internal-methods-and-i-1": {
-      "checkedAt": "2026-11-27T10:51:13.602Z",
+      "checkedAt": "2026-11-28T10:23:30.429Z",
       "detail": "Use https://tc39.es/ecma262/multipage/<page>.html (the single page is 7.8 MB).",
       "engines": null,
       "failingSince": null,
@@ -1141,7 +1141,7 @@
       "status": "failed"
     },
     "proxy-vs-compiler-reactivity/spec-10-5-proxy-object-internal-methods-and-i-1": {
-      "checkedAt": "2026-11-27T10:51:13.602Z",
+      "checkedAt": "2026-11-28T10:23:30.429Z",
       "detail": "Use https://tc39.es/ecma262/multipage/<page>.html (the single page is 7.8 MB).",
       "engines": null,
       "failingSince": null,
@@ -1151,7 +1151,7 @@
       "status": "failed"
     },
     "react-portal-zindex-legacy/spec-4-11-4-the-dialog-element-1": {
-      "checkedAt": "2026-11-27T10:51:13.602Z",
+      "checkedAt": "2026-11-28T10:23:30.429Z",
       "detail": "Quote not found verbatim in normative text of #the-dialog-element.",
       "engines": null,
       "failingSince": null,
@@ -1161,7 +1161,7 @@
       "status": "failed"
     },
     "realtime-streams-backpressure-jitter/spec-9-2-2-the-eventsource-interface-1": {
-      "checkedAt": "2026-11-27T10:51:13.626Z",
+      "checkedAt": "2026-11-28T10:23:30.442Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim realtime-streams-backpressure-jitter/spec-9-2-2-the-eventsource-interface-1",
       "engines": null,
       "failingSince": null,
@@ -1171,7 +1171,7 @@
       "status": "failed"
     },
     "regexp-backtracking-unicode/spec-22-2-regexp-regular-expression-objects-1": {
-      "checkedAt": "2026-11-27T10:51:13.626Z",
+      "checkedAt": "2026-11-28T10:23:30.442Z",
       "detail": "Use https://tc39.es/ecma262/multipage/<page>.html (the single page is 7.8 MB).",
       "engines": null,
       "failingSince": null,
@@ -1181,7 +1181,7 @@
       "status": "failed"
     },
     "render-tree-layout/spec-2-box-layout-modes-the-display-property-1": {
-      "checkedAt": "2026-11-27T10:51:13.626Z",
+      "checkedAt": "2026-11-28T10:23:30.442Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim render-tree-layout/spec-2-box-layout-modes-the-display-property-1",
       "engines": null,
       "failingSince": null,
@@ -1191,7 +1191,7 @@
       "status": "failed"
     },
     "requestanimationframe-vsync/spec-8-12-animation-frames-1": {
-      "checkedAt": "2026-11-27T10:51:13.626Z",
+      "checkedAt": "2026-11-28T10:23:30.442Z",
       "detail": "Quote not found verbatim in normative text of #animation-frames.",
       "engines": null,
       "failingSince": null,
@@ -1201,7 +1201,7 @@
       "status": "failed"
     },
     "responsive-images-decoding/spec-whatwg-html-fetchpriority-loading-2": {
-      "checkedAt": "2026-11-27T10:51:14.720Z",
+      "checkedAt": "2026-11-28T10:23:31.489Z",
       "detail": "Quote not found verbatim in normative text of #attr-img-fetchpriority.",
       "engines": null,
       "failingSince": null,
@@ -1211,7 +1211,7 @@
       "status": "failed"
     },
     "responsive-images-decoding/spec-whatwg-html-images-srcset-sizes-and-deco-1": {
-      "checkedAt": "2026-11-27T10:51:13.632Z",
+      "checkedAt": "2026-11-28T10:23:30.445Z",
       "detail": "Quote not found verbatim in normative text of #updating-the-image-data.",
       "engines": null,
       "failingSince": null,
@@ -1221,7 +1221,7 @@
       "status": "failed"
     },
     "resumability-vs-hydration/spec-qwik-architecture-resumability-2": {
-      "checkedAt": "2026-11-27T10:51:15.674Z",
+      "checkedAt": "2026-11-28T10:23:32.478Z",
       "detail": "qwik.dev/docs/concepts/resumable/ is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1231,7 +1231,7 @@
       "status": "failed"
     },
     "resumability-vs-hydration/spec-web-dev-rendering-on-the-web-hydration-c-1": {
-      "checkedAt": "2026-11-27T10:51:15.674Z",
+      "checkedAt": "2026-11-28T10:23:32.478Z",
       "detail": "web.dev/articles/rendering-on-the-web is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1241,7 +1241,7 @@
       "status": "failed"
     },
     "roving-tabindex-focus-order/spec-wai-aria-authoring-practices-guide-rovin-1": {
-      "checkedAt": "2026-11-27T10:51:15.674Z",
+      "checkedAt": "2026-11-28T10:23:32.478Z",
       "detail": "www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/ is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1251,7 +1251,7 @@
       "status": "failed"
     },
     "rpc-server-actions-closures/spec-server-functions-security-1": {
-      "checkedAt": "2026-11-27T10:51:15.674Z",
+      "checkedAt": "2026-11-28T10:23:32.478Z",
       "detail": "react.dev/reference/rsc/server-actions is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1261,7 +1261,7 @@
       "status": "failed"
     },
     "runtime-boundary-validation/spec-ecmascript-json-parse-2": {
-      "checkedAt": "2026-11-27T10:51:15.674Z",
+      "checkedAt": "2026-11-28T10:23:32.478Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1271,7 +1271,7 @@
       "status": "failed"
     },
     "runtime-boundary-validation/spec-parse-don-t-validate-1": {
-      "checkedAt": "2026-11-27T10:51:15.674Z",
+      "checkedAt": "2026-11-28T10:23:32.478Z",
       "detail": "lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/ is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1281,7 +1281,7 @@
       "status": "failed"
     },
     "scheduler-api-yield/spec-4-2-2-scheduler-yield-1": {
-      "checkedAt": "2026-11-27T10:51:15.674Z",
+      "checkedAt": "2026-11-28T10:23:32.478Z",
       "detail": "Quote not found verbatim in normative text of #dom-scheduler-yield.",
       "engines": null,
       "failingSince": null,
@@ -1291,7 +1291,7 @@
       "status": "failed"
     },
     "scroll-driven-animations/spec-3-scroll-progress-timelines-1": {
-      "checkedAt": "2026-11-27T10:51:15.853Z",
+      "checkedAt": "2026-11-28T10:23:32.639Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim scroll-driven-animations/spec-3-scroll-progress-timelines-1",
       "engines": null,
       "failingSince": null,
@@ -1301,7 +1301,7 @@
       "status": "failed"
     },
     "server-state-cache-machines/spec-section-3-stale-while-revalidate-1": {
-      "checkedAt": "2026-11-27T10:51:15.853Z",
+      "checkedAt": "2026-11-28T10:23:32.639Z",
       "detail": "datatracker.ietf.org/doc/html/rfc5861 is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1311,7 +1311,7 @@
       "status": "failed"
     },
     "service-worker-lifecycle/spec-mdn-service-worker-lifecycle-2": {
-      "checkedAt": "2026-11-27T10:51:16.248Z",
+      "checkedAt": "2026-11-28T10:23:32.997Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1321,7 +1321,7 @@
       "status": "failed"
     },
     "service-worker-lifecycle/spec-w3c-service-workers-lifecycle-1": {
-      "checkedAt": "2026-11-27T10:51:15.853Z",
+      "checkedAt": "2026-11-28T10:23:32.639Z",
       "detail": "Anchor \"#service-worker-lifecycle\" not found in specification.",
       "engines": null,
       "failingSince": null,
@@ -1331,7 +1331,7 @@
       "status": "failed"
     },
     "shadow-dom-encapsulation/spec-4-8-shadow-trees-1": {
-      "checkedAt": "2026-11-27T10:51:16.248Z",
+      "checkedAt": "2026-11-28T10:23:32.997Z",
       "detail": "Quote not found verbatim in normative text of #shadow-trees.",
       "engines": null,
       "failingSince": null,
@@ -1341,7 +1341,7 @@
       "status": "failed"
     },
     "shared-array-buffer-atomics/spec-ecma-262-25-2-sharedarraybuffer-objects-1": {
-      "checkedAt": "2026-11-27T10:51:16.269Z",
+      "checkedAt": "2026-11-28T10:23:33.013Z",
       "detail": "Use https://tc39.es/ecma262/multipage/<page>.html (the single page is 7.8 MB).",
       "engines": null,
       "failingSince": null,
@@ -1351,7 +1351,7 @@
       "status": "failed"
     },
     "signal-graph-topological-sort/spec-design-goals-glitch-free-push-pull-algor-1": {
-      "checkedAt": "2026-11-27T10:51:16.269Z",
+      "checkedAt": "2026-11-28T10:23:33.013Z",
       "detail": "github.com/tc39/proposal-signals is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1361,7 +1361,7 @@
       "status": "failed"
     },
     "signal-graph-topological-sort/spec-doubly-linked-dependency-graphs-3": {
-      "checkedAt": "2026-11-27T10:51:16.269Z",
+      "checkedAt": "2026-11-28T10:23:33.013Z",
       "detail": "preactjs.com/blog/signal-boosting/ is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1371,7 +1371,7 @@
       "status": "failed"
     },
     "signal-graph-topological-sort/spec-tri-state-coloring-clean-check-dirty-2": {
-      "checkedAt": "2026-11-27T10:51:16.269Z",
+      "checkedAt": "2026-11-28T10:23:33.013Z",
       "detail": "github.com/modderme123/reactively is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1381,7 +1381,7 @@
       "status": "failed"
     },
     "simulated-dom-vs-real-engines/spec-html-living-standard-dom-rendering-integ-1": {
-      "checkedAt": "2026-11-27T10:51:16.269Z",
+      "checkedAt": "2026-11-28T10:23:33.013Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim simulated-dom-vs-real-engines/spec-html-living-standard-dom-rendering-integ-1",
       "engines": null,
       "failingSince": null,
@@ -1391,7 +1391,7 @@
       "status": "failed"
     },
     "simulated-dom-vs-real-engines/spec-jsdom-unimplemented-parts-2": {
-      "checkedAt": "2026-11-27T10:51:16.269Z",
+      "checkedAt": "2026-11-28T10:23:33.013Z",
       "detail": "github.com/jsdom/jsdom is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1401,7 +1401,7 @@
       "status": "failed"
     },
     "speculation-rules-prerender/spec-mdn-speculation-rules-api-2": {
-      "checkedAt": "2026-11-27T10:51:16.269Z",
+      "checkedAt": "2026-11-28T10:23:33.013Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/API/Speculation_Rules_API is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1411,7 +1411,7 @@
       "status": "failed"
     },
     "speculation-rules-prerender/spec-wicg-speculation-rules-prerendering-1": {
-      "checkedAt": "2026-11-27T10:51:16.269Z",
+      "checkedAt": "2026-11-28T10:23:33.013Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim speculation-rules-prerender/spec-wicg-speculation-rules-prerendering-1",
       "engines": null,
       "failingSince": null,
@@ -1421,7 +1421,7 @@
       "status": "failed"
     },
     "stale-closures-hooks/spec-mdn-javascript-closures-2": {
-      "checkedAt": "2026-11-27T10:51:16.269Z",
+      "checkedAt": "2026-11-28T10:23:33.013Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/JavaScript/Closures is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1431,7 +1431,7 @@
       "status": "failed"
     },
     "stale-closures-hooks/spec-react-docs-reactive-dependencies-closure-1": {
-      "checkedAt": "2026-11-27T10:51:16.269Z",
+      "checkedAt": "2026-11-28T10:23:33.013Z",
       "detail": "react.dev/reference/react/useEffect is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1441,7 +1441,7 @@
       "status": "failed"
     },
     "state-topology-boundaries/spec-7-4-2-the-history-interface-1": {
-      "checkedAt": "2026-11-27T10:51:16.269Z",
+      "checkedAt": "2026-11-28T10:23:33.013Z",
       "detail": "Quote not found verbatim in normative text of #the-history-interface.",
       "engines": null,
       "failingSince": null,
@@ -1451,7 +1451,7 @@
       "status": "failed"
     },
     "state-topology-boundaries/spec-urlsearchparams-web-api-2": {
-      "checkedAt": "2026-11-27T10:51:16.289Z",
+      "checkedAt": "2026-11-28T10:23:33.027Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/API/URLSearchParams is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1461,7 +1461,7 @@
       "status": "failed"
     },
     "streaming-ssr-flushing/spec-mdn-streams-api-readablestream-chunked-f-2": {
-      "checkedAt": "2026-11-27T10:51:16.974Z",
+      "checkedAt": "2026-11-28T10:23:33.621Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/API/Streams_API/Using_readable_streams is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1471,7 +1471,7 @@
       "status": "failed"
     },
     "streaming-ssr-flushing/spec-whatwg-html-incremental-tree-constructio-1": {
-      "checkedAt": "2026-11-27T10:51:16.289Z",
+      "checkedAt": "2026-11-28T10:23:33.027Z",
       "detail": "Quote not found verbatim in normative text of #tree-construction.",
       "engines": null,
       "failingSince": null,
@@ -1481,7 +1481,7 @@
       "status": "failed"
     },
     "streams-api-backpressure/spec-streams-living-standard-6-queuing-strate-1": {
-      "checkedAt": "2026-11-27T10:51:16.974Z",
+      "checkedAt": "2026-11-28T10:23:33.621Z",
       "detail": "Quote not found verbatim in normative text of #queuing-strategies.",
       "engines": null,
       "failingSince": null,
@@ -1491,7 +1491,7 @@
       "status": "failed"
     },
     "structured-clone-algorithm/spec-2-7-3-structuredserializeinternal-1": {
-      "checkedAt": "2026-11-27T10:51:17.913Z",
+      "checkedAt": "2026-11-28T10:23:34.155Z",
       "detail": "Quote not found verbatim in normative text of #structuredserializeinternal.",
       "engines": null,
       "failingSince": null,
@@ -1501,7 +1501,7 @@
       "status": "failed"
     },
     "temporal-api-dates/spec-tc39-temporal-specification-1": {
-      "checkedAt": "2026-11-27T10:51:18.078Z",
+      "checkedAt": "2026-11-28T10:23:34.433Z",
       "detail": "tc39.es/proposal-temporal/docs/ is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1511,7 +1511,7 @@
       "status": "failed"
     },
     "test-fidelity-spectrum/spec-testing-philosophy-isolate-test-user-vis-2": {
-      "checkedAt": "2026-11-27T10:51:18.078Z",
+      "checkedAt": "2026-11-28T10:23:34.433Z",
       "detail": "playwright.dev/docs/best-practices is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1521,7 +1521,7 @@
       "status": "failed"
     },
     "test-fidelity-spectrum/spec-vitest-browser-mode-architecture-1": {
-      "checkedAt": "2026-11-27T10:51:18.078Z",
+      "checkedAt": "2026-11-28T10:23:34.433Z",
       "detail": "vitest.dev/guide/browser/ is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1531,7 +1531,7 @@
       "status": "failed"
     },
     "typed-arrays-zero-copy/spec-23-2-typedarray-objects-1": {
-      "checkedAt": "2026-11-27T10:51:18.078Z",
+      "checkedAt": "2026-11-28T10:23:34.433Z",
       "detail": "Use https://tc39.es/ecma262/multipage/<page>.html (the single page is 7.8 MB).",
       "engines": null,
       "failingSince": null,
@@ -1541,7 +1541,7 @@
       "status": "failed"
     },
     "undo-redo-structural-sharing/spec-immer-structural-sharing-copy-on-write-1": {
-      "checkedAt": "2026-11-27T10:51:18.078Z",
+      "checkedAt": "2026-11-28T10:23:34.433Z",
       "detail": "immerjs.github.io/immer/structural-sharing/ is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1551,7 +1551,7 @@
       "status": "failed"
     },
     "undo-redo-structural-sharing/spec-mdn-structuredclone-2": {
-      "checkedAt": "2026-11-27T10:51:18.078Z",
+      "checkedAt": "2026-11-28T10:23:34.433Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1561,7 +1561,7 @@
       "status": "failed"
     },
     "url-as-state-store/spec-whatwg-html-history-pushstate-vs-replace-2": {
-      "checkedAt": "2026-11-27T10:51:18.078Z",
+      "checkedAt": "2026-11-28T10:23:34.433Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/API/History/pushState is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1571,7 +1571,7 @@
       "status": "failed"
     },
     "url-as-state-store/spec-whatwg-url-standard-urlsearchparams-1": {
-      "checkedAt": "2026-11-27T10:51:18.078Z",
+      "checkedAt": "2026-11-28T10:23:34.433Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/API/URLSearchParams is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1581,7 +1581,7 @@
       "status": "failed"
     },
     "user-preference-media-queries/spec-media-queries-level-5-11-user-preference-1": {
-      "checkedAt": "2026-11-27T10:51:18.078Z",
+      "checkedAt": "2026-11-28T10:23:34.433Z",
       "detail": "Quote not found verbatim in normative text of #mf-user-preferences.",
       "engines": null,
       "failingSince": null,
@@ -1591,7 +1591,7 @@
       "status": "failed"
     },
     "v8-hidden-classes-ic/spec-fast-properties-in-v8-1": {
-      "checkedAt": "2026-11-27T10:51:18.353Z",
+      "checkedAt": "2026-11-28T10:23:34.677Z",
       "detail": "v8.dev/blog/fast-properties is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1601,7 +1601,7 @@
       "status": "failed"
     },
     "view-transitions-api/spec-2-concepts-1": {
-      "checkedAt": "2026-11-27T10:51:18.353Z",
+      "checkedAt": "2026-11-28T10:23:34.677Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim view-transitions-api/spec-2-concepts-1",
       "engines": null,
       "failingSince": null,
@@ -1611,7 +1611,7 @@
       "status": "failed"
     },
     "virtual-dom-reconciliation/spec-mdn-dom-mutation-cost-2": {
-      "checkedAt": "2026-11-27T10:51:18.353Z",
+      "checkedAt": "2026-11-28T10:23:34.677Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1621,7 +1621,7 @@
       "status": "failed"
     },
     "virtual-dom-reconciliation/spec-react-reconciliation-tree-diffing-keys-1": {
-      "checkedAt": "2026-11-27T10:51:18.353Z",
+      "checkedAt": "2026-11-28T10:23:34.677Z",
       "detail": "react.dev/learn/preserving-and-resetting-state is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1631,7 +1631,7 @@
       "status": "failed"
     },
     "virtualized-lists-windowing/spec-css-containment-level-2-content-visibili-1": {
-      "checkedAt": "2026-11-27T10:51:18.353Z",
+      "checkedAt": "2026-11-28T10:23:34.677Z",
       "detail": "developer.mozilla.org/en-US/docs/Web/CSS/content-visibility is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1641,7 +1641,7 @@
       "status": "failed"
     },
     "virtualized-lists-windowing/spec-web-dev-list-virtualization-windowing-2": {
-      "checkedAt": "2026-11-27T10:51:18.353Z",
+      "checkedAt": "2026-11-28T10:23:34.677Z",
       "detail": "web.dev/articles/virtualize-long-lists-react-window is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1651,7 +1651,7 @@
       "status": "failed"
     },
     "visual-regression-subpixel-rendering/spec-4-2-fontfaceset-ready-1": {
-      "checkedAt": "2026-11-27T10:51:18.353Z",
+      "checkedAt": "2026-11-28T10:23:34.677Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim visual-regression-subpixel-rendering/spec-4-2-fontfaceset-ready-1",
       "engines": null,
       "failingSince": null,
@@ -1661,7 +1661,7 @@
       "status": "failed"
     },
     "visual-regression-subpixel-rendering/spec-playwright-visual-comparisons-2": {
-      "checkedAt": "2026-11-27T10:51:18.353Z",
+      "checkedAt": "2026-11-28T10:23:34.677Z",
       "detail": "playwright.dev/docs/test-snapshots is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1671,7 +1671,7 @@
       "status": "failed"
     },
     "wasm-js-boundary-overhead/spec-4-6-3-memory-prototype-grow-1": {
-      "checkedAt": "2026-11-27T10:51:18.353Z",
+      "checkedAt": "2026-11-28T10:23:34.677Z",
       "detail": "webassembly.github.io/spec/js-api/ is not an allowed normative source.",
       "engines": null,
       "failingSince": null,
@@ -1681,7 +1681,7 @@
       "status": "failed"
     },
     "web-animations-api/spec-4-1-timing-model-1": {
-      "checkedAt": "2026-11-27T10:51:18.353Z",
+      "checkedAt": "2026-11-28T10:23:34.677Z",
       "detail": "Claim has no spec anchor. Run: npm run proof:verify-specs -- --suggest-anchors --claim web-animations-api/spec-4-1-timing-model-1",
       "engines": null,
       "failingSince": null,
@@ -1691,7 +1691,7 @@
       "status": "failed"
     },
     "web-crypto-subtle/spec-web-cryptography-api-14-subtlecrypto-int-1": {
-      "checkedAt": "2026-11-27T10:51:18.353Z",
+      "checkedAt": "2026-11-28T10:23:34.677Z",
       "detail": "Quote not found verbatim in normative text of #subtlecrypto-interface.",
       "engines": null,
       "failingSince": null,
@@ -1701,7 +1701,7 @@
       "status": "failed"
     },
     "zero-runtime-vs-runtime-css/spec-6-4-1-cssstylesheet-insertrule-1": {
-      "checkedAt": "2026-11-27T10:51:18.766Z",
+      "checkedAt": "2026-11-28T10:23:34.953Z",
       "detail": "Quote not found verbatim in normative text of #dom-cssstylesheet-insertrule.",
       "engines": null,
       "failingSince": null,
@@ -1718,8 +1718,76 @@
     "webkit": "27.2"
   },
   "experimentMeta": {
+    "abortsignal-cleans-detached-listeners": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "a39878e054e5247363c2cae126882442484a7b9dd8c3eee30421bb27bb0f895c",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
+    "block-formatting-context-sandbox": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "07ec6062df3baca41a13f5bef8ed2ccee959b8964d8801c31a05bf44432edc28",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
     "container-query-inline-size": {
-      "checkedAt": "2026-11-27T10:50:32.957Z",
+      "checkedAt": "2026-11-28T10:21:45.828Z",
       "runtimeVersion": "1",
       "sourceHash": "9234986b83d307e2198a09a0c2fd43885909a6e4e670708d16e7257c2c73b899",
       "vacuity": {
@@ -1752,8 +1820,314 @@
         }
       }
     },
+    "cross-origin-isolation-headers": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "9fa33cfad8766898405c6cacdf7437692021fafdcedc031512f16f52b5f8c0cf",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
+    "css-containment-sandbox": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "d6bc1c3131fdce96371dba68aa2a135feb3310f13d71dd5077125b41045515b3",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
+    "css-scroll-snap-sandbox": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "77cf37cd55d1378a6e9bd67f3d2335d1c2575b900dc72e0e77fd71d56999dbbe",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
+    "device-pixel-ratio-subpixel-sandbox": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "968daa663e485f3c6ca35a623a0da6e9226cdc942727f934e5e34546f6bf0919",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
+    "event-loop-microtask-queue-order": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "ab2876d4dfb48e8e73de637f5552976ebf3ba4cfe0e909c45f91493a38f1870d",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
+    "event-timing-blocking-handler": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "2675a4333734398b6e5620cffd5ab4e1cc06e3ec5cb8c5c21435ef67cc21a3b2",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
+    "flexbox-intrinsic-sizing-sandbox": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "6775018ad7df54813582b5ffeaf741b734a00e528fc0c3432587e939498becc4",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
+    "layout-thrashing-forced-sync": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "b137b2cf330e8e8c3beb8712d2c9dfaf8b8f673d12a13847f94ebf25e0a18f61",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": null,
+            "differs": null,
+            "mutationChanges": null
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": null,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": null,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
+    "long-task-yield-main-thread": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "43328284865c6b46e8d5b77e0caa89ca37957a2b332320579d11cfd5e701f92f",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": null,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": null,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": null,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
     "microtasks-before-timers": {
-      "checkedAt": "2026-11-27T10:50:32.957Z",
+      "checkedAt": "2026-11-28T10:21:45.828Z",
       "runtimeVersion": "1",
       "sourceHash": "6db746ffd0809241f76ac2ba784ac91de477ef82d63f7f148994d770586fb094",
       "vacuity": {
@@ -1786,10 +2160,282 @@
         }
       }
     },
+    "raf-coalesces-burst-events": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "f39394147fbec2d7c9d0a2b3d32f2f7e2d1818b99eb8bc9a7901e73fd8264287",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
+    "readable-stream-backpressure-hwm": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "e4fa89266a7e2e3630c8677f39f0b0580c74548726ad1ca0765508c5c13299b4",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
+    "stacking-context-opacity-traps-z-index": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "39f112d911b4e4299fb696133ef7b04feb10858dae2f1a1f0e8169da59c3f94a",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
     "stacking-context-traps-z-index": {
-      "checkedAt": "2026-11-27T10:50:32.957Z",
+      "checkedAt": "2026-11-28T10:21:45.828Z",
       "runtimeVersion": "1",
       "sourceHash": "07d6d54d1d0048605f35143d21e3edfa423acfeb5c4d5bff57edfbe30a79d3c9",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
+    "top-layer-popover-escapes-transform": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "f78bc0bafe484d555156c725543f93255b42eaafcaad2b5b383273ef2a5e956d",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
+    "user-preference-media-queries-sandbox": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "13a5f74fbe086e79c86d65d9c7dda541d4098660a02a6a96acaad20a6e861154",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
+    "virtualized-lists-windowing-cost": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "77264b16cf6f2f81f09dff74a45d74cfa00fa63abf83c999c1035388f394fa93",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": null,
+            "differs": null,
+            "mutationChanges": null
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": null,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": null,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
+    "virtualized-lists-windowing-nodes": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "215eef6236a92071e0ca126b07a02e374b6aee464612c5d6ed06858ce804f550",
+      "vacuity": {
+        "chromium": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "firefox": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        },
+        "webkit": {
+          "checks": {
+            "blankDiffers": true,
+            "differs": true,
+            "mutationChanges": true
+          },
+          "detail": null,
+          "ok": true
+        }
+      }
+    },
+    "will-change-transform-containing-block": {
+      "checkedAt": "2026-11-28T10:21:45.828Z",
+      "runtimeVersion": "1",
+      "sourceHash": "49872f5c0b34bb0da26b70ac9219c171bdc07d2599597ff8ff05feed54b07da0",
       "vacuity": {
         "chromium": {
           "checks": {
@@ -1822,6 +2468,338 @@
     }
   },
   "experiments": {
+    "abortsignal-cleans-detached-listeners": {
+      "detached-listener-fires": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "events": [
+                {
+                  "label": "subtree removed from DOM",
+                  "lane": "lifecycle",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "resize calls after unmount: 0",
+                  "lane": "listener",
+                  "seq": 1,
+                  "status": "ok"
+                }
+              ]
+            },
+            "treatment": {
+              "events": [
+                {
+                  "label": "subtree removed from DOM",
+                  "lane": "lifecycle",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "resize calls after unmount: 3",
+                  "lane": "listener",
+                  "seq": 1,
+                  "status": "fail"
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "fail"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "events": [
+                {
+                  "label": "subtree removed from DOM",
+                  "lane": "lifecycle",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "resize calls after unmount: 0",
+                  "lane": "listener",
+                  "seq": 1,
+                  "status": "ok"
+                }
+              ]
+            },
+            "treatment": {
+              "events": [
+                {
+                  "label": "subtree removed from DOM",
+                  "lane": "lifecycle",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "resize calls after unmount: 2",
+                  "lane": "listener",
+                  "seq": 1,
+                  "status": "fail"
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "events": [
+                {
+                  "label": "subtree removed from DOM",
+                  "lane": "lifecycle",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "resize calls after unmount: 0",
+                  "lane": "listener",
+                  "seq": 1,
+                  "status": "ok"
+                }
+              ]
+            },
+            "treatment": {
+              "events": [
+                {
+                  "label": "subtree removed from DOM",
+                  "lane": "lifecycle",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "resize calls after unmount: 2",
+                  "lane": "listener",
+                  "seq": 1,
+                  "status": "fail"
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      }
+    },
+    "block-formatting-context-sandbox": {
+      "encloses-float-and-margin": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "float-left"
+                    ],
+                    "id": "float",
+                    "label": "Floated box"
+                  },
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [],
+                    "id": "first",
+                    "label": "First child"
+                  }
+                ],
+                "display": "block",
+                "flags": [
+                  "margin-collapses-through"
+                ],
+                "id": "parent",
+                "label": "Parent (.bfc-parent)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "float-left"
+                    ],
+                    "id": "float",
+                    "label": "Floated box"
+                  },
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [],
+                    "id": "first",
+                    "label": "First child"
+                  }
+                ],
+                "display": "flow-root",
+                "flags": [
+                  "contains-float"
+                ],
+                "id": "parent",
+                "label": "Parent (.bfc-parent)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "float-left"
+                    ],
+                    "id": "float",
+                    "label": "Floated box"
+                  },
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [],
+                    "id": "first",
+                    "label": "First child"
+                  }
+                ],
+                "display": "block",
+                "flags": [
+                  "margin-collapses-through"
+                ],
+                "id": "parent",
+                "label": "Parent (.bfc-parent)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "float-left"
+                    ],
+                    "id": "float",
+                    "label": "Floated box"
+                  },
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [],
+                    "id": "first",
+                    "label": "First child"
+                  }
+                ],
+                "display": "flow-root",
+                "flags": [
+                  "contains-float"
+                ],
+                "id": "parent",
+                "label": "Parent (.bfc-parent)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "float-left"
+                    ],
+                    "id": "float",
+                    "label": "Floated box"
+                  },
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [],
+                    "id": "first",
+                    "label": "First child"
+                  }
+                ],
+                "display": "block",
+                "flags": [
+                  "margin-collapses-through"
+                ],
+                "id": "parent",
+                "label": "Parent (.bfc-parent)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "float-left"
+                    ],
+                    "id": "float",
+                    "label": "Floated box"
+                  },
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [],
+                    "id": "first",
+                    "label": "First child"
+                  }
+                ],
+                "display": "flow-root",
+                "flags": [
+                  "contains-float"
+                ],
+                "id": "parent",
+                "label": "Parent (.bfc-parent)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      }
+    },
     "container-query-inline-size": {
       "one-column-at-300": {
         "chromium": {
@@ -1924,6 +2902,1235 @@
         }
       }
     },
+    "cross-origin-isolation-headers": {
+      "coop-coep-headers-present": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "requests": [
+                {
+                  "headers": {
+                    "coep": "none",
+                    "coop": "none"
+                  },
+                  "method": "GET",
+                  "outcome": 200,
+                  "path": "/doc",
+                  "seq": 0
+                }
+              ]
+            },
+            "treatment": {
+              "requests": [
+                {
+                  "headers": {
+                    "coep": "require-corp",
+                    "coop": "same-origin"
+                  },
+                  "method": "GET",
+                  "outcome": 200,
+                  "path": "/doc",
+                  "seq": 0
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "requests": [
+                {
+                  "headers": {
+                    "coep": "none",
+                    "coop": "none"
+                  },
+                  "method": "GET",
+                  "outcome": 200,
+                  "path": "/doc",
+                  "seq": 0
+                }
+              ]
+            },
+            "treatment": {
+              "requests": [
+                {
+                  "headers": {
+                    "coep": "require-corp",
+                    "coop": "same-origin"
+                  },
+                  "method": "GET",
+                  "outcome": 200,
+                  "path": "/doc",
+                  "seq": 0
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "requests": [
+                {
+                  "headers": {
+                    "coep": "none",
+                    "coop": "none"
+                  },
+                  "method": "GET",
+                  "outcome": 200,
+                  "path": "/doc",
+                  "seq": 0
+                }
+              ]
+            },
+            "treatment": {
+              "requests": [
+                {
+                  "headers": {
+                    "coep": "require-corp",
+                    "coop": "same-origin"
+                  },
+                  "method": "GET",
+                  "outcome": 200,
+                  "path": "/doc",
+                  "seq": 0
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      }
+    },
+    "css-containment-sandbox": {
+      "contain-layout-traps-fixed": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [
+                  "fixed-trapped"
+                ],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [
+                  "fixed-trapped"
+                ],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [
+                  "fixed-trapped"
+                ],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      },
+      "contain-paint-clips-overflow": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [
+                  "fixed-trapped",
+                  "paint-clipped"
+                ],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [
+                  "fixed-trapped",
+                  "paint-clipped"
+                ],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [
+                  "fixed-trapped",
+                  "paint-clipped"
+                ],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      },
+      "contain-size-collapses-height": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [
+                  "collapsed-to-zero"
+                ],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [
+                  "collapsed-to-zero"
+                ],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [],
+                "display": "block",
+                "flags": [
+                  "collapsed-to-zero"
+                ],
+                "id": "card",
+                "label": "Card (.card)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      }
+    },
+    "css-scroll-snap-sandbox": {
+      "mandatory-snaps-midpoint": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "alignedSlide": null,
+              "snapped": false
+            },
+            "treatment": {
+              "alignedSlide": "s2",
+              "snapped": true
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "alignedSlide": null,
+              "snapped": false
+            },
+            "treatment": {
+              "alignedSlide": "s2",
+              "snapped": true
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "alignedSlide": null,
+              "snapped": false
+            },
+            "treatment": {
+              "alignedSlide": "s2",
+              "snapped": true
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      }
+    },
+    "device-pixel-ratio-subpixel-sandbox": {
+      "dpr-1": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "alignedToDevicePixel": false,
+              "dpr": 1
+            },
+            "treatment": {
+              "alignedToDevicePixel": true,
+              "dpr": 1
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "alignedToDevicePixel": false,
+              "dpr": 1
+            },
+            "treatment": {
+              "alignedToDevicePixel": true,
+              "dpr": 1
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "alignedToDevicePixel": false,
+              "dpr": 1
+            },
+            "treatment": {
+              "alignedToDevicePixel": true,
+              "dpr": 1
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      },
+      "dpr-2": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "alignedToDevicePixel": false,
+              "dpr": 2
+            },
+            "treatment": {
+              "alignedToDevicePixel": true,
+              "dpr": 2
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "alignedToDevicePixel": false,
+              "dpr": 2
+            },
+            "treatment": {
+              "alignedToDevicePixel": true,
+              "dpr": 2
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "alignedToDevicePixel": false,
+              "dpr": 2
+            },
+            "treatment": {
+              "alignedToDevicePixel": true,
+              "dpr": 2
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      },
+      "dpr-3": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "alignedToDevicePixel": false,
+              "dpr": 3
+            },
+            "treatment": {
+              "alignedToDevicePixel": true,
+              "dpr": 3
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "alignedToDevicePixel": false,
+              "dpr": 3
+            },
+            "treatment": {
+              "alignedToDevicePixel": true,
+              "dpr": 3
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "alignedToDevicePixel": false,
+              "dpr": 3
+            },
+            "treatment": {
+              "alignedToDevicePixel": true,
+              "dpr": 3
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      }
+    },
+    "event-loop-microtask-queue-order": {
+      "microtask-beats-timer": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "events": [
+                {
+                  "label": "sync-script",
+                  "op": "run-start",
+                  "queue": "task",
+                  "seq": 0
+                },
+                {
+                  "label": "sync-script",
+                  "op": "run-end",
+                  "queue": "task",
+                  "seq": 1
+                },
+                {
+                  "label": "timer-0ms",
+                  "op": "run-start",
+                  "queue": "task",
+                  "seq": 2
+                },
+                {
+                  "label": "queued-second",
+                  "op": "run-start",
+                  "queue": "task",
+                  "seq": 3
+                }
+              ]
+            },
+            "treatment": {
+              "events": [
+                {
+                  "label": "sync-script",
+                  "op": "run-start",
+                  "queue": "task",
+                  "seq": 0
+                },
+                {
+                  "label": "sync-script",
+                  "op": "run-end",
+                  "queue": "task",
+                  "seq": 1
+                },
+                {
+                  "label": "queued-second",
+                  "op": "run-start",
+                  "queue": "microtask",
+                  "seq": 2
+                },
+                {
+                  "label": "timer-0ms",
+                  "op": "run-start",
+                  "queue": "task",
+                  "seq": 3
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "events": [
+                {
+                  "label": "sync-script",
+                  "op": "run-start",
+                  "queue": "task",
+                  "seq": 0
+                },
+                {
+                  "label": "sync-script",
+                  "op": "run-end",
+                  "queue": "task",
+                  "seq": 1
+                },
+                {
+                  "label": "timer-0ms",
+                  "op": "run-start",
+                  "queue": "task",
+                  "seq": 2
+                },
+                {
+                  "label": "queued-second",
+                  "op": "run-start",
+                  "queue": "task",
+                  "seq": 3
+                }
+              ]
+            },
+            "treatment": {
+              "events": [
+                {
+                  "label": "sync-script",
+                  "op": "run-start",
+                  "queue": "task",
+                  "seq": 0
+                },
+                {
+                  "label": "sync-script",
+                  "op": "run-end",
+                  "queue": "task",
+                  "seq": 1
+                },
+                {
+                  "label": "queued-second",
+                  "op": "run-start",
+                  "queue": "microtask",
+                  "seq": 2
+                },
+                {
+                  "label": "timer-0ms",
+                  "op": "run-start",
+                  "queue": "task",
+                  "seq": 3
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "events": [
+                {
+                  "label": "sync-script",
+                  "op": "run-start",
+                  "queue": "task",
+                  "seq": 0
+                },
+                {
+                  "label": "sync-script",
+                  "op": "run-end",
+                  "queue": "task",
+                  "seq": 1
+                },
+                {
+                  "label": "timer-0ms",
+                  "op": "run-start",
+                  "queue": "task",
+                  "seq": 2
+                },
+                {
+                  "label": "queued-second",
+                  "op": "run-start",
+                  "queue": "task",
+                  "seq": 3
+                }
+              ]
+            },
+            "treatment": {
+              "events": [
+                {
+                  "label": "sync-script",
+                  "op": "run-start",
+                  "queue": "task",
+                  "seq": 0
+                },
+                {
+                  "label": "sync-script",
+                  "op": "run-end",
+                  "queue": "task",
+                  "seq": 1
+                },
+                {
+                  "label": "queued-second",
+                  "op": "run-start",
+                  "queue": "microtask",
+                  "seq": 2
+                },
+                {
+                  "label": "timer-0ms",
+                  "op": "run-start",
+                  "queue": "task",
+                  "seq": 3
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      }
+    },
+    "event-timing-blocking-handler": {
+      "blocking-click-slow": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "events": [
+                {
+                  "label": "trusted click on #action-btn",
+                  "lane": "input",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "click duration < 104 ms",
+                  "lane": "event-timing",
+                  "seq": 1,
+                  "status": "ok"
+                }
+              ]
+            },
+            "treatment": {
+              "events": [
+                {
+                  "label": "trusted click on #action-btn",
+                  "lane": "input",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "click duration >= 104 ms",
+                  "lane": "event-timing",
+                  "seq": 1,
+                  "status": "fail"
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "events": [
+                {
+                  "label": "trusted click on #action-btn",
+                  "lane": "input",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "click duration < 104 ms",
+                  "lane": "event-timing",
+                  "seq": 1,
+                  "status": "ok"
+                }
+              ]
+            },
+            "treatment": {
+              "events": [
+                {
+                  "label": "trusted click on #action-btn",
+                  "lane": "input",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "click duration >= 104 ms",
+                  "lane": "event-timing",
+                  "seq": 1,
+                  "status": "fail"
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "events": [
+                {
+                  "label": "trusted click on #action-btn",
+                  "lane": "input",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "click duration < 104 ms",
+                  "lane": "event-timing",
+                  "seq": 1,
+                  "status": "ok"
+                }
+              ]
+            },
+            "treatment": {
+              "events": [
+                {
+                  "label": "trusted click on #action-btn",
+                  "lane": "input",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "click duration >= 104 ms",
+                  "lane": "event-timing",
+                  "seq": 1,
+                  "status": "fail"
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      }
+    },
+    "flexbox-intrinsic-sizing-sandbox": {
+      "min-width-zero-stops-overflow": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "exceeds-container"
+                    ],
+                    "id": "main",
+                    "label": "Main flex item"
+                  }
+                ],
+                "display": "flex",
+                "flags": [
+                  "overflows"
+                ],
+                "id": "row",
+                "label": "Flex row (.flex-row)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "shrunk-to-fit"
+                    ],
+                    "id": "main",
+                    "label": "Main flex item"
+                  }
+                ],
+                "display": "flex",
+                "flags": [
+                  "contained"
+                ],
+                "id": "row",
+                "label": "Flex row (.flex-row)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "exceeds-container"
+                    ],
+                    "id": "main",
+                    "label": "Main flex item"
+                  }
+                ],
+                "display": "flex",
+                "flags": [
+                  "overflows"
+                ],
+                "id": "row",
+                "label": "Flex row (.flex-row)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "shrunk-to-fit"
+                    ],
+                    "id": "main",
+                    "label": "Main flex item"
+                  }
+                ],
+                "display": "flex",
+                "flags": [
+                  "contained"
+                ],
+                "id": "row",
+                "label": "Flex row (.flex-row)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "exceeds-container"
+                    ],
+                    "id": "main",
+                    "label": "Main flex item"
+                  }
+                ],
+                "display": "flex",
+                "flags": [
+                  "overflows"
+                ],
+                "id": "row",
+                "label": "Flex row (.flex-row)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "shrunk-to-fit"
+                    ],
+                    "id": "main",
+                    "label": "Main flex item"
+                  }
+                ],
+                "display": "flex",
+                "flags": [
+                  "contained"
+                ],
+                "id": "row",
+                "label": "Flex row (.flex-row)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      }
+    },
+    "layout-thrashing-forced-sync": {
+      "forced-reflow-costs-more": {
+        "chromium": {
+          "error": "FR_MEASURE_TOO_SMALL: scale up the workload",
+          "observed": {
+            "control": {
+              "median": 0.7,
+              "n": 15
+            },
+            "pValue": 1,
+            "ratio": 10.571,
+            "treatment": {
+              "median": 7.4,
+              "n": 15
+            }
+          },
+          "presented": null,
+          "status": "error"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "median": 1,
+              "n": 15
+            },
+            "pValue": 0,
+            "ratio": 14,
+            "treatment": {
+              "median": 14,
+              "n": 15
+            }
+          },
+          "presented": null,
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "median": 2,
+              "n": 15
+            },
+            "pValue": 0,
+            "ratio": 6.5,
+            "treatment": {
+              "median": 13,
+              "n": 15
+            }
+          },
+          "presented": null,
+          "status": "pass"
+        }
+      }
+    },
+    "long-task-yield-main-thread": {
+      "single-block-stalls-longer": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "median": 2,
+              "n": 15
+            },
+            "pValue": 0,
+            "ratio": 10,
+            "treatment": {
+              "median": 20,
+              "n": 15
+            }
+          },
+          "presented": null,
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "median": 2,
+              "n": 15
+            },
+            "pValue": 0,
+            "ratio": 10,
+            "treatment": {
+              "median": 20,
+              "n": 15
+            }
+          },
+          "presented": null,
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "median": 2,
+              "n": 15
+            },
+            "pValue": 0,
+            "ratio": 10,
+            "treatment": {
+              "median": 20,
+              "n": 15
+            }
+          },
+          "presented": null,
+          "status": "pass"
+        }
+      }
+    },
     "microtasks-before-timers": {
       "promise-reaction-runs-before-earlier-timer": {
         "chromium": {
@@ -2006,6 +4213,486 @@
         }
       }
     },
+    "raf-coalesces-burst-events": {
+      "coalesces-50-events": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "events": [
+                {
+                  "label": "50 pointermove events",
+                  "lane": "input",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "expensive work ran 50x",
+                  "lane": "work",
+                  "seq": 1,
+                  "status": "warn"
+                }
+              ]
+            },
+            "treatment": {
+              "events": [
+                {
+                  "label": "50 pointermove events",
+                  "lane": "input",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "expensive work ran 1x",
+                  "lane": "work",
+                  "seq": 1,
+                  "status": "ok"
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "events": [
+                {
+                  "label": "50 pointermove events",
+                  "lane": "input",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "expensive work ran 50x",
+                  "lane": "work",
+                  "seq": 1,
+                  "status": "warn"
+                }
+              ]
+            },
+            "treatment": {
+              "events": [
+                {
+                  "label": "50 pointermove events",
+                  "lane": "input",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "expensive work ran 1x",
+                  "lane": "work",
+                  "seq": 1,
+                  "status": "ok"
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "events": [
+                {
+                  "label": "50 pointermove events",
+                  "lane": "input",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "expensive work ran 50x",
+                  "lane": "work",
+                  "seq": 1,
+                  "status": "warn"
+                }
+              ]
+            },
+            "treatment": {
+              "events": [
+                {
+                  "label": "50 pointermove events",
+                  "lane": "input",
+                  "seq": 0,
+                  "status": "neutral"
+                },
+                {
+                  "label": "expensive work ran 1x",
+                  "lane": "work",
+                  "seq": 1,
+                  "status": "ok"
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      }
+    },
+    "readable-stream-backpressure-hwm": {
+      "hwm-bounds-pulls": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "events": [
+                {
+                  "label": "pulls before first read: 12",
+                  "lane": "producer",
+                  "seq": 0,
+                  "status": "warn"
+                },
+                {
+                  "label": "last desiredSize: 8",
+                  "lane": "queue",
+                  "seq": 1,
+                  "status": "neutral"
+                }
+              ]
+            },
+            "treatment": {
+              "events": [
+                {
+                  "label": "pulls before first read: 4",
+                  "lane": "producer",
+                  "seq": 0,
+                  "status": "ok"
+                },
+                {
+                  "label": "last desiredSize: 0",
+                  "lane": "queue",
+                  "seq": 1,
+                  "status": "neutral"
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "events": [
+                {
+                  "label": "pulls before first read: 12",
+                  "lane": "producer",
+                  "seq": 0,
+                  "status": "warn"
+                },
+                {
+                  "label": "last desiredSize: 8",
+                  "lane": "queue",
+                  "seq": 1,
+                  "status": "neutral"
+                }
+              ]
+            },
+            "treatment": {
+              "events": [
+                {
+                  "label": "pulls before first read: 4",
+                  "lane": "producer",
+                  "seq": 0,
+                  "status": "ok"
+                },
+                {
+                  "label": "last desiredSize: 0",
+                  "lane": "queue",
+                  "seq": 1,
+                  "status": "neutral"
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "events": [
+                {
+                  "label": "pulls before first read: 12",
+                  "lane": "producer",
+                  "seq": 0,
+                  "status": "warn"
+                },
+                {
+                  "label": "last desiredSize: 8",
+                  "lane": "queue",
+                  "seq": 1,
+                  "status": "neutral"
+                }
+              ]
+            },
+            "treatment": {
+              "events": [
+                {
+                  "label": "pulls before first read: 4",
+                  "lane": "producer",
+                  "seq": 0,
+                  "status": "ok"
+                },
+                {
+                  "label": "last desiredSize: 0",
+                  "lane": "queue",
+                  "seq": 1,
+                  "status": "neutral"
+                }
+              ]
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      }
+    },
+    "stacking-context-opacity-traps-z-index": {
+      "opacity-traps-tooltip": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "nodes": [
+                {
+                  "createsStackingContext": true,
+                  "id": "header",
+                  "label": "Header",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": 10
+                },
+                {
+                  "createsStackingContext": false,
+                  "id": "parent",
+                  "label": "Parent",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": "auto"
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "tooltip",
+                  "label": "Tooltip",
+                  "parent": "parent",
+                  "topLayer": false,
+                  "zIndex": 9999
+                }
+              ],
+              "probe": {
+                "hitId": "tooltip"
+              }
+            },
+            "treatment": {
+              "nodes": [
+                {
+                  "createsStackingContext": true,
+                  "id": "header",
+                  "label": "Header",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": 10
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "parent",
+                  "label": "Parent",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": "auto"
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "tooltip",
+                  "label": "Tooltip",
+                  "parent": "parent",
+                  "topLayer": false,
+                  "zIndex": 9999
+                }
+              ],
+              "probe": {
+                "hitId": "header"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "nodes": [
+                {
+                  "createsStackingContext": true,
+                  "id": "header",
+                  "label": "Header",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": 10
+                },
+                {
+                  "createsStackingContext": false,
+                  "id": "parent",
+                  "label": "Parent",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": "auto"
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "tooltip",
+                  "label": "Tooltip",
+                  "parent": "parent",
+                  "topLayer": false,
+                  "zIndex": 9999
+                }
+              ],
+              "probe": {
+                "hitId": "tooltip"
+              }
+            },
+            "treatment": {
+              "nodes": [
+                {
+                  "createsStackingContext": true,
+                  "id": "header",
+                  "label": "Header",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": 10
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "parent",
+                  "label": "Parent",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": "auto"
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "tooltip",
+                  "label": "Tooltip",
+                  "parent": "parent",
+                  "topLayer": false,
+                  "zIndex": 9999
+                }
+              ],
+              "probe": {
+                "hitId": "header"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "nodes": [
+                {
+                  "createsStackingContext": true,
+                  "id": "header",
+                  "label": "Header",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": 10
+                },
+                {
+                  "createsStackingContext": false,
+                  "id": "parent",
+                  "label": "Parent",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": "auto"
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "tooltip",
+                  "label": "Tooltip",
+                  "parent": "parent",
+                  "topLayer": false,
+                  "zIndex": 9999
+                }
+              ],
+              "probe": {
+                "hitId": "tooltip"
+              }
+            },
+            "treatment": {
+              "nodes": [
+                {
+                  "createsStackingContext": true,
+                  "id": "header",
+                  "label": "Header",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": 10
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "parent",
+                  "label": "Parent",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": "auto"
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "tooltip",
+                  "label": "Tooltip",
+                  "parent": "parent",
+                  "topLayer": false,
+                  "zIndex": 9999
+                }
+              ],
+              "probe": {
+                "hitId": "header"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      }
+    },
     "stacking-context-traps-z-index": {
       "opacity-traps-tooltip-under-header": {
         "chromium": {
@@ -2057,9 +4744,566 @@
           "status": "pass"
         }
       }
+    },
+    "top-layer-popover-escapes-transform": {
+      "popover-beats-header": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "nodes": [
+                {
+                  "createsStackingContext": true,
+                  "id": "header",
+                  "label": "Header",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": 10
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "parent",
+                  "label": "Transformed parent",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": "auto"
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "menu",
+                  "label": "Menu",
+                  "parent": "parent",
+                  "topLayer": false,
+                  "zIndex": 9999
+                }
+              ],
+              "probe": {
+                "hitId": "header"
+              }
+            },
+            "treatment": {
+              "nodes": [
+                {
+                  "createsStackingContext": true,
+                  "id": "header",
+                  "label": "Header",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": 10
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "parent",
+                  "label": "Transformed parent",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": "auto"
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "menu",
+                  "label": "Menu",
+                  "parent": "parent",
+                  "topLayer": true,
+                  "zIndex": 9999
+                }
+              ],
+              "probe": {
+                "hitId": "menu"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "nodes": [
+                {
+                  "createsStackingContext": true,
+                  "id": "header",
+                  "label": "Header",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": 10
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "parent",
+                  "label": "Transformed parent",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": "auto"
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "menu",
+                  "label": "Menu",
+                  "parent": "parent",
+                  "topLayer": false,
+                  "zIndex": 9999
+                }
+              ],
+              "probe": {
+                "hitId": "header"
+              }
+            },
+            "treatment": {
+              "nodes": [
+                {
+                  "createsStackingContext": true,
+                  "id": "header",
+                  "label": "Header",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": 10
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "parent",
+                  "label": "Transformed parent",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": "auto"
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "menu",
+                  "label": "Menu",
+                  "parent": "parent",
+                  "topLayer": true,
+                  "zIndex": 9999
+                }
+              ],
+              "probe": {
+                "hitId": "menu"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "nodes": [
+                {
+                  "createsStackingContext": true,
+                  "id": "header",
+                  "label": "Header",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": 10
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "parent",
+                  "label": "Transformed parent",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": "auto"
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "menu",
+                  "label": "Menu",
+                  "parent": "parent",
+                  "topLayer": false,
+                  "zIndex": 9999
+                }
+              ],
+              "probe": {
+                "hitId": "header"
+              }
+            },
+            "treatment": {
+              "nodes": [
+                {
+                  "createsStackingContext": true,
+                  "id": "header",
+                  "label": "Header",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": 10
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "parent",
+                  "label": "Transformed parent",
+                  "parent": null,
+                  "topLayer": false,
+                  "zIndex": "auto"
+                },
+                {
+                  "createsStackingContext": true,
+                  "id": "menu",
+                  "label": "Menu",
+                  "parent": "parent",
+                  "topLayer": true,
+                  "zIndex": 9999
+                }
+              ],
+              "probe": {
+                "hitId": "menu"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      }
+    },
+    "user-preference-media-queries-sandbox": {
+      "reduced-motion-and-dark": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "animationDisabled": false,
+              "darkSurfaceApplied": false,
+              "forcedColors": false,
+              "prefersDark": true,
+              "prefersReducedMotion": true
+            },
+            "treatment": {
+              "animationDisabled": true,
+              "darkSurfaceApplied": true,
+              "forcedColors": false,
+              "prefersDark": true,
+              "prefersReducedMotion": true
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "animationDisabled": false,
+              "darkSurfaceApplied": false,
+              "forcedColors": false,
+              "prefersDark": true,
+              "prefersReducedMotion": true
+            },
+            "treatment": {
+              "animationDisabled": true,
+              "darkSurfaceApplied": true,
+              "forcedColors": false,
+              "prefersDark": true,
+              "prefersReducedMotion": true
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "animationDisabled": false,
+              "darkSurfaceApplied": false,
+              "forcedColors": false,
+              "prefersDark": true,
+              "prefersReducedMotion": true
+            },
+            "treatment": {
+              "animationDisabled": true,
+              "darkSurfaceApplied": true,
+              "forcedColors": false,
+              "prefersDark": true,
+              "prefersReducedMotion": true
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      }
+    },
+    "virtualized-lists-windowing-cost": {
+      "full-list-layout-slower": {
+        "chromium": {
+          "error": "FR_MEASURE_TOO_SMALL: scale up the workload",
+          "observed": {
+            "control": {
+              "median": 0.4,
+              "n": 15
+            },
+            "pValue": 1,
+            "ratio": 264.75,
+            "treatment": {
+              "median": 105.9,
+              "n": 15
+            }
+          },
+          "presented": null,
+          "status": "error"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "median": 1,
+              "n": 15
+            },
+            "pValue": 0.000001,
+            "ratio": 86,
+            "treatment": {
+              "median": 86,
+              "n": 15
+            }
+          },
+          "presented": null,
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "median": 1,
+              "n": 15
+            },
+            "pValue": 0.000001,
+            "ratio": 175,
+            "treatment": {
+              "median": 175,
+              "n": 15
+            }
+          },
+          "presented": null,
+          "status": "pass"
+        }
+      }
+    },
+    "virtualized-lists-windowing-nodes": {
+      "dom-node-count": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "listNodes": 30
+            },
+            "treatment": {
+              "listNodes": 10000
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "listNodes": 30
+            },
+            "treatment": {
+              "listNodes": 10000
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "listNodes": 30
+            },
+            "treatment": {
+              "listNodes": 10000
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      }
+    },
+    "will-change-transform-containing-block": {
+      "traps-fixed-child": {
+        "chromium": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "fixed-relative-to-viewport"
+                    ],
+                    "id": "fixed",
+                    "label": "Child (position: fixed)"
+                  }
+                ],
+                "display": "block",
+                "flags": [],
+                "id": "parent",
+                "label": "Parent (.parent)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "fixed-relative-to-parent"
+                    ],
+                    "id": "fixed",
+                    "label": "Child (position: fixed)"
+                  }
+                ],
+                "display": "block",
+                "flags": [
+                  "containing-block"
+                ],
+                "id": "parent",
+                "label": "Parent (.parent)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "firefox": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "fixed-relative-to-viewport"
+                    ],
+                    "id": "fixed",
+                    "label": "Child (position: fixed)"
+                  }
+                ],
+                "display": "block",
+                "flags": [],
+                "id": "parent",
+                "label": "Parent (.parent)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "fixed-relative-to-parent"
+                    ],
+                    "id": "fixed",
+                    "label": "Child (position: fixed)"
+                  }
+                ],
+                "display": "block",
+                "flags": [
+                  "containing-block"
+                ],
+                "id": "parent",
+                "label": "Parent (.parent)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        },
+        "webkit": {
+          "error": null,
+          "observed": {
+            "control": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "fixed-relative-to-viewport"
+                    ],
+                    "id": "fixed",
+                    "label": "Child (position: fixed)"
+                  }
+                ],
+                "display": "block",
+                "flags": [],
+                "id": "parent",
+                "label": "Parent (.parent)"
+              }
+            },
+            "treatment": {
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "display": "block",
+                    "flags": [
+                      "fixed-relative-to-parent"
+                    ],
+                    "id": "fixed",
+                    "label": "Child (position: fixed)"
+                  }
+                ],
+                "display": "block",
+                "flags": [
+                  "containing-block"
+                ],
+                "id": "parent",
+                "label": "Parent (.parent)"
+              }
+            }
+          },
+          "presented": {
+            "control": null,
+            "treatment": null
+          },
+          "status": "pass"
+        }
+      }
     }
   },
-  "generatedAt": "2026-11-27T10:51:25.066Z",
+  "generatedAt": "2026-11-28T10:23:38.973Z",
   "pages": {
     "a11y-tree-queries-vs-dom-selectors": {
       "coverage": {
