@@ -73,11 +73,13 @@ export function validateRedirectTargets(
   knownTargets: {
     conceptIds: ReadonlySet<string>;
     autopsyIds?: ReadonlySet<string>;
+    symptomIds?: ReadonlySet<string>;
     extraRoutes?: ReadonlySet<string>;
   },
 ): string[] {
   const errors: string[] = [];
   const autopsyIds = knownTargets.autopsyIds ?? new Set<string>();
+  const symptomIds = knownTargets.symptomIds ?? new Set<string>();
   const extraRoutes = knownTargets.extraRoutes ?? new Set<string>();
 
   for (const { fileName, data } of files) {
@@ -103,6 +105,16 @@ export function validateRedirectTargets(
         if (!autopsyIds.has(autopsyMatch[1])) {
           errors.push(
             `[redirects/${fileName}] 301 target "${rule.to}" references unknown autopsy "${autopsyMatch[1]}"`,
+          );
+        }
+        continue;
+      }
+
+      const symptomMatch = /^\/symptoms\/([a-z0-9-]+)\/$/.exec(basePath);
+      if (symptomMatch) {
+        if (!symptomIds.has(symptomMatch[1])) {
+          errors.push(
+            `[redirects/${fileName}] 301 target "${rule.to}" references unknown symptom "${symptomMatch[1]}"`,
           );
         }
         continue;

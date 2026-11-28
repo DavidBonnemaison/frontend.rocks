@@ -4,7 +4,7 @@ import {
   getAllConcepts,
   getAllLabs,
 } from '../src/lib/content-loader';
-import { PRODUCTION_SYMPTOMS } from '../src/config/symptoms';
+import { getAllSymptoms } from '../src/lib/symptoms/loader';
 import { extractVsPairs } from '../src/lib/vs-pairs';
 import {
   SEARCH_WEIGHTS,
@@ -109,7 +109,7 @@ describe('US-16.1: Search index generation, lab parent resolution & zero 404s', 
   it('indexes all 6 entity kinds: concept, autopsy, lab, symptom, vs, digest', () => {
     const kinds = new Set(index.map((item) => item.kind));
     expect(kinds).toEqual(new Set(['concept', 'autopsy', 'lab', 'symptom', 'vs', 'digest']));
-    expect(index.filter((i) => i.kind === 'symptom').length).toBe(PRODUCTION_SYMPTOMS.length);
+    expect(index.filter((i) => i.kind === 'symptom').length).toBe(getAllSymptoms().length);
     expect(index.filter((i) => i.kind === 'vs').length).toBe(vsPairs.length);
     expect(index.filter((i) => i.kind === 'concept').length).toBe(concepts.length);
     expect(index.filter((i) => i.kind === 'autopsy').length).toBe(autopsies.length);
@@ -148,7 +148,7 @@ describe('US-16.1: Search index generation, lab parent resolution & zero 404s', 
       '/digest/',
       ...concepts.map((c) => `/concepts/${c.frontmatter.id}/`),
       ...autopsies.map((a) => `/autopsies/${a.frontmatter.id}/`),
-      ...PRODUCTION_SYMPTOMS.map((s) => `/symptoms/${s.slug}/`),
+      ...getAllSymptoms().map((s) => `/symptoms/${s.frontmatter.id}/`),
       ...vsPairs.map((p) => `/vs/${p.slug}/`),
     ]);
 

@@ -1,5 +1,5 @@
 import type { LoadedAutopsy, LoadedConcept } from '../../src/lib/content-loader';
-import type { ProductionSymptomConfig } from '../../src/config/symptoms';
+import type { LoadedSymptom } from '../../src/lib/symptoms/loader';
 import type { VsPair } from '../../src/lib/vs-pairs';
 import { isListingIndexable, isPublished } from '../../src/lib/publication';
 
@@ -12,7 +12,7 @@ const SITE_URL = 'https://frontend.rocks';
 export function buildQuarantineUrls(input: {
   concepts: LoadedConcept[];
   autopsies: LoadedAutopsy[];
-  symptoms: ProductionSymptomConfig[];
+  symptoms: LoadedSymptom[];
   vsPairs: VsPair[];
 }): string[] {
   const { concepts, autopsies, symptoms, vsPairs } = input;
@@ -20,7 +20,7 @@ export function buildQuarantineUrls(input: {
   const publishedCount = {
     concepts: concepts.filter((c) => isPublished(c.frontmatter.proof_status, c.frontmatter.id)).length,
     autopsies: autopsies.filter((a) => isPublished(a.frontmatter.proof_status, a.frontmatter.id)).length,
-    symptoms: symptoms.filter((s) => isPublished(s.proof_status, s.slug)).length,
+    symptoms: symptoms.filter((s) => isPublished(s.frontmatter.proof_status, s.frontmatter.id)).length,
     vsPairs: vsPairs.filter((p) => isPublished(p.proof_status, `vs-${p.slug}`)).length,
   };
 
@@ -32,8 +32,8 @@ export function buildQuarantineUrls(input: {
       .filter((a) => !isPublished(a.frontmatter.proof_status, a.frontmatter.id))
       .map((a) => `${SITE_URL}/autopsies/${a.frontmatter.id}/`),
     ...symptoms
-      .filter((s) => !isPublished(s.proof_status, s.slug))
-      .map((s) => `${SITE_URL}/symptoms/${s.slug}/`),
+      .filter((s) => !isPublished(s.frontmatter.proof_status, s.frontmatter.id))
+      .map((s) => `${SITE_URL}/symptoms/${s.frontmatter.id}/`),
     ...vsPairs
       .filter((p) => !isPublished(p.proof_status, `vs-${p.slug}`))
       .map((p) => `${SITE_URL}/vs/${p.slug}/`),

@@ -7,7 +7,7 @@ import {
   getAllDigests,
   getLearningPaths,
 } from '@/lib/content-loader';
-import { getFeaturedSymptoms } from '@/config/symptoms';
+import { getFeaturedSymptoms } from '@/lib/symptoms/loader';
 import { formatFailureModeLabel, UI_STRINGS } from '@/lib/ui-strings';
 import { PathPreview, type PathPreviewConcept } from '@/components/home/PathPreview';
 import { LearningPathCard } from '@/components/home/LearningPathCard';
@@ -119,18 +119,19 @@ export default function HomePage() {
         </div>
 
         <div className="home-symptoms-list">
-          {symptoms.map((s) => {
+          {symptoms.map((loaded) => {
+            const s = loaded.frontmatter;
             const primaryConceptId = s.concept_ids[0];
             const target = primaryConceptId ? conceptMap.get(primaryConceptId) : undefined;
             return (
               <Link
-                key={s.slug}
-                href={`/symptoms/${s.slug}/`}
+                key={s.id}
+                href={`/symptoms/${s.id}/`}
                 className="home-symptom-row"
                 data-analytics-event="symptom_search"
-                data-analytics-target={s.slug}
+                data-analytics-target={s.id}
               >
-                <span className="home-symptom-quote">&ldquo;{s.search_title}&rdquo;</span>
+                <span className="home-symptom-quote">&ldquo;{s.title}&rdquo;</span>
                 <span className="home-symptom-badge">
                   <span>{target?.frontmatter.title ?? primaryConceptId}</span>
                   <ArrowRight size={13} aria-hidden="true" />

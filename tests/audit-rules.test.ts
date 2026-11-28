@@ -14,7 +14,7 @@ import {
   PUBLIC_SKILL_WHITELIST,
 } from '@/lib/public-skill-bundle';
 import { getAllAutopsies, getAllConcepts } from '@/lib/content-loader';
-import { PRODUCTION_SYMPTOMS } from '@/config/symptoms';
+import { getAllSymptoms } from '@/lib/symptoms/loader';
 import { extractVsPairs } from '@/lib/vs-pairs';
 import { SITE_URL } from '@/lib/seo-exports';
 
@@ -67,8 +67,8 @@ function buildValidSiteRouteSet(): Set<string> {
     validUrls.add(`${SITE_URL}/autopsies/${a.frontmatter.id}/`);
     validUrls.add(`${SITE_URL}/autopsies/${a.frontmatter.id}.md`);
   }
-  for (const s of PRODUCTION_SYMPTOMS) {
-    validUrls.add(`${SITE_URL}/symptoms/${s.slug}/`);
+  for (const s of getAllSymptoms()) {
+    validUrls.add(`${SITE_URL}/symptoms/${s.frontmatter.id}/`);
   }
   for (const p of vsPairs) {
     validUrls.add(`${SITE_URL}/vs/${p.slug}/`);
@@ -84,7 +84,7 @@ describe('US-19.1: Deterministic Audit Rules Catalog & Public Skill', () => {
     buildAuditRulesCatalog({
       concepts: getAllConcepts(),
       autopsies: getAllAutopsies(),
-      symptoms: PRODUCTION_SYMPTOMS,
+      symptoms: getAllSymptoms(),
       generatedAt,
     });
   const catalog = buildFull('2026-11-21T00:00:00.000Z');

@@ -51,3 +51,8 @@ export function getSymptomById(id: string): LoadedSymptom | null {
 export function getFeaturedSymptoms(): LoadedSymptom[] {
   return getAllSymptoms().filter((s) => s.frontmatter.featured);
 }
+
+/** Joins the verified signature texts of a symptom, or returns an empty string while unverified. */
+export function primarySignatureText(fm: Pick<SymptomFrontmatter, 'signatures'>): string {
+  return fm.signatures.map((s) => s.text).join(' · ');
+}

@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { getAllAutopsies, getAllConcepts } from '../content-loader';
 import { SITE_ROOT } from '../paths';
-import { PRODUCTION_SYMPTOMS } from '../../config/symptoms';
+import { getAllSymptoms } from '../symptoms/loader';
 import { extractVsPairs } from '../vs-pairs';
 import type { PageProofStatus } from './claim-schema';
 
@@ -35,11 +35,11 @@ export const PAGE_REF_PROVIDERS: Record<PageKind, (() => PageRef[]) | null> = {
       mdxPath: rel(a.filePath),
     })),
   symptom: () =>
-    PRODUCTION_SYMPTOMS.map((s) => ({
-      id: s.slug,
+    getAllSymptoms().map((s) => ({
+      id: s.frontmatter.id,
       kind: 'symptom',
-      proofStatus: s.proof_status,
-      mdxPath: null,
+      proofStatus: s.frontmatter.proof_status,
+      mdxPath: rel(s.filePath),
     })),
   vs: () =>
     extractVsPairs().map((p) => ({

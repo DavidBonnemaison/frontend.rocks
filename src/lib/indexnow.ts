@@ -43,8 +43,9 @@ export function mapChangedFileToUrls(filePath: string): string[] {
     return [`${SITE_URL}/`];
   }
 
-  if (normalized === 'src/config/symptoms.ts') {
-    return [`${SITE_URL}/symptoms/`];
+  const symptomMatch = normalized.match(/^content\/symptoms\/([^/]+)\.mdx?$/);
+  if (symptomMatch) {
+    return [`${SITE_URL}/symptoms/${symptomMatch[1]}/`, `${SITE_URL}/symptoms/`];
   }
 
   return [];
@@ -111,7 +112,7 @@ export function buildIndexNowPending(input: {
 
   try {
     const changedFiles = input
-      .git(['diff', '--name-only', deployed, 'HEAD', '--', 'content/', 'src/config/symptoms.ts'])
+      .git(['diff', '--name-only', deployed, 'HEAD', '--', 'content/'])
       .split('\n')
       .map((line) => line.trim())
       .filter(Boolean);

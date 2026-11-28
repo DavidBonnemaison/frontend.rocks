@@ -7,9 +7,10 @@ import {
 import { splitProductionPitfalls, stripMarkdown } from '../seo-schema';
 import { extractVsPairs, type VsPair } from '../vs-pairs';
 import {
-  PRODUCTION_SYMPTOMS,
-  type ProductionSymptomConfig,
-} from '../../config/symptoms';
+  getAllSymptoms,
+  primarySignatureText,
+  type LoadedSymptom,
+} from '../symptoms/loader';
 
 export const MAX_NGRAM_OVERLAP = 0.65;
 
@@ -64,23 +65,24 @@ export function assembleVsPageText(pair: VsPair): string {
 }
 
 export function assembleSymptomPageText(
-  symptom: ProductionSymptomConfig,
+  symptom: LoadedSymptom,
   conceptMap: Map<string, LoadedConcept>,
   autopsyMap: Map<string, LoadedAutopsy>
 ): string {
-  const conceptTexts = symptom.concept_ids.map((cid) => {
+  const fm = symptom.frontmatter;
+  const conceptTexts = fm.concept_ids.map((cid) => {
     const c = conceptMap.get(cid);
     return c ? `${c.frontmatter.title} ${c.frontmatter.summary_tldr}` : cid;
   });
-  const autopsyTexts = symptom.autopsy_ids.map((aid) => {
+  const autopsyTexts = fm.autopsy_ids.map((aid) => {
     const a = autopsyMap.get(aid);
     return a ? `${a.frontmatter.title} ${a.frontmatter.symptom}` : aid;
   });
 
   return [
-    symptom.search_title,
-    symptom.summary,
-    symptom.devtools_signature,
+    fm.title,
+    fm.summary,
+    primarySignatureText(fm),
     ...conceptTexts,
     ...autopsyTexts,
   ].join(' ');
@@ -100,12 +102,12 @@ export interface SeoValidationResult {
 export function validateProgrammaticSeo(options?: {
   concepts?: LoadedConcept[];
   autopsies?: LoadedAutopsy[];
-  productionSymptoms?: ProductionSymptomConfig[];
+  productionSymptoms?: LoadedSymptom[];
   maxNgramOverlap?: number;
 }): SeoValidationResult {
   const concepts = options?.concepts ?? getAllConcepts();
   const autopsies = options?.autopsies ?? getAllAutopsies();
-  const productionSymptoms = options?.productionSymptoms ?? PRODUCTION_SYMPTOMS;
+  const productionSymptoms = options?.productionSymptoms ?? getAllSymptoms();
   const maxOverlapThreshold = options?.maxNgramOverlap ?? MAX_NGRAM_OVERLAP;
 
   const errors: string[] = [];
@@ -159,28 +161,29 @@ export function validateProgrammaticSeo(options?: {
   const seenSymptomSlugs = new Set<string>();
 
   for (const s of productionSymptoms) {
-    if (seenSymptomSlugs.has(s.slug)) {
-      errors.push(`[symptoms.ts] Duplicate symptom slug "${s.slug}".`);
+    const fm = s.frontmatter;
+    if (seenSymptomSlugs.has(fm.id)) {
+      errors.push(`[symptoms] Duplicate symptom id "${fm.id}".`);
     }
-    seenSymptomSlugs.add(s.slug);
+    seenSymptomSlugs.add(fm.id);
 
-    if (s.concept_ids.length === 0) {
-      errors.push(`[symptoms.ts] Symptom "${s.slug}" must reference at least one concept_id.`);
+    if (fm.concept_ids.length === 0) {
+      errors.push(`[symptoms] Symptom "${fm.id}" must reference at least one concept_id.`);
     }
-    for (const cid of s.concept_ids) {
+    for (const cid of fm.concept_ids) {
       if (!conceptMap.has(cid)) {
-        errors.push(`[symptoms.ts] Symptom "${s.slug}" references orphan concept_id "${cid}".`);
+        errors.push(`[symptoms] Symptom "${fm.id}" references orphan concept_id "${cid}".`);
       }
     }
-    for (const aid of s.autopsy_ids) {
+    for (const aid of fm.autopsy_ids) {
       if (!autopsyMap.has(aid)) {
-        errors.push(`[symptoms.ts] Symptom "${s.slug}" references orphan autopsy_id "${aid}".`);
+        errors.push(`[symptoms] Symptom "${fm.id}" references orphan autopsy_id "${aid}".`);
       }
     }
   }
 
   const symptomNgrams = productionSymptoms.map((s) => ({
-    slug: s.slug,
+    slug: s.frontmatter.id,
     grams: computeNgrams(assembleSymptomPageText(s, conceptMap, autopsyMap), 3),
   }));
 

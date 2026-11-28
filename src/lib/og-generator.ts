@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import satori, { type Font } from 'satori';
 import { Resvg } from '@resvg/resvg-js';
-import type { ProductionSymptomConfig } from '@/config/symptoms';
+import { primarySignatureText, type LoadedSymptom } from './symptoms/loader';
 import type { LoadedAutopsy, LoadedConcept } from './content-loader';
 import { renderSchematic } from './design/schematic';
 import { getSnapshotsForExperiment } from './design/schematics-loader';
@@ -447,10 +447,13 @@ export async function renderAutopsyCoverPng(
 }
 
 export async function renderSymptomOgPng(
-  symptom: Pick<ProductionSymptomConfig, 'slug' | 'search_title' | 'devtools_signature'>
+  symptom: LoadedSymptom
 ): Promise<Buffer> {
-  const titleText = truncateText(symptom.search_title, 76);
-  const sigText = truncateText(symptom.devtools_signature, 200);
+  const titleText = truncateText(symptom.frontmatter.title, 76);
+  const sigText = truncateText(
+    primarySignatureText(symptom.frontmatter) || symptom.frontmatter.summary,
+    200
+  );
 
   const tree = {
     type: 'div',

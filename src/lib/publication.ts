@@ -1,6 +1,6 @@
 import type { PageProofStatus } from './schemas';
 import type { LoadedConcept, LoadedAutopsy } from './content-loader';
-import type { ProductionSymptomConfig } from '../config/symptoms';
+import type { LoadedSymptom } from './symptoms/loader';
 import type { VsPair } from './vs-pairs';
 import { getEffectivePageStatus } from './proof/page-status';
 
@@ -22,8 +22,8 @@ export function publishedAutopsies(all: LoadedAutopsy[]): LoadedAutopsy[] {
   return all.filter((a) => isPublished(a.frontmatter.proof_status, a.frontmatter.id));
 }
 
-export function publishedSymptoms(all: ProductionSymptomConfig[]): ProductionSymptomConfig[] {
-  return all.filter((s) => isPublished(s.proof_status, s.slug));
+export function publishedSymptoms(all: LoadedSymptom[]): LoadedSymptom[] {
+  return all.filter((s) => isPublished(s.frontmatter.proof_status, s.frontmatter.id));
 }
 
 export function publishedVsPairs(all: VsPair[]): VsPair[] {

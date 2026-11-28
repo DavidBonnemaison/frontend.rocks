@@ -17,8 +17,6 @@ import {
 } from '../src/lib/validators/autopsy-validator';
 import { validateConceptMdx } from '../src/lib/validators/concept-validator';
 import { validateConceptGraph } from '../src/lib/validators/dag';
-import { isPublished } from '../src/lib/publication';
-import { PRODUCTION_SYMPTOMS } from '../src/config/symptoms';
 import { CONTENT_DIR } from '../src/lib/paths';
 import { parseCliArgs } from '../src/lib/cli-args';
 import { getAllClaimsFiles } from '../src/lib/proof/claims-loader';
@@ -258,7 +256,12 @@ async function main(): Promise<void> {
         : []
     );
     const { pages, collisions } = getAllPageRefs();
-    const claimsResult = validateClaimsCorpus({ claimsFiles, pages, collisions, experimentIds });
+    for (const c of collisions) {
+      errors.push(
+        `[pages] page id "${c.id}" is used by several content types: ${c.kinds.join(', ')}`
+      );
+    }
+    const claimsResult = validateClaimsCorpus({ claimsFiles, pages, collisions: [], experimentIds });
     errors.push(...claimsResult.errors);
     for (const w of claimsResult.warnings) console.warn(`⚠️  ${w}`);
     claimsStats = claimsResult.stats;
@@ -443,11 +446,6 @@ async function main(): Promise<void> {
     }
   }
 
-  for (const s of PRODUCTION_SYMPTOMS) {
-    if (isPublished(s.proof_status, s.slug)) {
-      errors.push(`[proof] symptom "${s.slug}" cannot be proven before MDX migration`);
-    }
-  }
 
   // Validate redirects (content/redirects/*.json)
   if (fs.existsSync(REDIRECTS_DIR)) {
@@ -468,10 +466,19 @@ async function main(): Promise<void> {
         errors.push(`[redirects] ${err instanceof Error ? err.message : String(err)}`);
       }
       const autopsyIdSet = new Set(autopsies.map((a) => a.id));
+      const symptomIdSet = new Set(
+        fs.existsSync(SYMPTOMS_DIR)
+          ? fs
+              .readdirSync(SYMPTOMS_DIR)
+              .filter((f) => f.endsWith('.mdx') || f.endsWith('.md'))
+              .map((f) => f.replace(/\.mdx?$/, ''))
+          : []
+      );
       errors.push(
         ...validateRedirectTargets(namedRedirects, {
           conceptIds: conceptIdSet,
           autopsyIds: autopsyIdSet,
+          symptomIds: symptomIdSet,
         }),
       );
     }

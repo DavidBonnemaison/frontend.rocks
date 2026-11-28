@@ -151,7 +151,7 @@ export function buildAutopsyMarkdownTwin(
   return `${headerLines.join('\n')}${cleanMdxBodyForMarkdown(body)}\n`;
 }
 
-import type { ProductionSymptomConfig } from '../config/symptoms';
+import { primarySignatureText, type LoadedSymptom } from './symptoms/loader';
 import type { VsPair } from './vs-pairs';
 import { splitProductionPitfalls, stripMarkdown } from './seo-schema';
 
@@ -224,7 +224,7 @@ export function buildLlmsTxt(params: {
   concepts: LoadedConcept[];
   autopsies: LoadedAutopsy[];
   vsPairs?: VsPair[];
-  productionSymptoms?: ProductionSymptomConfig[];
+  productionSymptoms?: LoadedSymptom[];
 }): string {
   const { concepts, autopsies, vsPairs = [], productionSymptoms = [] } = params;
 
@@ -236,10 +236,13 @@ export function buildLlmsTxt(params: {
     ...(productionSymptoms.length > 0
       ? [
           '## Symptom Triggers & Production Symptom Hubs',
-          ...productionSymptoms.map(
-            (ps) =>
-              `- [${ps.search_title}](${SITE_URL}/symptoms/${ps.slug}/): ${ps.summary} (Signature: ${ps.devtools_signature})`
-          ),
+          ...productionSymptoms.map((ps) => {
+            const fm = ps.frontmatter;
+            const sig = primarySignatureText(fm);
+            return sig
+              ? `- [${fm.title}](${SITE_URL}/symptoms/${fm.id}/): ${fm.summary} (Signature: ${sig})`
+              : `- [${fm.title}](${SITE_URL}/symptoms/${fm.id}/): ${fm.summary}`;
+          }),
           '',
         ]
       : []),
