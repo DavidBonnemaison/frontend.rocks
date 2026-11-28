@@ -104,6 +104,7 @@ function MdxBlock({
   causalSteps,
   lab,
   caseFile,
+  pieceColor,
 }: {
   pageId: string;
   source: string;
@@ -111,11 +112,14 @@ function MdxBlock({
   causalSteps: CausalChainStepItem[];
   lab: InteractivePrimitiveConfig | null;
   caseFile: AutopsyCaseFile;
+  pieceColor?: string;
 }) {
   const proofComponents = createProofMdxComponents({
     pageId,
     claimsBySlug: buildClaimsBySlug(getClaimsForPage(pageId)?.claims ?? []),
     claimsById: getClaimsById(),
+    pageKind: 'autopsy',
+    pieceColor,
   });
   return (
     <div className="mdx-prose autopsy-prose">
@@ -339,6 +343,7 @@ export default async function AutopsyDetailPage({
           causalSteps={causalSteps}
           lab={lab}
           caseFile={frontmatter.case_file}
+          pieceColor={frontmatter.piece_color}
         />
       </div>
 

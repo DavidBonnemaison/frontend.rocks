@@ -1,0 +1,6 @@
+{
+  "instrument": "frame-budget",
+  "observedPath": "",
+  "compare": "side-by-side",
+  "smoke": true
+}

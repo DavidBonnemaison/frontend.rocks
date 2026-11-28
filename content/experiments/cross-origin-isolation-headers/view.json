@@ -1,0 +1,6 @@
+{
+  "instrument": "network-waterfall",
+  "observedPath": "",
+  "compare": "side-by-side",
+  "smoke": true
+}

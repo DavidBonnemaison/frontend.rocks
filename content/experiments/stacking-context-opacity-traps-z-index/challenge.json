@@ -1,0 +1,8 @@
+{
+  "goal": "Release the trapped tooltip so it paints above the z-index: 10 header without touching z-index.",
+  "startFrom": "treatment",
+  "editable": "css",
+  "expectKey": "opacity-traps-tooltip",
+  "hint": "Remove opacity: 0.99 from .parent (or set opacity: 1) so it stops creating a stacking context.",
+  "forbid": ["z-index", "header"]
+}

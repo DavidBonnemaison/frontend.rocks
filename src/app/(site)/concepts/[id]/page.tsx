@@ -123,6 +123,7 @@ function MdxBlock({
     pageId,
     claimsBySlug: buildClaimsBySlug(getClaimsForPage(pageId)?.claims ?? []),
     claimsById: getClaimsById(),
+    pageKind: 'concept',
   });
   return (
     <div className="mdx-prose">
@@ -626,7 +627,7 @@ export default async function ConceptPage({
           <MdxBlock pageId={frontmatter.id} source={sections.tl_dr} conceptPreviews={conceptPreviews} />
         </section>
 
-        {lab && (
+        {lab && frontmatter.proof_status !== 'proven' && (
           <section id="lab" className="section-block" aria-label={UI_STRINGS.sections.interactiveSimulator}>
             <InteractiveLabRenderer config={lab} />
           </section>

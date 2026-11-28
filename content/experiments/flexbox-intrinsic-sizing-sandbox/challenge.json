@@ -1,0 +1,8 @@
+{
+  "goal": "Eliminate the horizontal flex overflow without changing the child width or hiding overflow on the row.",
+  "startFrom": "control",
+  "editable": "css",
+  "expectKey": "min-width-zero-stops-overflow",
+  "hint": "Set min-width: 0 on .main-col and max-width: 100% on .unbreakable.",
+  "forbid": ["overflow: hidden", "width: 100px"]
+}

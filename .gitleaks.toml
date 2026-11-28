@@ -9,3 +9,13 @@ condition = "AND"
 paths = ['''src/app/\(site\)/layout\.tsx$''']
 regexTarget = "line"
 regexes = ['''data-cf-beacon''']
+
+[[allowlists]]
+description = "Experiment expectKey identifiers (kebab-case) in challenge configs and challenge tests."
+condition = "AND"
+paths = [
+  '''^content/experiments/[^/]+/challenge\.json$''',
+  '''^tests/challenge\.test\.ts$''',
+]
+regexTarget = "line"
+regexes = ['''"?expectKey"?\s*:\s*['"][a-z0-9-]+['"]''']

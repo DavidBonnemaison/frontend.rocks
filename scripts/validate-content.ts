@@ -26,6 +26,8 @@ import { getAllPageRefs } from '../src/lib/proof/page-registry';
 import { validateClaimsCorpus } from '../src/lib/validators/claims-validator';
 import { validateExperimentView } from '../src/lib/validators/experiment-view-validator';
 import { validateProgrammaticSeo } from '../src/lib/validators/seo-validator';
+import { ChallengeSchema } from '../src/lib/proof/challenge-schema';
+import { validateChallengeAgainstExperiment } from '../src/lib/proof/challenge';
 import type { ExperimentDefinition } from '../src/lib/proof/define-experiment';
 
 const CONCEPTS_DIR = path.join(CONTENT_DIR, 'concepts');
@@ -244,37 +246,103 @@ async function main(): Promise<void> {
     errors.push(`[claims] ${err instanceof Error ? err.message : String(err)}`);
   }
 
-  // Validate optional Experiment view.json files (static: schema, observedPath, frame-budget kind)
+  // Validate optional Experiment view.json and challenge.json files
   const experimentsDirForViews = path.join(CONTENT_DIR, 'experiments');
+  const existingExperimentIds = new Set<string>();
   if (fs.existsSync(experimentsDirForViews)) {
     for (const entry of fs.readdirSync(experimentsDirForViews, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
-      const viewPath = path.join(experimentsDirForViews, entry.name, 'view.json');
-      if (!fs.existsSync(viewPath)) continue;
       const expPath = path.join(experimentsDirForViews, entry.name, 'experiment.ts');
+      if (fs.existsSync(expPath)) {
+        existingExperimentIds.add(entry.name);
+      }
+
+      const viewPath = path.join(experimentsDirForViews, entry.name, 'view.json');
+      const challengePath = path.join(experimentsDirForViews, entry.name, 'challenge.json');
+      if (!fs.existsSync(viewPath) && !fs.existsSync(challengePath)) continue;
+
       if (!fs.existsSync(expPath)) {
-        errors.push(`[experiments/${entry.name}/view.json] Missing sibling experiment.ts`);
+        if (fs.existsSync(viewPath)) {
+          errors.push(`[experiments/${entry.name}/view.json] Missing sibling experiment.ts`);
+        }
+        if (fs.existsSync(challengePath)) {
+          errors.push(`[experiments/${entry.name}/challenge.json] Missing sibling experiment.ts`);
+        }
         continue;
       }
+
+      let expDef: ExperimentDefinition | undefined;
       try {
-        const rawView = JSON.parse(fs.readFileSync(viewPath, 'utf-8'));
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const mod = require(expPath) as { default?: ExperimentDefinition };
-        const expDef = mod.default;
-        if (!expDef) {
-          errors.push(`[experiments/${entry.name}/view.json] experiment.ts has no default export`);
-          continue;
-        }
-        const res = validateExperimentView(entry.name, rawView, expDef);
-        if (!res.ok) {
-          for (const e of res.errors) {
-            errors.push(`[experiments/${e.experimentId}/view.json] ${e.message}`);
-          }
-        }
+        expDef = mod.default;
       } catch (err) {
         errors.push(
-          `[experiments/${entry.name}/view.json] ${err instanceof Error ? err.message : String(err)}`,
+          `[experiments/${entry.name}/experiment.ts] ${err instanceof Error ? err.message : String(err)}`,
         );
+        continue;
+      }
+
+      if (!expDef) {
+        errors.push(`[experiments/${entry.name}/experiment.ts] experiment.ts has no default export`);
+        continue;
+      }
+
+      if (fs.existsSync(viewPath)) {
+        try {
+          const rawView = JSON.parse(fs.readFileSync(viewPath, 'utf-8'));
+          const res = validateExperimentView(entry.name, rawView, expDef);
+          if (!res.ok) {
+            for (const e of res.errors) {
+              errors.push(`[experiments/${e.experimentId}/view.json] ${e.message}`);
+            }
+          }
+        } catch (err) {
+          errors.push(
+            `[experiments/${entry.name}/view.json] ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+      }
+
+      if (fs.existsSync(challengePath)) {
+        try {
+          const rawChallenge = JSON.parse(fs.readFileSync(challengePath, 'utf-8'));
+          const parsedChallenge = ChallengeSchema.parse(rawChallenge);
+          const challengeErrors = validateChallengeAgainstExperiment(expDef, parsedChallenge);
+          for (const ce of challengeErrors) {
+            errors.push(`[experiments/${entry.name}/challenge.json] ${ce}`);
+          }
+        } catch (err) {
+          errors.push(
+            `[experiments/${entry.name}/challenge.json] ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+      }
+    }
+  }
+
+  // Validate <Experiment id="..."> references in MDX and proven concept Experiment requirement
+  const EXPERIMENT_TAG_RE = /<Experiment\b[^>]*\bid=["']([a-z0-9-]+)["'][^>]*>/g;
+  const conceptProofByFile = new Map(concepts.map((c) => [`${c.id}.mdx`, c.proof_status]));
+  for (const { file, body } of conceptBodies) {
+    const refs = [...body.matchAll(EXPERIMENT_TAG_RE)].map((m) => m[1]);
+    for (const expId of refs) {
+      if (!existingExperimentIds.has(expId)) {
+        errors.push(`[${file}] <Experiment id="${expId}"> points to a missing experiment folder`);
+      }
+    }
+    if (conceptProofByFile.get(file) === 'proven' && refs.length === 0) {
+      errors.push(`[${file}] Proven concept must include at least one <Experiment> in MDX`);
+    }
+  }
+
+  if (fs.existsSync(AUTOPSIES_DIR)) {
+    for (const file of fs.readdirSync(AUTOPSIES_DIR).filter((f) => f.endsWith('.mdx') || f.endsWith('.md'))) {
+      const raw = fs.readFileSync(path.join(AUTOPSIES_DIR, file), 'utf-8');
+      for (const m of raw.matchAll(EXPERIMENT_TAG_RE)) {
+        if (!existingExperimentIds.has(m[1])) {
+          errors.push(`[autopsies/${file}] <Experiment id="${m[1]}"> points to a missing experiment folder`);
+        }
       }
     }
   }
