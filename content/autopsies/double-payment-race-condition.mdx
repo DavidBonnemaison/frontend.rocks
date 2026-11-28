@@ -26,7 +26,7 @@ traversed_concepts:
     role_in_chain: "Missing AbortSignal leaves orphaned POST streams active on the network socket after UI reset or retry."
   - concept_id: idempotency-optimistic-queues
     step_order: 5
-    role_in_chain: "Absent Idempotency-Key headers cause the payment gateway to treat retried TCP packets as two distinct charges."
+    role_in_chain: "Without an Idempotency-Key, the server cannot tell a second POST from a new purchase, so a retried request becomes a second charge."
 case_file:
   trigger: "Swapped `<form onSubmit>` for `<button onClick={handlePay}>` to fire an analytics event before checkout"
   symptom: "Customers on mobile and slow connections billed twice; two `200 OK` charges 38 ms apart, zero Sentry errors"
