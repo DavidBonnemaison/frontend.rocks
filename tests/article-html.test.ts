@@ -165,7 +165,7 @@ Second mixed paragraph with <C id="a">first claim</C> and <C id="b">second claim
 
   it('collectClaimSlugs extracts all claim slugs in order', () => {
     const FakeC = Object.assign(
-      function FakeC({ children }: { id: string; children: React.ReactNode }) {
+      function FakeC({ children }: { id: string; children?: React.ReactNode }) {
         return React.createElement('span', null, children);
       },
       { __frClaim: true as const }

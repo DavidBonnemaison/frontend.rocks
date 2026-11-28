@@ -5,6 +5,7 @@ import type { PieceColor } from '@/lib/design/piece-colors';
 import type { GeometrySnapshot } from '@/lib/design/schematic-snapshot';
 import type { EngineId } from '@/lib/proof/claim-schema';
 import type { PageProofSummary } from '@/lib/proof/page-proof.types';
+import type { JsonLdGraph } from '@/lib/seo-schema';
 import type {
   AutopsyCaseFile,
   Domain,
@@ -53,7 +54,7 @@ export interface ConceptPageView {
   replacesTargets: Array<{ id: string; title: string }>;
   sources: string[];
   lastVerifiedAt: string;
-  jsonLd: Record<string, unknown>;
+  jsonLd: JsonLdGraph;
 }
 
 export interface AutopsyNavItem {
@@ -93,7 +94,7 @@ export interface AutopsyPageView {
   prev: AutopsyNavItem | null;
   next: AutopsyNavItem | null;
   conceptPreviews: Record<string, ConceptPreviewData>;
-  jsonLd: Record<string, unknown>;
+  jsonLd: JsonLdGraph;
 }
 
 export interface SymptomPageView {
@@ -115,5 +116,5 @@ export interface SymptomPageView {
   related: Array<{ slug: string; title: string }>;
   proof: PageProofSummary | null;
   sources: string[];
-  jsonLd: Record<string, unknown>;
+  jsonLd: JsonLdGraph;
 }

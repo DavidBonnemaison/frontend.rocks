@@ -178,13 +178,7 @@ export default async function ConceptPage({ params }: { params: Promise<{ id: st
           <React.Fragment key={section.id}>
             <h2 id={section.id}>
               {section.title}
-              <a
-                className="heading-anchor meta"
-                href={`#${section.id}`}
-                aria-label={`Link to ${section.title}`}
-              >
-                #
-              </a>
+              <a className="heading-anchor meta" href={`#${section.id}`} aria-label={`Link to ${section.title}`}>#</a>
             </h2>
             <MDXRemote source={section.mdx} components={mdxComponents} options={mdxOptions} />
           </React.Fragment>

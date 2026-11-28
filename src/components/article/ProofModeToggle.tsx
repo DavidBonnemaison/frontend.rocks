@@ -83,6 +83,8 @@ export function ProofModeToggle() {
       <SlideSwitch
         id={id}
         label="HIGHLIGHT PROVEN"
+        offLabel="OFF"
+        onLabel="ON"
         checked={checked}
         onChange={handleChange}
       />

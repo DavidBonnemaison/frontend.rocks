@@ -12,7 +12,7 @@ import {
 } from '@/components/proof/mdx-components';
 import { worstStatus } from '@/lib/pages/claim-groups';
 import type { ClaimProofRow } from '@/lib/proof/page-proof.types';
-import { SpecSidenote } from './SpecSidenote';
+import { allocateSidenoteIndex, SpecSidenote } from './SpecSidenote';
 
 export interface ArticleMdxContext {
   pageId: string;
@@ -213,7 +213,11 @@ export function createArticleMdxComponents(
     p: ProseParagraph,
     li: ProseListItem,
     SpecQuote: (props: { claim: string }) => (
-      <SpecSidenote proofCtx={proofCtx} claimSlug={props.claim} counter={ctx.counter} />
+      <SpecSidenote
+        proofCtx={proofCtx}
+        claimSlug={props.claim}
+        sidenoteIndex={allocateSidenoteIndex(ctx.counter)}
+      />
     ),
     Advice: (props: { children: React.ReactNode }) => (
       <Callout kind="advice">{props.children}</Callout>

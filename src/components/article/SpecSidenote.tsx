@@ -9,14 +9,23 @@ export interface SpecSidenoteCounter {
   sidenotesInSection: number;
 }
 
+export function allocateSidenoteIndex(counter: SpecSidenoteCounter): number | null {
+  counter.sidenotesInSection += 1;
+  if (counter.sidenotesInSection > 2) {
+    return null;
+  }
+  counter.sidenote += 1;
+  return counter.sidenote;
+}
+
 export function SpecSidenote({
   proofCtx,
   claimSlug,
-  counter,
+  sidenoteIndex,
 }: {
   proofCtx: ProofMdxContext;
   claimSlug: string;
-  counter: SpecSidenoteCounter;
+  sidenoteIndex: number | null;
 }) {
   const claim = resolveClaimRef(proofCtx, claimSlug);
   if (!claim || claim.proof.kind !== 'spec-quote') {
@@ -25,8 +34,7 @@ export function SpecSidenote({
     );
   }
 
-  counter.sidenotesInSection += 1;
-  if (counter.sidenotesInSection > 2) {
+  if (sidenoteIndex === null) {
     if (process.env.NODE_ENV !== 'production') {
       console.warn(
         `[SpecSidenote] Skipping sidenote "${claimSlug}" on "${proofCtx.pageId}": at most 2 sidenotes per h2 section.`
@@ -34,8 +42,6 @@ export function SpecSidenote({
     }
     return null;
   }
-
-  counter.sidenote += 1;
 
   const { proof } = claim;
   const source = classifySpecUrl(proof.url);
@@ -50,7 +56,7 @@ export function SpecSidenote({
 
   return (
     <span id={`quote-${anchorId}`} data-claim-id={claim.id}>
-      <Sidenote id={`quote-${anchorId}-${counter.sidenote}`} label="§">
+      <Sidenote id={`quote-${anchorId}-${sidenoteIndex}`} label="§">
         <span className="spec-note__quote">“{quoteText}”</span>
         <span className="spec-note__source meta">
           <a

@@ -112,7 +112,7 @@ test.describe('Autopsy pages', () => {
         await expect(page.getByTestId('composite-case-note')).toBeVisible();
 
         // 3. Free-form narrative chapters (>= 6 h2s)
-        const narrativeHeadings = page.locator('#incident-report h2');
+        const narrativeHeadings = page.locator('.article-grid > h2[data-chapter="true"]');
         expect(await narrativeHeadings.count()).toBeGreaterThanOrEqual(6);
 
         // 4. Inline CausalChainStepper, FailureSimulator (#lab), and CaseFileCard
