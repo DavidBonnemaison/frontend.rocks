@@ -83,6 +83,22 @@ const PROVEN_RE = /^proof_status:\s*proven\s*$/m;
  * Without a deployed commit, or when the diff fails (history missing, first build), every
  * published URL is sent.
  */
+export function extractRedirectUrlsFromJson(rawJson: string): string[] {
+  try {
+    const parsed = JSON.parse(rawJson) as { rules?: Array<{ from?: unknown }> };
+    if (!Array.isArray(parsed.rules)) return [];
+    const urls: string[] = [];
+    for (const rule of parsed.rules) {
+      if (typeof rule?.from !== 'string') continue;
+      if (!rule.from.startsWith('/') || rule.from.includes('*')) continue;
+      urls.push(`${SITE_URL}${rule.from}`);
+    }
+    return urls;
+  } catch {
+    return [];
+  }
+}
+
 export function buildIndexNowPending(input: {
   commit: string;
   deployedCommit?: string | null;
@@ -101,7 +117,18 @@ export function buildIndexNowPending(input: {
       .filter(Boolean);
 
     const previouslyPublishedUrls: string[] = [];
+    const redirectUrls: string[] = [];
+
     for (const file of changedFiles) {
+      if (/^content\/redirects\/[^/]+\.json$/.test(file)) {
+        try {
+          const currentJson = input.git(['show', `HEAD:${file}`]);
+          redirectUrls.push(...extractRedirectUrlsFromJson(currentJson));
+        } catch {
+          // Redirect file deleted or unreadable from HEAD.
+        }
+        continue;
+      }
       if (!/^content\/(concepts|autopsies)\//.test(file)) continue;
       try {
         if (PROVEN_RE.test(input.git(['show', `${deployed}:${file}`]))) {
@@ -112,13 +139,15 @@ export function buildIndexNowPending(input: {
       }
     }
 
+    const selected = selectIndexNowUrls({
+      changedUrls: collectIndexNowUrls(changedFiles),
+      publishedUrls: input.publishedUrls,
+      previouslyPublishedUrls,
+    });
+
     return {
       commit: input.commit,
-      urls: selectIndexNowUrls({
-        changedUrls: collectIndexNowUrls(changedFiles),
-        publishedUrls: input.publishedUrls,
-        previouslyPublishedUrls,
-      }),
+      urls: [...new Set([...selected, ...redirectUrls])].sort(),
     };
   } catch {
     return everything;

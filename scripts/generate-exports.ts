@@ -33,6 +33,7 @@ import { experimentBuildDir } from '../src/lib/proof/experiment-bundles';
 import { getAllPublishedClaimEntries } from '../src/lib/proof/published-claims';
 import { buildPublicProofExports, stableJsonStringify } from '../src/lib/proof/public-export-schema';
 import { getProofResults } from '../src/lib/proof/results-loader';
+import { generateRedirectsFile } from './build-redirects';
 
 const PUBLIC_SKILL_REFS_DIR = path.join(process.cwd(), 'packages', 'public-skill', 'references');
 
@@ -398,12 +399,15 @@ ${rssItems}
     renderAuditCatalogMarkdown(auditCatalog),
   );
 
+  // 11. Netlify _redirects (from content/redirects/*.json)
+  const redirectsResult = generateRedirectsFile();
+
   const twinCount = concepts.length + autopsies.length + vsPairs.length;
   const ogCount = skipOg
     ? 0
     : allConcepts.length + allAutopsies.length * 2 + allVsPairs.length;
   console.log(
-    `✅ Generated exports (published ${concepts.length + autopsies.length + symptoms.length + vsPairs.length} / total ${allConcepts.length + allAutopsies.length + PRODUCTION_SYMPTOMS.length + allVsPairs.length}): llms.txt, llms-full.txt, graph.json (${concepts.length} nodes), audit-rules.json (${auditCatalog.rule_count} rules), packages/public-skill/references/audit-catalog.md, rss.xml (0 items), search-index.json (${searchIndex.length} items), ${twinCount} .md twins, robots.txt, sitemap.xml (${sitemapEntries.length} URLs), ${skipOg ? 'OG PNGs skipped' : `and ${ogCount} OG PNGs`}.`,
+    `✅ Generated exports (published ${concepts.length + autopsies.length + symptoms.length + vsPairs.length} / total ${allConcepts.length + allAutopsies.length + PRODUCTION_SYMPTOMS.length + allVsPairs.length}): llms.txt, llms-full.txt, graph.json (${concepts.length} nodes), audit-rules.json (${auditCatalog.rule_count} rules), packages/public-skill/references/audit-catalog.md, rss.xml (0 items), search-index.json (${searchIndex.length} items), ${twinCount} .md twins, robots.txt, sitemap.xml (${sitemapEntries.length} URLs), _redirects (${redirectsResult.ruleCount} rules), ${skipOg ? 'OG PNGs skipped' : `and ${ogCount} OG PNGs`}.`,
   );
 }
 
