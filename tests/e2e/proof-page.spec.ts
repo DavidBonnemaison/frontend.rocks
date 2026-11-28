@@ -53,5 +53,23 @@ test.describe('/proof page', () => {
     expect(ld['@type']).toBe('Dataset');
     expect(Array.isArray(ld.distribution)).toBe(true);
     expect(ld.distribution).toHaveLength(2);
+
+    const summaryPath = path.resolve(process.cwd(), 'content', 'recertification', 'summary.json');
+    if (fs.existsSync(summaryPath)) {
+      const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf-8')) as {
+        pagesMerged: number;
+        pagesDeleted: number;
+        claims: { proven: number; narrowed: number; dropped: number };
+      };
+      const recertSection = page.getByTestId('recertification-stats');
+      await expect(recertSection).toBeVisible();
+      await expect(recertSection).toContainText(
+        `${summary.claims.proven + summary.claims.narrowed} claims survived`,
+      );
+      await expect(recertSection).toContainText(`${summary.claims.dropped} were deleted`);
+      await expect(recertSection).toContainText(
+        `${summary.pagesMerged} pages were merged into a neighbour, ${summary.pagesDeleted} were retired.`,
+      );
+    }
   });
 });
