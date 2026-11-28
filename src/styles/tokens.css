@@ -53,16 +53,16 @@
 
   @supports (color: light-dark(white, black)) {
     :root {
-      --color-paper: light-dark(oklch(0.985 0.012 40), oklch(0.18 0.006 60));
-      --color-paper-sunk: light-dark(oklch(0.955 0.014 45), oklch(0.15 0.006 60));
+      --color-paper: light-dark(oklch(0.985 0.012 40), oklch(0.20 0.007 60));
+      --color-paper-sunk: light-dark(oklch(0.955 0.014 45), oklch(0.16 0.006 60));
       --color-ink: light-dark(oklch(0.18 0.005 60), oklch(0.95 0.01 60));
       --color-ink-muted: light-dark(oklch(0.43 0.01 60), oklch(0.76 0.01 60));
       --color-ink-faint: light-dark(oklch(0.6 0.01 60), oklch(0.58 0.01 60));
       --color-rule: light-dark(oklch(0.18 0.005 60), oklch(0.95 0.01 60));
-      --color-rule-soft: light-dark(oklch(0.86 0.012 50), oklch(0.3 0.006 60));
+      --color-rule-soft: light-dark(oklch(0.86 0.012 50), oklch(0.33 0.007 60));
       --color-accent: light-dark(oklch(0.55 0.19 35), oklch(0.74 0.15 40));
       --color-focus: light-dark(oklch(0.5 0.2 262), oklch(0.78 0.14 262));
-      --color-device: light-dark(oklch(0.93 0.004 90), oklch(0.24 0.004 90));
+      --color-device: light-dark(oklch(0.93 0.004 90), oklch(0.255 0.004 90));
       --color-device-inset: light-dark(oklch(0.2 0.004 90), oklch(0.12 0.004 90));
       --color-led: light-dark(oklch(0.66 0.23 28), oklch(0.7 0.22 28));
       --color-led-ok: light-dark(oklch(0.78 0.19 145), oklch(0.8 0.19 145));
@@ -73,16 +73,16 @@
   }
 
   [data-theme="dark"] {
-    --color-paper: oklch(0.18 0.006 60);
-    --color-paper-sunk: oklch(0.15 0.006 60);
+    --color-paper: oklch(0.20 0.007 60);
+    --color-paper-sunk: oklch(0.16 0.006 60);
     --color-ink: oklch(0.95 0.01 60);
     --color-ink-muted: oklch(0.76 0.01 60);
     --color-ink-faint: oklch(0.58 0.01 60);
     --color-rule: oklch(0.95 0.01 60);
-    --color-rule-soft: oklch(0.3 0.006 60);
+    --color-rule-soft: oklch(0.33 0.007 60);
     --color-accent: oklch(0.74 0.15 40);
     --color-focus: oklch(0.78 0.14 262);
-    --color-device: oklch(0.24 0.004 90);
+    --color-device: oklch(0.255 0.004 90);
     --color-device-inset: oklch(0.12 0.004 90);
     --color-led: oklch(0.7 0.22 28);
     --color-led-ok: oklch(0.8 0.19 145);
@@ -113,16 +113,16 @@
   @supports (color: light-dark(white, black)) {
     [data-theme="dark"],
     [data-theme="light"] {
-      --color-paper: light-dark(oklch(0.985 0.012 40), oklch(0.18 0.006 60));
-      --color-paper-sunk: light-dark(oklch(0.955 0.014 45), oklch(0.15 0.006 60));
+      --color-paper: light-dark(oklch(0.985 0.012 40), oklch(0.20 0.007 60));
+      --color-paper-sunk: light-dark(oklch(0.955 0.014 45), oklch(0.16 0.006 60));
       --color-ink: light-dark(oklch(0.18 0.005 60), oklch(0.95 0.01 60));
       --color-ink-muted: light-dark(oklch(0.43 0.01 60), oklch(0.76 0.01 60));
       --color-ink-faint: light-dark(oklch(0.6 0.01 60), oklch(0.58 0.01 60));
       --color-rule: light-dark(oklch(0.18 0.005 60), oklch(0.95 0.01 60));
-      --color-rule-soft: light-dark(oklch(0.86 0.012 50), oklch(0.3 0.006 60));
+      --color-rule-soft: light-dark(oklch(0.86 0.012 50), oklch(0.33 0.007 60));
       --color-accent: light-dark(oklch(0.55 0.19 35), oklch(0.74 0.15 40));
       --color-focus: light-dark(oklch(0.5 0.2 262), oklch(0.78 0.14 262));
-      --color-device: light-dark(oklch(0.93 0.004 90), oklch(0.24 0.004 90));
+      --color-device: light-dark(oklch(0.93 0.004 90), oklch(0.255 0.004 90));
       --color-device-inset: light-dark(oklch(0.2 0.004 90), oklch(0.12 0.004 90));
       --color-led: light-dark(oklch(0.66 0.23 28), oklch(0.7 0.22 28));
       --color-led-ok: light-dark(oklch(0.78 0.19 145), oklch(0.8 0.19 145));
