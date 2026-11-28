@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { Scale } from 'lucide-react';
-import { extractVsPairs } from '@/lib/vs-pairs';
+import { extractVsPairs, loadVsPairEntries } from '@/lib/vs-pairs';
 import { SITE_URL } from '@/lib/seo-schema';
 import { VsHubClient, type VsHubItem } from '@/components/vs/VsHubClient';
 
@@ -37,7 +37,9 @@ export function generateMetadata(): Metadata {
 }
 
 export default function VsHubPage() {
-  const pairs = extractVsPairs();
+  const allPairs = extractVsPairs();
+  const hasPairsFile = loadVsPairEntries().length > 0;
+  const pairs = hasPairsFile ? allPairs.filter((p) => p.proof_status === 'proven') : allPairs;
 
   const items: VsHubItem[] = pairs.map((pair) => {
     const pFm = pair.primary.frontmatter;

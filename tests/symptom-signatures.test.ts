@@ -84,11 +84,11 @@ describe('checkSymptomSignatures (US-35.6)', () => {
       experiments: {
         [exp.id]: {
           'message-chromium': {
-            chromium: { status: 'pass', observed: { treatment: { message: 'TypeError: Failed to fetch dynamically imported module' }, control: { message: null } }, mutationValid: true, durationMs: 10 },
-            firefox: { status: 'fail', observed: { treatment: { message: 'other' }, control: { message: null } }, mutationValid: true, durationMs: 10 },
+            chromium: { status: 'pass', observed: { treatment: { message: 'TypeError: Failed to fetch dynamically imported module' }, control: { message: null } }, presented: null, error: null },
+            firefox: { status: 'fail', observed: { treatment: { message: 'other' }, control: { message: null } }, presented: null, error: null },
           },
           'message-firefox': {
-            firefox: { status: 'pass', observed: { treatment: { message: 'TypeError: error loading dynamically imported module' }, control: { message: null } }, mutationValid: true, durationMs: 10 },
+            firefox: { status: 'pass', observed: { treatment: { message: 'TypeError: error loading dynamically imported module' }, control: { message: null } }, presented: null, error: null },
           },
         },
       },

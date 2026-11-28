@@ -19,6 +19,9 @@ import {
 } from '@/lib/ui-strings';
 import { extractVsPairs, getVsPairBySlug } from '@/lib/vs-pairs';
 import { isPublished, robotsForStatus } from '@/lib/publication';
+import { getAllClaims, getClaimsForPage } from '@/lib/proof/claims-loader';
+import { Experiment } from '@/components/experiments/Experiment';
+import { buildClaimsBySlug } from '@/components/proof/mdx-components';
 import { Support } from '@/components/proof/Support';
 
 function getConceptSupportProps(
@@ -164,18 +167,53 @@ export default async function VsComparisonPage({
         {pFm.title} <span style={{ color: 'var(--accent)' }}>vs</span> {sFm.title}
       </h1>
 
-      {/* Above-the-fold Verdict */}
+      {/* Above-the-fold Question / Verdict */}
       <section
         className="callout callout-mental-model"
-        aria-label="Mechanical Verdict"
+        aria-label={pair.question ? 'Comparison Question' : 'Mechanical Verdict'}
         style={{ marginTop: '20px' }}
       >
         <div className="callout-header">
           <Scale size={16} aria-hidden="true" />
-          <span>Mechanical Verdict</span>
+          <span>{pair.question ? 'Comparison Question' : 'Mechanical Verdict'}</span>
         </div>
-        <p style={{ margin: 0, fontSize: '1.05rem', lineHeight: 1.65 }}>{note}</p>
+        <p style={{ margin: 0, fontSize: '1.05rem', lineHeight: 1.65 }}>{pair.question ?? note}</p>
       </section>
+
+      {pair.experimentId && (() => {
+        const pageId = `vs-${pair.slug}`;
+        const pairClaimsFile = getClaimsForPage(pageId);
+        const pairClaims = pairClaimsFile?.claims ?? [];
+        const allClaimsById = new Map(getAllClaims().map((c) => [c.id, c]));
+        const ctx = {
+          pageId,
+          pageKind: 'vs' as const,
+          claimsBySlug: buildClaimsBySlug(pairClaims),
+          claimsById: allClaimsById,
+        };
+        const listedClaims = (pair.claim_ids ?? [])
+          .map((id) => allClaimsById.get(id))
+          .filter((c): c is NonNullable<typeof c> => Boolean(c));
+        return (
+          <>
+            <section className="section-block" style={{ marginTop: '24px' }} aria-label="Side-by-side Experiment">
+              <Experiment id={pair.experimentId} layout="side-by-side" ctx={ctx} />
+            </section>
+            {listedClaims.length > 0 && (
+              <section className="section-block" style={{ marginTop: '24px' }} aria-label="Verified Claims">
+                <h2>Verified Claims</h2>
+                <ul style={{ marginTop: '12px', paddingLeft: '20px' }}>
+                  {listedClaims.map((claim) => (
+                    <li key={claim.id} style={{ marginBottom: '8px' }}>
+                      {claim.statement}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </>
+        );
+      })()}
 
       {/* Direct Lab & Dissection CTAs */}
       <section
@@ -203,7 +241,8 @@ export default async function VsComparisonPage({
         </Link>
       </section>
 
-      {/* Structured Comparison Matrix */}
+      {/* Legacy Structured Comparison Matrix (shown only before content/vs/pairs.json switch-over) */}
+      {!pair.experimentId && (
       <section className="section-block" style={{ marginTop: '28px' }}>
         <h2>Structured Comparison Matrix</h2>
         <div style={{ overflowX: 'auto', marginTop: '12px' }}>
@@ -328,6 +367,7 @@ export default async function VsComparisonPage({
           </table>
         </div>
       </section>
+      )}
 
       {/* Engine Internals & Production Pitfalls */}
       <section className="section-block" style={{ marginTop: '28px' }}>
