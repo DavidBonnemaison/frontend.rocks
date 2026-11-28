@@ -130,6 +130,7 @@ export async function renderConceptOgPng(concept: LoadedConcept): Promise<Buffer
       style: {
         width: '100%',
         height: '100%',
+        boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -306,6 +307,7 @@ function buildAutopsyPieceTree(
       style: {
         width: '100%',
         height: '100%',
+        boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -456,6 +458,7 @@ export async function renderSymptomOgPng(
       style: {
         width: '100%',
         height: '100%',
+        boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -496,7 +499,7 @@ export async function renderSymptomOgPng(
                           letterSpacing: '0.06em',
                           color: SRGB.light.fail,
                         },
-                        children: '✕ CONSOLE',
+                        children: '× CONSOLE',
                       },
                     },
                     {
@@ -575,6 +578,7 @@ export async function renderDefaultOgPng(): Promise<Buffer> {
       style: {
         width: '100%',
         height: '100%',
+        boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -665,6 +669,7 @@ export async function renderVsOgPng(pair: VsPair): Promise<Buffer> {
       style: {
         width: '100%',
         height: '100%',
+        boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
