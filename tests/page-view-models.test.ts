@@ -55,8 +55,8 @@ describe('Page view models', () => {
     expect(view).not.toBeNull();
     expect(view!.slug).toBe('z-index-ignored');
     expect(view!.title).toBeTruthy();
-    expect(view!.signature).toBeTruthy();
-    // Engine signature data is not invented before EPIC-35 provides it
+    // Unverified migrated symptoms carry no invented signature until Wave 6 proves them
+    expect(view!.signature).toBe('');
     expect(view!.signatureEngines).toBeNull();
     expect(view!.causes.length).toBeGreaterThan(0);
     expect(view!.causes[0].rank).toBe(1);
