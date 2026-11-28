@@ -29,12 +29,21 @@ import { validateProgrammaticSeo } from '../src/lib/validators/seo-validator';
 import { ChallengeSchema } from '../src/lib/proof/challenge-schema';
 import { validateChallengeAgainstExperiment } from '../src/lib/proof/challenge';
 import type { ExperimentDefinition } from '../src/lib/proof/define-experiment';
+import { RedirectsFileSchema } from '../src/lib/redirects/schema';
+import {
+  buildRedirectsFile,
+  validateRedirectTargets,
+  type NamedRedirectsFile,
+} from '../src/lib/redirects/build';
+import { validateRecertSummary } from '../src/lib/recertification/validate';
 
 const CONCEPTS_DIR = path.join(CONTENT_DIR, 'concepts');
 const AUTOPSIES_DIR = path.join(CONTENT_DIR, 'autopsies');
 const LABS_DIR = path.join(CONTENT_DIR, 'labs');
 const DIGESTS_DIR = path.join(CONTENT_DIR, 'digests');
 const EVIDENCE_DIR = path.join(CONTENT_DIR, 'evidence');
+const REDIRECTS_DIR = path.join(CONTENT_DIR, 'redirects');
+const RECERT_SUMMARY_FILE = path.join(CONTENT_DIR, 'recertification', 'summary.json');
 const PATHS_FILE = path.join(CONTENT_DIR, 'paths.json');
 
 async function main(): Promise<void> {
@@ -350,6 +359,50 @@ async function main(): Promise<void> {
   for (const s of PRODUCTION_SYMPTOMS) {
     if (isPublished(s.proof_status, s.slug)) {
       errors.push(`[proof] symptom "${s.slug}" cannot be proven before MDX migration`);
+    }
+  }
+
+  // Validate redirects (content/redirects/*.json)
+  if (fs.existsSync(REDIRECTS_DIR)) {
+    const namedRedirects: NamedRedirectsFile[] = [];
+    for (const file of fs.readdirSync(REDIRECTS_DIR).filter((f) => f.endsWith('.json')).sort()) {
+      try {
+        const raw = JSON.parse(fs.readFileSync(path.join(REDIRECTS_DIR, file), 'utf-8'));
+        const data = RedirectsFileSchema.parse(raw);
+        namedRedirects.push({ fileName: file, data });
+      } catch (err) {
+        errors.push(`[redirects/${file}] ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    if (namedRedirects.length > 0) {
+      try {
+        buildRedirectsFile(namedRedirects);
+      } catch (err) {
+        errors.push(`[redirects] ${err instanceof Error ? err.message : String(err)}`);
+      }
+      const autopsyIdSet = new Set(autopsies.map((a) => a.id));
+      errors.push(
+        ...validateRedirectTargets(namedRedirects, {
+          conceptIds: conceptIdSet,
+          autopsyIds: autopsyIdSet,
+        }),
+      );
+    }
+  }
+
+  // Validate recertification summary (content/recertification/summary.json) if present
+  if (fs.existsSync(RECERT_SUMMARY_FILE)) {
+    try {
+      const raw = JSON.parse(fs.readFileSync(RECERT_SUMMARY_FILE, 'utf-8'));
+      const provenConceptCount = concepts.filter((c) => c.proof_status === 'proven').length;
+      const summaryRes = validateRecertSummary(raw, provenConceptCount);
+      if (!summaryRes.ok) {
+        errors.push(...summaryRes.errors);
+      }
+    } catch (err) {
+      errors.push(
+        `[recertification/summary.json] ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 

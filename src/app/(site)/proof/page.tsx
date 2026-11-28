@@ -14,6 +14,8 @@ import { getEffectivePageStatus } from '@/lib/proof/page-status';
 import { getAllPublishedClaimEntries, getPublishedPageRefs } from '@/lib/proof/published-claims';
 import { getBuildCommit, getVerifierRepoLinks } from '@/lib/proof/repo-links';
 import { getProofResults } from '@/lib/proof/results-loader';
+import { RecertificationStats } from '@/components/proof/RecertificationStats';
+import { getRecertSummary } from '@/lib/recertification/loader';
 import { SITE_URL } from '@/lib/seo-schema';
 import { UI_STRINGS } from '@/lib/ui-strings';
 
@@ -107,6 +109,7 @@ export default function ProofMethodPage() {
   const commit = getBuildCommit();
   const repoLinks = getVerifierRepoLinks(commit);
   const historyPoints = getGlobalRunHistory(90);
+  const recertSummary = getRecertSummary();
 
   const byStatus: Record<ClaimStatus, number> = {
     pending: 0,
@@ -331,6 +334,8 @@ export default function ProofMethodPage() {
           ))}
         </ul>
       </section>
+
+      <RecertificationStats summary={recertSummary} />
 
       <section aria-labelledby="history-heading" className="proof-panel">
         <h2 id="history-heading">Global history</h2>

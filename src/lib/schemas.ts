@@ -372,10 +372,7 @@ export const AutopsyFrontmatterSchema = z.object({
   format: z.enum(['narrative', 'legacy']).default('narrative'),
   case_type: z.enum(['composite', 'reconstructed']).default('composite'),
   cast: z.array(AutopsyCastMemberSchema).min(2).max(4),
-  traversed_concepts: z
-    .array(TraversedConceptSchema)
-    .min(4, 'traversed_concepts must contain 4 to 6 concepts')
-    .max(6, 'traversed_concepts must contain 4 to 6 concepts'),
+  traversed_concepts: z.array(TraversedConceptSchema),
   case_file: AutopsyCaseFileSchema,
   reading_time_min: z.number().int().positive(),
   sources: z.array(z.string().url()).min(1, 'At least one primary source URL is required'),
@@ -384,6 +381,17 @@ export const AutopsyFrontmatterSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'last_verified_at must be ISO-8601 YYYY-MM-DD'),
   proof_status: PageProofStatusSchema.default('unverified'),
   lab_id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
+}).superRefine((fm, ctx) => {
+  if (
+    fm.proof_status === 'proven' &&
+    (fm.traversed_concepts.length < 4 || fm.traversed_concepts.length > 6)
+  ) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['traversed_concepts'],
+      message: 'traversed_concepts must contain 4 to 6 concepts',
+    });
+  }
 });
 
 export type AutopsyFrontmatter = z.infer<typeof AutopsyFrontmatterSchema>;

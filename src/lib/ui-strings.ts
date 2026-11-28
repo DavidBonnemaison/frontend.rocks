@@ -206,6 +206,17 @@ export const UI_STRINGS = {
     noDataAtPath: (path: string) => `No data at path "${path}"`,
     emptyObservation: 'No observations recorded.',
   },
+  RECERTIFICATION: {
+    heading: 'Re-certification',
+    rerunLine: (monthYear: string) =>
+      `In ${monthYear} we re-ran every page through the automated proof checks.`,
+    survivedLine: (survived: number, narrowed: number) =>
+      `${survived} claims survived (${narrowed} of them narrowed to the engines where they hold).`,
+    deletedLine: (dropped: number, dropPercent: string) =>
+      `${dropped} were deleted because no spec quote, engine source or experiment could back them (${dropPercent}).`,
+    pagesLine: (merged: number, deleted: number) =>
+      `${merged} pages were merged into a neighbour, ${deleted} were retired.`,
+  },
 } as const;
 
 export function formatMaturityLabel(status: string | null | undefined): string {

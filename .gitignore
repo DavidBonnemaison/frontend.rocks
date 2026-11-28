@@ -43,6 +43,7 @@ yarn-error.log*
 /public/build-info.json
 /public/indexnow-pending.json
 /public/map-layout.json
+/public/_redirects
 /public/concepts/
 /public/autopsies/
 /public/vs/
