@@ -25,6 +25,13 @@ export const SEARCH_WEIGHTS = {
   searchText: 1,
 } as const;
 
+/** Words ignored when deriving keywords from titles and signatures (EPIC-35 §4.6). */
+export const SEARCH_STOP_WORDS: ReadonlySet<string> = new Set([
+  'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from', 'has', 'have', 'how', 'in', 'is',
+  'it', 'its', 'my', 'no', 'not', 'of', 'on', 'or', 'that', 'the', 'this', 'to', 'vs', 'was', 'when',
+  'while', 'with', 'why', 'you', 'your',
+]);
+
 export function tokenizeQuery(query: string): string[] {
   return query
     .trim()

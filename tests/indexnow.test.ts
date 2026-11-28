@@ -22,7 +22,8 @@ describe('IndexNow', () => {
     expect(mapChangedFileToUrls('content/labs/css-stacking-context.json')).toEqual([
       'https://frontend.rocks/embed/lab/css-stacking-context/',
     ]);
-    expect(mapChangedFileToUrls('src/config/symptoms.ts')).toEqual([
+    expect(mapChangedFileToUrls('content/symptoms/z-index-ignored.mdx')).toEqual([
+      'https://frontend.rocks/symptoms/z-index-ignored/',
       'https://frontend.rocks/symptoms/',
     ]);
     expect(mapChangedFileToUrls('README.md')).toEqual([]);
@@ -31,12 +32,13 @@ describe('IndexNow', () => {
       collectIndexNowUrls([
         'content/concepts/css-stacking-context.mdx',
         'content/concepts/css-stacking-context.mdx',
-        'src/config/symptoms.ts',
+        'content/symptoms/z-index-ignored.mdx',
         'package.json',
       ])
     ).toEqual([
       'https://frontend.rocks/concepts/css-stacking-context/',
       'https://frontend.rocks/symptoms/',
+      'https://frontend.rocks/symptoms/z-index-ignored/',
     ]);
   });
 

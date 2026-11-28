@@ -6,9 +6,9 @@ import {
   type LoadedConcept,
 } from './content-loader';
 import {
-  PRODUCTION_SYMPTOMS,
-  type ProductionSymptomConfig,
-} from '../config/symptoms';
+  getAllSymptoms,
+  type LoadedSymptom,
+} from './symptoms/loader';
 import { SITE_URL } from './seo-exports';
 
 export const AUDIT_CATEGORIES = [
@@ -283,7 +283,7 @@ const RULE_BLUEPRINTS: readonly RuleBlueprint[] = [
     category: 'React / State & Race Conditions',
     severity: 'critical',
     primaryAutopsyId: 'double-payment-race-condition',
-    primarySymptomSlug: 'double-payment-race-condition',
+    primarySymptomSlug: 'double-charge-on-double-click',
     detection_signals: [
       'POST to /checkout, /pay, /charge, or /order guarded only by React state disabled={isSubmitting}',
       'Missing synchronous useRef/state-machine transition lock and missing Idempotency-Key request header',
@@ -511,7 +511,7 @@ function dedupe<T>(items: T[]): T[] {
 export interface BuildAuditRulesCatalogOptions {
   concepts?: LoadedConcept[];
   autopsies?: LoadedAutopsy[];
-  symptoms?: ProductionSymptomConfig[];
+  symptoms?: LoadedSymptom[];
   generatedAt?: string;
   /**
    * 'throw' (default): a rule that references an absent autopsy, concept or symptom throws.
@@ -527,11 +527,11 @@ export function buildAuditRulesCatalog(
 ): AuditRulesCatalog {
   const concepts = options.concepts ?? getAllConcepts();
   const autopsies = options.autopsies ?? getAllAutopsies();
-  const symptoms = options.symptoms ?? PRODUCTION_SYMPTOMS;
+  const symptoms = options.symptoms ?? getAllSymptoms();
 
   const conceptMap = new Map(concepts.map((c) => [c.frontmatter.id, c]));
   const autopsyMap = new Map(autopsies.map((a) => [a.frontmatter.id, a]));
-  const symptomMap = new Map(symptoms.map((s) => [s.slug, s]));
+  const symptomMap = new Map(symptoms.map((s) => [s.frontmatter.id, s]));
 
   const buildRule = (bp: RuleBlueprint): AuditRule => {
     const primaryAutopsy = bp.primaryAutopsyId ? autopsyMap.get(bp.primaryAutopsyId) : undefined;
@@ -547,7 +547,7 @@ export function buildAuditRulesCatalog(
     const autopsyIds = dedupe([
       ...(bp.primaryAutopsyId ? [bp.primaryAutopsyId] : []),
       ...(bp.extraAutopsyIds ?? []),
-      ...(primarySymptom?.autopsy_ids ?? []),
+      ...(primarySymptom?.frontmatter.autopsy_ids ?? []),
     ]);
 
     for (const aid of autopsyIds) {
@@ -558,7 +558,7 @@ export function buildAuditRulesCatalog(
 
     const conceptIds = dedupe([
       ...(primaryAutopsy?.frontmatter.traversed_concepts.map((tc) => tc.concept_id) ?? []),
-      ...(primarySymptom?.concept_ids ?? []),
+      ...(primarySymptom?.frontmatter.concept_ids ?? []),
       ...(bp.extraConceptIds ?? []),
     ]);
 
@@ -580,11 +580,15 @@ export function buildAuditRulesCatalog(
     }
 
     const cf = primaryAutopsy?.frontmatter.case_file;
-    const trigger = bp.triggerOverride ?? cf?.trigger ?? primarySymptom?.search_title ?? bp.title;
-    const rootCause = bp.rootCauseOverride ?? cf?.root_cause ?? primarySymptom?.summary ?? bp.title;
+    const pfm = primarySymptom?.frontmatter;
+    const trigger = bp.triggerOverride ?? cf?.trigger ?? pfm?.title ?? bp.title;
+    const rootCause = bp.rootCauseOverride ?? cf?.root_cause ?? pfm?.summary ?? bp.title;
     const howToSpot =
-      bp.howToSpotOverride ?? cf?.how_to_spot ?? primarySymptom?.devtools_signature ?? bp.title;
-    const fix = bp.fixOverride ?? cf?.fix ?? primarySymptom?.summary ?? bp.title;
+      bp.howToSpotOverride ??
+      cf?.how_to_spot ??
+      (pfm && pfm.signatures.length > 0 ? pfm.signatures.map((s) => s.text).join(' · ') : undefined) ??
+      bp.title;
+    const fix = bp.fixOverride ?? cf?.fix ?? pfm?.summary ?? bp.title;
 
     return {
       id: bp.id,

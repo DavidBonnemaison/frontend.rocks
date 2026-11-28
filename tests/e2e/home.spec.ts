@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 import fs from 'node:fs';
 import path from 'node:path';
-import { getFeaturedSymptoms } from '../../src/config/symptoms';
+import { getFeaturedSymptoms } from '../../src/lib/symptoms/loader';
 
 const AUTOPSY_COUNT = fs
   .readdirSync(path.join(process.cwd(), 'content', 'autopsies'))
@@ -32,12 +32,12 @@ test.describe('Home page', () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/', { waitUntil: 'networkidle' });
 
-    // 2. Door B fed from PRODUCTION_SYMPTOMS linking to /symptoms/<slug>/
+    // 2. Door B fed from content/symptoms linking to /symptoms/<slug>/
     const featuredSymptom = getFeaturedSymptoms()[0];
     const symptomRows = page.locator('.home-symptom-row');
     await expect(symptomRows).toHaveCount(getFeaturedSymptoms().length);
     const firstSymptomRow = symptomRows.first();
-    await expect(firstSymptomRow).toHaveAttribute('href', `/symptoms/${featuredSymptom.slug}/`);
+    await expect(firstSymptomRow).toHaveAttribute('href', `/symptoms/${featuredSymptom.frontmatter.id}/`);
 
     const browseAllSymptoms = page.getByRole('link', {
       name: /Browse all production symptoms/i,
@@ -53,7 +53,7 @@ test.describe('Home page', () => {
 
     // 4. Click first Door B symptom row -> lands on its symptom page
     await firstSymptomRow.click();
-    await expect(page).toHaveURL(new RegExp(`/symptoms/${featuredSymptom.slug}/$`));
+    await expect(page).toHaveURL(new RegExp(`/symptoms/${featuredSymptom.frontmatter.id}/$`));
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
 

@@ -331,8 +331,8 @@ describe('US-16.2: Autopsy case_number Contiguity, Featured Symptoms & Dynamic C
     expect(res.errors.some((e) => e.includes('Out-of-range autopsy case_number #4'))).toBe(true);
   });
 
-  it('exposes 6 featured symptoms from PRODUCTION_SYMPTOMS and dynamic autopsy count label', async () => {
-    const { getFeaturedSymptoms } = await import('../src/config/symptoms');
+  it('exposes 6 featured symptoms from content/symptoms and dynamic autopsy count label', async () => {
+    const { getFeaturedSymptoms } = await import('../src/lib/symptoms/loader');
     const { UI_STRINGS } = await import('../src/lib/ui-strings');
     expect(getFeaturedSymptoms()).toHaveLength(6);
     expect(UI_STRINGS.autopsies.viewAllAutopsies(14)).toBe('Browse all 14 Architecture Autopsies');

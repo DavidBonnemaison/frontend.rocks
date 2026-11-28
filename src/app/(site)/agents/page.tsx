@@ -6,7 +6,7 @@ import { CopyCodeButton } from '@/components/concepts/CopyCodeButton';
 import { buildAuditRulesCatalog } from '@/lib/audit-rules';
 import { getAllAutopsies, getAllConcepts } from '@/lib/content-loader';
 import { selectPublishableContent } from '@/lib/publishable-content';
-import { PRODUCTION_SYMPTOMS } from '@/config/symptoms';
+import { getAllSymptoms } from '@/lib/symptoms/loader';
 import { SITE_URL } from '@/lib/seo-schema';
 import './agents.css';
 
@@ -116,7 +116,7 @@ export default function AgentsPage() {
   const published = selectPublishableContent({
     concepts: getAllConcepts(),
     autopsies: getAllAutopsies(),
-    symptoms: PRODUCTION_SYMPTOMS,
+    symptoms: getAllSymptoms(),
   });
   const catalog = buildAuditRulesCatalog({
     concepts: published.concepts,

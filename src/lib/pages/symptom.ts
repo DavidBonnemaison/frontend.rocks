@@ -1,12 +1,13 @@
-import { getSymptomBySlug, PRODUCTION_SYMPTOMS } from '@/config/symptoms';
+import { getAllSymptoms, getSymptomById, primarySignatureText } from '@/lib/symptoms/loader';
 import { getAllAutopsies, getAllConcepts } from '@/lib/content-loader';
 import { summarizePageProof } from '@/lib/proof/page-proof';
 import { buildSymptomJsonLd } from '@/lib/seo-schema';
 import type { SymptomPageView } from './view-models';
 
 export function buildSymptomPageView(slug: string): SymptomPageView | null {
-  const symptom = getSymptomBySlug(slug);
-  if (!symptom) return null;
+  const loaded = getSymptomById(slug);
+  if (!loaded) return null;
+  const symptom = loaded.frontmatter;
 
   const allConcepts = getAllConcepts();
   const allAutopsies = getAllAutopsies();
@@ -44,18 +45,19 @@ export function buildSymptomPageView(slug: string): SymptomPageView | null {
   // Related symptoms: share at least one concept or autopsy, capped at 3.
   const conceptSet = new Set(symptom.concept_ids);
   const autopsySet = new Set(symptom.autopsy_ids);
-  const related = PRODUCTION_SYMPTOMS.filter((other) => other.slug !== symptom.slug)
+  const related = getAllSymptoms()
+    .filter((other) => other.frontmatter.id !== symptom.id)
     .map((other) => {
       const overlap =
-        other.concept_ids.filter((id) => conceptSet.has(id)).length +
-        other.autopsy_ids.filter((id) => autopsySet.has(id)).length;
-      return { other, overlap };
+        other.frontmatter.concept_ids.filter((id) => conceptSet.has(id)).length +
+        other.frontmatter.autopsy_ids.filter((id) => autopsySet.has(id)).length;
+      return { other: other.frontmatter, overlap };
     })
     .sort((a, b) => b.overlap - a.overlap)
     .slice(0, 3)
     .map(({ other }) => ({
-      slug: other.slug,
-      title: other.search_title,
+      slug: other.id,
+      title: other.title,
     }));
 
   const sources = Array.from(
@@ -65,24 +67,30 @@ export function buildSymptomPageView(slug: string): SymptomPageView | null {
     ])
   );
 
-  const proof = summarizePageProof(symptom.slug, symptom.proof_status);
+  const signature = primarySignatureText(symptom);
+  const signatureEngines =
+    symptom.signatures.length > 0
+      ? Array.from(new Set(symptom.signatures.flatMap((s) => s.engines)))
+      : null;
+
+  const proof = summarizePageProof(symptom.id, symptom.proof_status);
 
   return {
-    slug: symptom.slug,
-    title: symptom.search_title,
+    slug: symptom.id,
+    title: symptom.title,
     proofStatus: symptom.proof_status,
-    signature: symptom.devtools_signature,
-    signatureEngines: null,
+    signature,
+    signatureEngines,
     summary: symptom.summary,
     causes,
     related,
     proof,
     sources,
     jsonLd: buildSymptomJsonLd({
-      slug: symptom.slug,
-      title: symptom.search_title,
+      slug: symptom.id,
+      title: symptom.title,
       summary: symptom.summary,
-      devtoolsSignature: symptom.devtools_signature,
+      devtoolsSignature: signature,
       sources,
     }),
   };

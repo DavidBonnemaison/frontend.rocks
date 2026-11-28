@@ -29,7 +29,7 @@ import {
   renderVsOgPng,
 } from '@/lib/og-generator';
 import { extractVsPairs } from '@/lib/vs-pairs';
-import { PRODUCTION_SYMPTOMS } from '@/config/symptoms';
+import { getAllSymptoms } from '@/lib/symptoms/loader';
 import { validateProgrammaticSeo } from '@/lib/validators/seo-validator';
 import markdownNegotiation from '../netlify/edge-functions/markdown-negotiation';
 
@@ -165,10 +165,10 @@ describe('US-14.4: GEO Markdown Twins, llms.txt, robots.txt & Content Negotiatio
     const llms = buildLlmsTxt({
       concepts,
       autopsies,
-      productionSymptoms: PRODUCTION_SYMPTOMS,
+      productionSymptoms: getAllSymptoms(),
     });
     expect(llms).toContain('## Symptom Triggers');
-    expect(llms).toContain(`${SITE_URL}/symptoms/${PRODUCTION_SYMPTOMS[0].slug}/`);
+    expect(llms).toContain(`${SITE_URL}/symptoms/${getAllSymptoms()[0].frontmatter.id}/`);
     expect(llms).toContain(`${SITE_URL}/concepts/${concepts[0].frontmatter.id}.md`);
     expect(llms).toContain('#under-the-hood');
     expect(llms).toContain('#production-pitfalls');
@@ -291,7 +291,7 @@ describe('US-14.1, US-14.2 & Section 1.2: Programmatic /vs/, /symptoms/ & Anti-D
     const result = validateProgrammaticSeo({
       concepts,
       autopsies,
-      productionSymptoms: PRODUCTION_SYMPTOMS,
+      productionSymptoms: getAllSymptoms(),
     });
 
     expect(result.errors).toEqual([]);
@@ -304,15 +304,22 @@ describe('US-14.1, US-14.2 & Section 1.2: Programmatic /vs/, /symptoms/ & Anti-D
 
   it('rejects orphan concept_ids or autopsy_ids in symptoms config', () => {
     const badSymptoms = [
-      ...PRODUCTION_SYMPTOMS,
+      ...getAllSymptoms(),
       {
-        slug: 'orphan-test-symptom',
-        proof_status: 'unverified' as const,
-        search_title: 'Orphan test symptom',
-        devtools_signature: 'TypeError: orphan',
-        autopsy_ids: ['nonexistent-autopsy'],
-        concept_ids: ['nonexistent-concept'],
-        summary: 'Synthetic orphan symptom for validator testing.',
+        frontmatter: {
+          id: 'orphan-test-symptom',
+          title: 'Orphan test symptom',
+          featured: false,
+          summary: 'Synthetic orphan symptom for validator testing.',
+          summary_claims: [],
+          signatures: [],
+          keywords: [],
+          autopsy_ids: ['nonexistent-autopsy'],
+          concept_ids: ['nonexistent-concept'],
+          proof_status: 'unverified' as const,
+        },
+        body: '',
+        filePath: 'content/symptoms/orphan-test-symptom.mdx',
       },
     ];
 
@@ -364,7 +371,7 @@ describe('US-14.1, US-14.2 & Section 1.2: Programmatic /vs/, /symptoms/ & Anti-D
   });
 
   it('generates 1200x630 PNGs for symptom and default OG templates', async () => {
-    const symptomPng = await renderSymptomOgPng(PRODUCTION_SYMPTOMS[0]);
+    const symptomPng = await renderSymptomOgPng(getAllSymptoms()[0]);
     expect(symptomPng.subarray(0, 8)).toEqual(
       Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
     );
@@ -413,7 +420,7 @@ describe('/dev/ gallery SEO exclusions', () => {
       concepts: getAllConcepts(),
       autopsies: getAllAutopsies(),
       vsPairs: [],
-      productionSymptoms: PRODUCTION_SYMPTOMS,
+      productionSymptoms: getAllSymptoms(),
     });
     expect(llms).not.toContain('/dev/');
   });

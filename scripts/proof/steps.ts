@@ -72,5 +72,11 @@ export const PROOF_STEPS: ProofStep[] = [
     optional: true,
     check: true,
   },
+  {
+    name: 'symptom-signatures',
+    script: 'scripts/proof/check-symptom-signatures.ts',
+    optional: true,
+    check: true,
+  },
   { name: 'gate', script: 'scripts/proof/gate.ts' },
 ];

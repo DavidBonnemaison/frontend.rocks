@@ -4,7 +4,7 @@ import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { LoadedConcept } from '@/lib/content-loader';
 import type { ConceptFrontmatter, PageProofStatus } from '@/lib/schemas';
-import type { ProductionSymptomConfig } from '@/config/symptoms';
+import type { LoadedSymptom } from '@/lib/symptoms/loader';
 
 function concept(
   id: string,
@@ -142,8 +142,8 @@ describe('selectPublishableContent', () => {
 
   it('excludes unverified symptoms', () => {
     const symptoms = [
-      { slug: 's', proof_status: 'unverified' },
-    ] as unknown as ProductionSymptomConfig[];
+      { frontmatter: { id: 's', proof_status: 'unverified' } },
+    ] as unknown as LoadedSymptom[];
     expect(selectPublishableContent({ concepts: [], autopsies: [], symptoms }).symptoms).toEqual([]);
   });
 

@@ -17,8 +17,6 @@ import {
 } from '../src/lib/validators/autopsy-validator';
 import { validateConceptMdx } from '../src/lib/validators/concept-validator';
 import { validateConceptGraph } from '../src/lib/validators/dag';
-import { isPublished } from '../src/lib/publication';
-import { PRODUCTION_SYMPTOMS } from '../src/config/symptoms';
 import { CONTENT_DIR } from '../src/lib/paths';
 import { parseCliArgs } from '../src/lib/cli-args';
 import { getAllClaimsFiles } from '../src/lib/proof/claims-loader';
@@ -36,6 +34,15 @@ import {
   type NamedRedirectsFile,
 } from '../src/lib/redirects/build';
 import { validateRecertSummary } from '../src/lib/recertification/validate';
+import matter from 'gray-matter';
+import { SymptomFrontmatterSchema } from '../src/lib/symptoms/schema';
+import { VsPairsFileSchema, isCanonicalVsPairsFile } from '../src/lib/vs/schema';
+import {
+  validateAutopsyNumberRule,
+  validateAutopsyReferences,
+  validateSymptomReferences,
+  validateVsPairReferences,
+} from '../src/lib/validators/debug-content-validator';
 
 const CONCEPTS_DIR = path.join(CONTENT_DIR, 'concepts');
 const AUTOPSIES_DIR = path.join(CONTENT_DIR, 'autopsies');
@@ -45,6 +52,8 @@ const EVIDENCE_DIR = path.join(CONTENT_DIR, 'evidence');
 const REDIRECTS_DIR = path.join(CONTENT_DIR, 'redirects');
 const RECERT_SUMMARY_FILE = path.join(CONTENT_DIR, 'recertification', 'summary.json');
 const PATHS_FILE = path.join(CONTENT_DIR, 'paths.json');
+const SYMPTOMS_DIR = path.join(CONTENT_DIR, 'symptoms');
+const VS_PAIRS_FILE = path.join(CONTENT_DIR, 'vs', 'pairs.json');
 
 async function main(): Promise<void> {
   parseCliArgs(process.argv.slice(2), {});
@@ -247,7 +256,12 @@ async function main(): Promise<void> {
         : []
     );
     const { pages, collisions } = getAllPageRefs();
-    const claimsResult = validateClaimsCorpus({ claimsFiles, pages, collisions, experimentIds });
+    for (const c of collisions) {
+      errors.push(
+        `[pages] page id "${c.id}" is used by several content types: ${c.kinds.join(', ')}`
+      );
+    }
+    const claimsResult = validateClaimsCorpus({ claimsFiles, pages, collisions: [], experimentIds });
     errors.push(...claimsResult.errors);
     for (const w of claimsResult.warnings) console.warn(`⚠️  ${w}`);
     claimsStats = claimsResult.stats;
@@ -356,11 +370,82 @@ async function main(): Promise<void> {
     }
   }
 
-  for (const s of PRODUCTION_SYMPTOMS) {
-    if (isPublished(s.proof_status, s.slug)) {
-      errors.push(`[proof] symptom "${s.slug}" cannot be proven before MDX migration`);
+  // Validate Debug pages: autopsy claim and repro references, symptoms, /vs pairs
+  {
+    const claimIds = new Set(
+      [...getAllClaimsFiles().values()].flatMap((f) => f.claims.map((c) => c.id))
+    );
+    const refCtx = { claimIds, experimentIds: existingExperimentIds };
+
+    for (const fm of autopsies) {
+      errors.push(...validateAutopsyReferences(fm, refCtx));
+      if (fm.proof_status === 'proven' && fm.repro_experiment_id) {
+        const expPath = path.join(CONTENT_DIR, 'experiments', fm.repro_experiment_id, 'experiment.ts');
+        if (fs.existsSync(expPath)) {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const mod = require(expPath) as { default?: ExperimentDefinition };
+            errors.push(...validateAutopsyNumberRule(fm, mod.default?.expect));
+          } catch {
+            // load errors are already reported by the experiment checks above
+          }
+        }
+      }
+    }
+
+    if (fs.existsSync(SYMPTOMS_DIR)) {
+      for (const file of fs.readdirSync(SYMPTOMS_DIR).filter((f) => f.endsWith('.mdx') || f.endsWith('.md')).sort()) {
+        const expectedId = file.replace(/\.mdx?$/, '');
+        const parsed = matter(fs.readFileSync(path.join(SYMPTOMS_DIR, file), 'utf-8'));
+        const res = SymptomFrontmatterSchema.safeParse(parsed.data);
+        if (!res.success) {
+          for (const issue of res.error.issues) {
+            errors.push(`[symptoms/${file}] Frontmatter [${issue.path.join('.')}]: ${issue.message}`);
+          }
+          continue;
+        }
+        const fm = res.data;
+        if (fm.id !== expectedId) {
+          errors.push(`[symptoms/${file}] Filename id "${expectedId}" does not match frontmatter id "${fm.id}"`);
+        }
+        for (const cid of fm.concept_ids) {
+          if (!conceptIdSet.has(cid)) errors.push(`[symptoms/${file}] Unknown concept_id "${cid}"`);
+        }
+        for (const aid of fm.autopsy_ids) {
+          if (!autopsies.some((a) => a.id === aid)) errors.push(`[symptoms/${file}] Unknown autopsy_id "${aid}"`);
+        }
+        errors.push(...validateSymptomReferences(fm, refCtx));
+      }
+    }
+
+    if (fs.existsSync(VS_PAIRS_FILE)) {
+      try {
+        const rawPairs = fs.readFileSync(VS_PAIRS_FILE, 'utf-8');
+        if (!isCanonicalVsPairsFile(rawPairs)) {
+          errors.push(
+            '[vs/pairs.json] File is not in canonical format (JSON.stringify(data, null, 2) plus a trailing newline)'
+          );
+        }
+        const file = VsPairsFileSchema.parse(JSON.parse(rawPairs));
+        const slugs = new Set<string>();
+        for (const pair of file.pairs) {
+          if (slugs.has(pair.slug)) errors.push(`[vs/pairs.json] Duplicate slug "${pair.slug}"`);
+          slugs.add(pair.slug);
+          for (const cid of [pair.primary, pair.secondary]) {
+            if (!conceptIdSet.has(cid)) errors.push(`[vs/${pair.slug}] Unknown concept "${cid}"`);
+          }
+          errors.push(...validateVsPairReferences(pair, refCtx));
+        }
+        const sortedSlugs = [...slugs].sort((a, b) => a.localeCompare(b));
+        if (file.pairs.some((p, i) => p.slug !== sortedSlugs[i])) {
+          errors.push('[vs/pairs.json] Pairs must be sorted by slug');
+        }
+      } catch (err) {
+        errors.push(`[vs/pairs.json] ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
   }
+
 
   // Validate redirects (content/redirects/*.json)
   if (fs.existsSync(REDIRECTS_DIR)) {
@@ -381,10 +466,19 @@ async function main(): Promise<void> {
         errors.push(`[redirects] ${err instanceof Error ? err.message : String(err)}`);
       }
       const autopsyIdSet = new Set(autopsies.map((a) => a.id));
+      const symptomIdSet = new Set(
+        fs.existsSync(SYMPTOMS_DIR)
+          ? fs
+              .readdirSync(SYMPTOMS_DIR)
+              .filter((f) => f.endsWith('.mdx') || f.endsWith('.md'))
+              .map((f) => f.replace(/\.mdx?$/, ''))
+          : []
+      );
       errors.push(
         ...validateRedirectTargets(namedRedirects, {
           conceptIds: conceptIdSet,
           autopsyIds: autopsyIdSet,
+          symptomIds: symptomIdSet,
         }),
       );
     }

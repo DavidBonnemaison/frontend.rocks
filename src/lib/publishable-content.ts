@@ -1,5 +1,5 @@
 import type { LoadedConcept, LoadedAutopsy } from './content-loader';
-import type { ProductionSymptomConfig } from '../config/symptoms';
+import type { LoadedSymptom } from './symptoms/loader';
 import { extractVsPairs, type VsPair } from './vs-pairs';
 import { publishedAutopsies, publishedConcepts, publishedSymptoms, publishedVsPairs } from './publication';
 
@@ -10,11 +10,11 @@ import { publishedAutopsies, publishedConcepts, publishedSymptoms, publishedVsPa
 export function selectPublishableContent(input: {
   concepts: LoadedConcept[];
   autopsies: LoadedAutopsy[];
-  symptoms: ProductionSymptomConfig[];
+  symptoms: LoadedSymptom[];
 }): {
   concepts: LoadedConcept[];
   autopsies: LoadedAutopsy[];
-  symptoms: ProductionSymptomConfig[];
+  symptoms: LoadedSymptom[];
   vsPairs: VsPair[];
 } {
   return {

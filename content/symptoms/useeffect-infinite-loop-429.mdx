@@ -1,0 +1,29 @@
+---
+id: useeffect-infinite-loop-429
+title: >-
+  useEffect dependency loop triggers Maximum update depth exceeded and 429 API
+  burst
+featured: false
+summary: >-
+  Allocating a fresh filter object literal per render fails Object.is() in
+  useEffect, rescheduling commits and uncancelled fetches until API rate limits
+  trip.
+concept_ids:
+  - execution-context-call-stack
+  - stale-closures-hooks
+  - virtual-dom-reconciliation
+  - server-state-cache-machines
+  - abortcontroller-cancellation
+autopsy_ids:
+  - useeffect-dependency-loop-ddos
+proof_status: unverified
+---
+## What you see
+
+## Likely causes
+
+## Confirm it
+
+## Fix
+
+## Reproduce it

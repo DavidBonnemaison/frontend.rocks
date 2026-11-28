@@ -25,7 +25,7 @@ import {
   renderVsOgPng,
 } from '../src/lib/og-generator';
 import { extractVsPairs } from '../src/lib/vs-pairs';
-import { PRODUCTION_SYMPTOMS } from '../src/config/symptoms';
+import { getAllSymptoms } from '../src/lib/symptoms/loader';
 import { buildSearchIndex } from '../src/lib/search-index';
 import { PUBLIC_DIR, SITE_ROOT } from '../src/lib/paths';
 import { parseCliArgs } from '../src/lib/cli-args';
@@ -86,10 +86,11 @@ async function main(): Promise<void> {
   );
   const allConcepts = getAllConcepts();
   const allAutopsies = getAllAutopsies();
+  const allSymptoms = getAllSymptoms();
   const { concepts, autopsies, symptoms, vsPairs } = selectPublishableContent({
     concepts: allConcepts,
     autopsies: allAutopsies,
-    symptoms: PRODUCTION_SYMPTOMS,
+    symptoms: allSymptoms,
   });
   const allVsPairs = extractVsPairs(allConcepts, allAutopsies);
 
@@ -234,8 +235,7 @@ ${rssItems}
   fs.writeFileSync(path.join(PUBLIC_DIR, 'robots.txt'), buildRobotsTxt());
 
   // 7. sitemap.xml with Git-Freshness <lastmod>
-  const symptomsConfigPath = path.join(process.cwd(), 'src', 'config', 'symptoms.ts');
-  const symptomsLastMod = getGitLastModified(symptomsConfigPath, '2026-11-16');
+  const symptomsLastMod = '2026-11-16';
 
   const listingEntries: Array<{ entry: SitemapEntry; publishedCount: number | null }> = [
     { entry: { loc: `${SITE_URL}/`, changefreq: 'weekly', priority: '1.0' }, publishedCount: null },
@@ -317,7 +317,7 @@ ${rssItems}
       };
     }),
     ...symptoms.map((s) => ({
-      loc: `${SITE_URL}/symptoms/${s.slug}/`,
+      loc: `${SITE_URL}/symptoms/${s.frontmatter.id}/`,
       lastmod: symptomsLastMod,
       changefreq: 'monthly' as const,
       priority: '0.8',
@@ -373,9 +373,9 @@ ${rssItems}
       const coverPng = await renderAutopsyCoverPng(a, conceptTitles);
       fs.writeFileSync(path.join(ogAutopsiesDir, `${a.frontmatter.id}-cover.png`), coverPng);
     }
-    for (const s of PRODUCTION_SYMPTOMS) {
+    for (const s of allSymptoms) {
       const png = await renderSymptomOgPng(s);
-      fs.writeFileSync(path.join(ogSymptomsDir, `${s.slug}.png`), png);
+      fs.writeFileSync(path.join(ogSymptomsDir, `${s.frontmatter.id}.png`), png);
     }
     for (const pair of allVsPairs) {
       const png = await renderVsOgPng(pair);
@@ -419,7 +419,7 @@ ${rssItems}
     ? 0
     : allConcepts.length + allAutopsies.length * 2 + allVsPairs.length;
   console.log(
-    `✅ Generated exports (published ${concepts.length + autopsies.length + symptoms.length + vsPairs.length} / total ${allConcepts.length + allAutopsies.length + PRODUCTION_SYMPTOMS.length + allVsPairs.length}): llms.txt, llms-full.txt, graph.json (${concepts.length} nodes), audit-rules.json (${auditCatalog.rule_count} rules), packages/public-skill/references/audit-catalog.md, rss.xml (0 items), search-index.json (${searchIndex.length} items), ${twinCount} .md twins, robots.txt, sitemap.xml (${sitemapEntries.length} URLs), _redirects (${redirectsResult.ruleCount} rules), ${skipOg ? 'OG PNGs skipped' : `and ${ogCount} OG PNGs`}.`,
+    `✅ Generated exports (published ${concepts.length + autopsies.length + symptoms.length + vsPairs.length} / total ${allConcepts.length + allAutopsies.length + allSymptoms.length + allVsPairs.length}): llms.txt, llms-full.txt, graph.json (${concepts.length} nodes), audit-rules.json (${auditCatalog.rule_count} rules), packages/public-skill/references/audit-catalog.md, rss.xml (0 items), search-index.json (${searchIndex.length} items), ${twinCount} .md twins, robots.txt, sitemap.xml (${sitemapEntries.length} URLs), _redirects (${redirectsResult.ruleCount} rules), ${skipOg ? 'OG PNGs skipped' : `and ${ogCount} OG PNGs`}.`,
   );
 }
 

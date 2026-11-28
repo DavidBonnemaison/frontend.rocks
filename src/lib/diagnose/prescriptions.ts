@@ -14,7 +14,7 @@ function autopsy(slug: string, title: string): PrescriptionLink {
 
 /**
  * Verified corpus prescriptions for each deterministic detector.
- * Every slug is checked against content/concepts/, content/autopsies/, and src/config/symptoms.ts.
+ * Every slug is checked against content/concepts/, content/autopsies/, and content/symptoms/.
  */
 export const DETECTOR_PRESCRIPTIONS: Record<DetectorId, PrescriptionLink[]> = {
   'long-tasks': [
@@ -54,7 +54,7 @@ export const DETECTOR_PRESCRIPTIONS: Record<DetectorId, PrescriptionLink[]> = {
   ],
   'duplicate-mutations': [
     concept('idempotency-optimistic-queues', 'Idempotency & Optimistic Queues'),
-    symptom('double-payment-race-condition', 'Double Payment Race Condition'),
+    symptom('double-charge-on-double-click', 'Double Payment Race Condition'),
     autopsy('double-payment-race-condition', 'Double Payment Race Condition'),
   ],
 };

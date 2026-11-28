@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { LoadedAutopsy, LoadedConcept } from '../src/lib/content-loader';
-import type { ProductionSymptomConfig } from '../src/config/symptoms';
+import type { LoadedSymptom } from '../src/lib/symptoms/loader';
 import type { PageProofStatus } from '../src/lib/schemas';
 import type { VsPair } from '../src/lib/vs-pairs';
 
@@ -12,7 +12,7 @@ const concept = (id: string, s: PageProofStatus) =>
 const autopsy = (id: string, s: PageProofStatus) =>
   ({ frontmatter: { id, proof_status: s } }) as unknown as LoadedAutopsy;
 const symptom = (slug: string, s: PageProofStatus) =>
-  ({ slug, proof_status: s }) as unknown as ProductionSymptomConfig;
+  ({ frontmatter: { id: slug, proof_status: s } }) as unknown as LoadedSymptom;
 const pair = (slug: string, s: PageProofStatus) => ({ slug, proof_status: s }) as unknown as VsPair;
 
 let tmpDir: string;

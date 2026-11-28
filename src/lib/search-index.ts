@@ -6,7 +6,11 @@ import {
   type LoadedAutopsy,
   type LoadedConcept,
 } from './content-loader';
-import { PRODUCTION_SYMPTOMS, type ProductionSymptomConfig } from '../config/symptoms';
+import {
+  getAllSymptoms,
+  primarySignatureText,
+  type LoadedSymptom,
+} from './symptoms/loader';
 import { formatFailureModeLabel } from './ui-strings';
 import { extractVsPairs, type VsPair } from './vs-pairs';
 import type { SearchItem } from './search';
@@ -53,7 +57,7 @@ export interface BuildSearchIndexOptions {
   /** Replace the corresponding loader call (used to pass only published content). */
   conceptsInput?: LoadedConcept[];
   autopsiesInput?: LoadedAutopsy[];
-  symptomsInput?: ProductionSymptomConfig[];
+  symptomsInput?: LoadedSymptom[];
   vsPairsInput?: VsPair[];
   /** Default true. */
   includeDigests?: boolean;
@@ -80,7 +84,7 @@ export function buildStaticSearchEntries(): SearchItem[] {
 export function buildSearchIndex(options: BuildSearchIndexOptions = {}): SearchItem[] {
   const concepts = options.conceptsInput ?? getAllConcepts();
   const autopsies = options.autopsiesInput ?? getAllAutopsies();
-  const symptoms = options.symptomsInput ?? PRODUCTION_SYMPTOMS;
+  const symptoms = options.symptomsInput ?? getAllSymptoms();
   const labs = getAllLabs();
   const digests = options.includeDigests === false ? [] : getAllDigests();
   const vsPairs = options.vsPairsInput ?? extractVsPairs(concepts, autopsies);
@@ -107,16 +111,18 @@ export function buildSearchIndex(options: BuildSearchIndexOptions = {}): SearchI
   }
 
   for (const s of symptoms) {
-    const keywords = `${s.devtools_signature} ${s.slug}`;
+    const fm = s.frontmatter;
+    const sig = primarySignatureText(fm);
+    const keywords = [sig, fm.id, ...fm.keywords].filter(Boolean).join(' ');
     items.push({
       kind: 'symptom',
-      id: s.slug,
-      title: s.search_title,
-      subtitle: s.summary,
-      href: `/symptoms/${s.slug}/`,
+      id: fm.id,
+      title: fm.title,
+      subtitle: fm.summary,
+      href: `/symptoms/${fm.id}/`,
       keywords,
       searchText:
-        `${s.slug} ${s.search_title} ${s.devtools_signature} ${s.summary} ${s.concept_ids.join(' ')} ${s.autopsy_ids.join(' ')}`.toLowerCase(),
+        `${fm.id} ${fm.title} ${sig} ${fm.summary} ${fm.keywords.join(' ')} ${fm.concept_ids.join(' ')} ${fm.autopsy_ids.join(' ')}`.toLowerCase(),
       badge: 'Symptom',
     });
   }

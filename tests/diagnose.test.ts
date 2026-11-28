@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { PRODUCTION_SYMPTOMS } from '@/config/symptoms';
+import { getAllSymptoms } from '@/lib/symptoms/loader';
 import { analyzeDiagnosticPayload } from '@/lib/diagnose/analyze';
 import { DEMO_TRACES } from '@/lib/diagnose/demo-traces';
 import { DETECTOR_PRESCRIPTIONS } from '@/lib/diagnose/prescriptions';
@@ -252,7 +252,7 @@ describe('US-18.1: Client-Side Diagnostic Tool (/diagnose)', () => {
           .filter((f) => f.endsWith('.mdx'))
           .map((f) => f.replace(/\.mdx$/, ''))
       );
-      const symptomSlugs = new Set(PRODUCTION_SYMPTOMS.map((s) => s.slug));
+      const symptomSlugs = new Set(getAllSymptoms().map((s) => s.frontmatter.id));
 
       for (const links of Object.values(DETECTOR_PRESCRIPTIONS)) {
         for (const link of links) {

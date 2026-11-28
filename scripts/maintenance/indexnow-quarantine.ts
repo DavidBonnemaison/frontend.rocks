@@ -1,7 +1,7 @@
 // Manual, local only. Tells IndexNow that every quarantined URL changed (now noindex).
 // Usage: INDEXNOW_KEY=... npm run maintenance:indexnow-quarantine [-- --dry-run]
 import { getAllAutopsies, getAllConcepts } from '../../src/lib/content-loader';
-import { PRODUCTION_SYMPTOMS } from '../../src/config/symptoms';
+import { getAllSymptoms } from '../../src/lib/symptoms/loader';
 import { extractVsPairs } from '../../src/lib/vs-pairs';
 import { parseCliArgs } from '../../src/lib/cli-args';
 import { submitIndexNow } from '../../src/lib/indexnow';
@@ -14,7 +14,7 @@ async function main(): Promise<void> {
   const urls = buildQuarantineUrls({
     concepts,
     autopsies,
-    symptoms: PRODUCTION_SYMPTOMS,
+    symptoms: getAllSymptoms(),
     vsPairs: extractVsPairs(concepts, autopsies),
   });
 

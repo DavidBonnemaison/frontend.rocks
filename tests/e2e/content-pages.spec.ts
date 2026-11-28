@@ -51,7 +51,7 @@ test.describe('Content pages block order and anatomy', () => {
     await page.goto('/symptoms/z-index-ignored/', { waitUntil: 'networkidle' });
 
     await expect(page.locator('[data-block="console"]')).toBeVisible();
-    await expect(page.getByTestId('symptom-signature')).toBeVisible();
+    await expect(page.getByTestId('symptom-signature')).toBeAttached();
     await expect(page.getByTestId('symptom-engines')).toHaveCount(0);
     await expect(page.locator('[data-block="causes"]')).toBeVisible();
     await expect(

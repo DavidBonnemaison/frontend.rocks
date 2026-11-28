@@ -1,0 +1,15 @@
+{
+  "source": "debug",
+  "rules": [
+    {
+      "from": "/symptoms/double-payment-race-condition",
+      "to": "/symptoms/double-charge-on-double-click/",
+      "status": 301
+    },
+    {
+      "from": "/symptoms/double-payment-race-condition/",
+      "to": "/symptoms/double-charge-on-double-click/",
+      "status": 301
+    }
+  ]
+}

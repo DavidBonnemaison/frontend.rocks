@@ -6,7 +6,7 @@ import { ArticleLayout } from '@/components/article/ArticleLayout';
 import { ArticleProofDetails } from '@/components/article/ArticleAfterBlocks';
 import { CopyCodeButton } from '@/components/concepts/CopyCodeButton';
 import { Breadcrumb, Chip } from '@/components/ui';
-import { getSymptomBySlug, PRODUCTION_SYMPTOMS } from '@/config/symptoms';
+import { getAllSymptoms, getSymptomById } from '@/lib/symptoms/loader';
 import { buildSymptomPageView } from '@/lib/pages/symptom';
 import { buildBrowserProofPayload } from '@/lib/proof/browser-proof-payload';
 import { ENGINE_LABELS } from '@/lib/proof/engine-labels';
@@ -14,8 +14,15 @@ import { isPublished, robotsForStatus } from '@/lib/publication';
 import { formatSymptomTitle, SITE_URL } from '@/lib/seo-schema';
 import '@/components/article/ArticleBlocks.css';
 
+function renderSignatureText(text: string): React.ReactNode {
+  const parts = text.split(/(\{PH\d+\})/g);
+  return parts.map((part, i) =>
+    /^\{PH\d+\}$/.test(part) ? <var key={i}>{part}</var> : part
+  );
+}
+
 export function generateStaticParams() {
-  return PRODUCTION_SYMPTOMS.map((s) => ({ slug: s.slug }));
+  return getAllSymptoms().map((s) => ({ slug: s.frontmatter.id }));
 }
 
 export async function generateMetadata({
@@ -24,24 +31,25 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const symptom = getSymptomBySlug(slug);
-  if (!symptom) return {};
+  const loaded = getSymptomById(slug);
+  if (!loaded) return {};
+  const symptom = loaded.frontmatter;
 
-  const title = formatSymptomTitle(symptom.search_title);
-  const canonicalUrl = `${SITE_URL}/symptoms/${symptom.slug}/`;
-  const ogImageUrl = `${SITE_URL}/og/symptoms/${symptom.slug}.png`;
+  const title = formatSymptomTitle(symptom.title);
+  const canonicalUrl = `${SITE_URL}/symptoms/${symptom.id}/`;
+  const ogImageUrl = `${SITE_URL}/og/symptoms/${symptom.id}.png`;
 
   return {
     title,
     description: symptom.summary,
-    robots: robotsForStatus(symptom.proof_status, symptom.slug),
+    robots: robotsForStatus(symptom.proof_status, symptom.id),
     alternates: { canonical: canonicalUrl },
     openGraph: {
       title,
       description: symptom.summary,
       url: canonicalUrl,
       type: 'article',
-      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: symptom.search_title }],
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: symptom.title }],
     },
     twitter: {
       card: 'summary_large_image',
@@ -130,7 +138,7 @@ export default async function SymptomDetailPage({
               aria-hidden="true"
             />
             <code className="symptom-console-code" data-testid="symptom-signature">
-              {view.signature}
+              {renderSignatureText(view.signature)}
             </code>
           </div>
         </section>

@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Activity } from 'lucide-react';
-import { PRODUCTION_SYMPTOMS } from '@/config/symptoms';
+import { getAllSymptoms, primarySignatureText } from '@/lib/symptoms/loader';
 import { SITE_URL } from '@/lib/seo-schema';
 
 import { isListingIndexable, publishedSymptoms } from '@/lib/publication';
@@ -26,17 +26,18 @@ const baseMetadata: Metadata = {
 export function generateMetadata(): Metadata {
   return {
     ...baseMetadata,
-    robots: { index: isListingIndexable(publishedSymptoms(PRODUCTION_SYMPTOMS).length), follow: true },
+    robots: { index: isListingIndexable(publishedSymptoms(getAllSymptoms()).length), follow: true },
   };
 }
 
 export default function SymptomsIndexPage() {
+  const symptoms = getAllSymptoms();
   return (
     <div style={{ maxWidth: '1040px', margin: '0 auto', padding: '32px 0' }}>
       <div className="concept-meta">
         <span className="badge">
           <Activity size={12} style={{ marginRight: '6px' }} aria-hidden="true" />
-          Diagnostic Index · {PRODUCTION_SYMPTOMS.length} Production Symptoms
+          Diagnostic Index · {symptoms.length} Production Symptoms
         </span>
       </div>
 
@@ -49,43 +50,49 @@ export default function SymptomsIndexPage() {
       </p>
 
       <div className="connections-grid" style={{ marginTop: '24px' }}>
-        {PRODUCTION_SYMPTOMS.map((symptom) => (
-          <Link
-            key={symptom.slug}
-            href={`/symptoms/${symptom.slug}`}
-            className="connection-card"
-          >
-            <div className="connection-card-top">
-              <span className="connection-type-tag">
-                {symptom.concept_ids.length} concepts
-              </span>
-              {symptom.autopsy_ids.length > 0 && (
-                <span className="badge">
-                  {symptom.autopsy_ids.length}{' '}
-                  {symptom.autopsy_ids.length === 1 ? 'autopsy' : 'autopsies'}
-                </span>
-              )}
-            </div>
-            <div className="connection-card-title">{symptom.search_title}</div>
-            <p className="connection-card-note">{symptom.summary}</p>
-            <code
-              style={{
-                display: 'block',
-                marginTop: '10px',
-                fontSize: '0.78rem',
-                color: 'var(--text-muted)',
-                background: 'var(--surface-2)',
-                padding: '6px 8px',
-                borderRadius: '6px',
-                border: '1px solid var(--border)',
-                whiteSpace: 'normal',
-                wordBreak: 'break-word',
-              }}
+        {symptoms.map((loaded) => {
+          const symptom = loaded.frontmatter;
+          const sig = primarySignatureText(symptom);
+          return (
+            <Link
+              key={symptom.id}
+              href={`/symptoms/${symptom.id}`}
+              className="connection-card"
             >
-              {symptom.devtools_signature}
-            </code>
-          </Link>
-        ))}
+              <div className="connection-card-top">
+                <span className="connection-type-tag">
+                  {symptom.concept_ids.length} concepts
+                </span>
+                {symptom.autopsy_ids.length > 0 && (
+                  <span className="badge">
+                    {symptom.autopsy_ids.length}{' '}
+                    {symptom.autopsy_ids.length === 1 ? 'autopsy' : 'autopsies'}
+                  </span>
+                )}
+              </div>
+              <div className="connection-card-title">{symptom.title}</div>
+              <p className="connection-card-note">{symptom.summary}</p>
+              {sig ? (
+                <code
+                  style={{
+                    display: 'block',
+                    marginTop: '10px',
+                    fontSize: '0.78rem',
+                    color: 'var(--text-muted)',
+                    background: 'var(--surface-2)',
+                    padding: '6px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border)',
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {sig}
+                </code>
+              ) : null}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
