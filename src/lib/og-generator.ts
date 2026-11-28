@@ -1,75 +1,58 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import satori, { type Font } from 'satori';
 import { Resvg } from '@resvg/resvg-js';
+import type { ProductionSymptomConfig } from '@/config/symptoms';
 import type { LoadedAutopsy, LoadedConcept } from './content-loader';
-import type { MaturityStatus } from './schemas';
+import { renderSchematic } from './design/schematic';
+import { getSnapshotsForExperiment } from './design/schematics-loader';
+import { SRGB } from './design/tokens.generated';
+import { SITE_ROOT } from './paths';
+import { formatDomainLabel } from './ui-strings';
 import type { VsPair } from './vs-pairs';
-import {
-  formatDomainLabel,
-  formatFailureModeLabel,
-  formatMaturityLabel,
-} from './ui-strings';
 
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
+const COVER_WIDTH = 1000;
+const COVER_HEIGHT = 420;
+
+const LIGHT_ON_PIECES = new Set(['magenta', 'violet', 'cobalt']);
 
 let cachedFonts: Font[] | null = null;
 
-function loadLocalInterFonts(): Font[] {
+function loadOgFonts(): Font[] {
   if (cachedFonts) return cachedFonts;
 
-  const fontDir = path.join(process.cwd(), 'node_modules', '@fontsource', 'inter', 'files');
-  const regular = fs.readFileSync(path.join(fontDir, 'inter-latin-400-normal.woff'));
-  const semiBold = fs.readFileSync(path.join(fontDir, 'inter-latin-600-normal.woff'));
-  const bold = fs.readFileSync(path.join(fontDir, 'inter-latin-700-normal.woff'));
+  const newsreaderDir = path.join(SITE_ROOT, 'node_modules', '@fontsource', 'newsreader', 'files');
+  const plexDir = path.join(SITE_ROOT, 'node_modules', '@fontsource', 'ibm-plex-mono', 'files');
 
   cachedFonts = [
-    { name: 'Inter', data: regular, weight: 400, style: 'normal' },
-    { name: 'Inter', data: semiBold, weight: 600, style: 'normal' },
-    { name: 'Inter', data: bold, weight: 700, style: 'normal' },
+    {
+      name: 'Newsreader',
+      data: fs.readFileSync(path.join(newsreaderDir, 'newsreader-latin-400-normal.woff')),
+      weight: 400,
+      style: 'normal',
+    },
+    {
+      name: 'Newsreader',
+      data: fs.readFileSync(path.join(newsreaderDir, 'newsreader-latin-700-normal.woff')),
+      weight: 700,
+      style: 'normal',
+    },
+    {
+      name: 'IBM Plex Mono',
+      data: fs.readFileSync(path.join(plexDir, 'ibm-plex-mono-latin-400-normal.woff')),
+      weight: 400,
+      style: 'normal',
+    },
+    {
+      name: 'IBM Plex Mono',
+      data: fs.readFileSync(path.join(plexDir, 'ibm-plex-mono-latin-600-normal.woff')),
+      weight: 600,
+      style: 'normal',
+    },
   ];
   return cachedFonts;
-}
-
-function getMaturityColors(status: MaturityStatus | null): {
-  bg: string;
-  text: string;
-  border: string;
-} {
-  switch (status) {
-    case 'baseline-widely':
-      return {
-        bg: 'rgba(16, 185, 129, 0.14)',
-        text: '#6ee7b7',
-        border: 'rgba(16, 185, 129, 0.42)',
-      };
-    case 'baseline-newly':
-      return {
-        bg: 'rgba(56, 189, 248, 0.14)',
-        text: '#7dd3fc',
-        border: 'rgba(56, 189, 248, 0.42)',
-      };
-    case 'interop-experimental':
-      return {
-        bg: 'rgba(245, 158, 11, 0.14)',
-        text: '#fcd34d',
-        border: 'rgba(245, 158, 11, 0.42)',
-      };
-    case 'legacy-pattern':
-    case 'superseded':
-      return {
-        bg: 'rgba(245, 118, 66, 0.14)',
-        text: '#fdba74',
-        border: 'rgba(245, 118, 66, 0.42)',
-      };
-    case null:
-      return {
-        bg: 'rgba(152, 164, 181, 0.12)',
-        text: '#98a4b5',
-        border: 'rgba(152, 164, 181, 0.32)',
-      };
-  }
 }
 
 function truncateText(text: string, maxLen: number): string {
@@ -80,12 +63,34 @@ function truncateText(text: string, maxLen: number): string {
   return `${base.replace(/[\s,;:\-—]+$/, '')}…`;
 }
 
+function firstExperimentIdFromMdx(body: string): string | null {
+  const match = /<Experiment\s+[^>]*id=["']([a-z0-9-]+)["']/.exec(body);
+  return match?.[1] ?? null;
+}
+
+function schematicDataUriForExperiment(
+  experimentId: string | null,
+  width: number,
+  highlightHex: string,
+  strokeHex: string
+): string | null {
+  if (!experimentId) return null;
+  const snapshot = getSnapshotsForExperiment(experimentId)[0] ?? null;
+  if (!snapshot) return null;
+  const rawSvg = renderSchematic({ snapshot, width, highlight: highlightHex })
+    .replace(/var\(--color-ink\)/g, strokeHex)
+    .replace(/var\(--color-ink-muted\)/g, strokeHex)
+    .replace(/var\(--piece-on\)/g, strokeHex)
+    .replace(/var\(--color-accent\)/g, highlightHex);
+  return `data:image/svg+xml;base64,${Buffer.from(rawSvg, 'utf-8').toString('base64')}`;
+}
+
 async function svgToPngBuffer(
   element: unknown,
   width = OG_WIDTH,
   height = OG_HEIGHT
 ): Promise<Buffer> {
-  const fonts = loadLocalInterFonts();
+  const fonts = loadOgFonts();
   const svg = await satori(element as Parameters<typeof satori>[0], {
     width,
     height,
@@ -103,12 +108,21 @@ async function svgToPngBuffer(
 }
 
 export async function renderConceptOgPng(concept: LoadedConcept): Promise<Buffer> {
-  const { frontmatter } = concept;
-  const domainLabel = formatDomainLabel(frontmatter.domain);
-  const maturityLabel = formatMaturityLabel(frontmatter.maturity_status);
-  const maturityColors = getMaturityColors(frontmatter.maturity_status);
+  const { frontmatter, body, claims } = concept;
+  const domainLabel = formatDomainLabel(frontmatter.domain).toUpperCase();
   const titleText = truncateText(frontmatter.title, 72);
-  const tldrText = truncateText(frontmatter.summary_tldr, 195);
+  const tldrText = truncateText(frontmatter.summary_tldr, 160);
+  const expId = firstExperimentIdFromMdx(body);
+  const schematicUri = schematicDataUriForExperiment(
+    expId,
+    380,
+    SRGB.light.accent,
+    SRGB.light.ink
+  );
+  const isProven = frontmatter.proof_status === 'proven' && (claims?.claims.length ?? 0) > 0;
+  const proofFooter = isProven
+    ? `${claims!.claims.length} claims · tested in Chromium, Firefox, WebKit`
+    : null;
 
   const tree = {
     type: 'div',
@@ -119,22 +133,22 @@ export async function renderConceptOgPng(concept: LoadedConcept): Promise<Buffer
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        backgroundColor: '#0b0d11',
-        color: '#eef2f7',
-        padding: '54px 64px',
-        fontFamily: 'Inter',
-        border: '1px solid #252c38',
+        backgroundColor: SRGB.light.paper,
+        color: SRGB.light.ink,
+        padding: '56px 64px',
+        fontFamily: 'Newsreader',
       },
       children: [
-        // Top Header Row
         {
           type: 'div',
           props: {
             style: {
               display: 'flex',
+              flexDirection: 'row',
               justifyContent: 'space-between',
-              alignItems: 'center',
-              width: '100%',
+              alignItems: 'flex-start',
+              gap: '40px',
+              flexGrow: 1,
             },
             children: [
               {
@@ -142,707 +156,55 @@ export async function renderConceptOgPng(concept: LoadedConcept): Promise<Buffer
                 props: {
                   style: {
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: '14px',
+                    flexDirection: 'column',
+                    gap: '20px',
+                    width: schematicUri ? '660px' : '100%',
                   },
                   children: [
                     {
                       type: 'div',
                       props: {
                         style: {
-                          display: 'flex',
-                          padding: '8px 16px',
-                          borderRadius: '8px',
-                          backgroundColor: '#12161d',
-                          border: '1px solid #252c38',
-                          fontSize: '20px',
-                          fontWeight: 700,
-                          color: '#38bdf8',
-                        },
-                        children: 'frontend.rocks',
-                      },
-                    },
-                    {
-                      type: 'div',
-                      props: {
-                        style: {
-                          display: 'flex',
-                          padding: '8px 16px',
-                          borderRadius: '8px',
-                          backgroundColor: '#181d26',
-                          border: '1px solid #252c38',
+                          fontFamily: 'IBM Plex Mono',
                           fontSize: '18px',
                           fontWeight: 600,
-                          color: '#eef2f7',
+                          letterSpacing: '0.06em',
+                          color: SRGB.light['ink-muted'],
                         },
                         children: domainLabel,
                       },
                     },
-                  ],
-                },
-              },
-              ...(maturityLabel
-                ? [
                     {
                       type: 'div',
                       props: {
                         style: {
-                          display: 'flex',
-                          padding: '8px 18px',
-                          borderRadius: '999px',
-                          backgroundColor: maturityColors.bg,
-                          border: `1px solid ${maturityColors.border}`,
-                          fontSize: '18px',
-                          fontWeight: 600,
-                          color: maturityColors.text,
-                        },
-                        children: maturityLabel,
-                      },
-                    },
-                  ]
-                : []),
-            ],
-          },
-        },
-        // Center Content
-        {
-          type: 'div',
-          props: {
-            style: {
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '22px',
-            },
-            children: [
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    fontSize: titleText.length > 42 ? '46px' : '54px',
-                    fontWeight: 700,
-                    lineHeight: 1.12,
-                    letterSpacing: '-0.02em',
-                    color: '#eef2f7',
-                  },
-                  children: titleText,
-                },
-              },
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    fontSize: '24px',
-                    fontWeight: 400,
-                    lineHeight: 1.45,
-                    color: '#98a4b5',
-                  },
-                  children: tldrText,
-                },
-              },
-            ],
-          },
-        },
-        // Bottom Footer Row
-        {
-          type: 'div',
-          props: {
-            style: {
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              borderTop: '1px solid #252c38',
-              paddingTop: '24px',
-              width: '100%',
-            },
-            children: [
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    fontSize: '19px',
-                    fontWeight: 600,
-                    color: '#98a4b5',
-                  },
-                  children: 'Browser Internals & Production Pitfalls',
-                },
-              },
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    fontSize: '19px',
-                    fontWeight: 600,
-                    color: '#38bdf8',
-                  },
-                  children: `frontend.rocks/concepts/${frontmatter.id}`,
-                },
-              },
-            ],
-          },
-        },
-      ],
-    },
-  };
-
-  return svgToPngBuffer(tree);
-}
-
-export async function renderAutopsyOgPng(
-  autopsy: LoadedAutopsy,
-  conceptTitles: Map<string, string>
-): Promise<Buffer> {
-  const { frontmatter } = autopsy;
-  const caseBadge = `AUTOPSY #${String(frontmatter.case_number).padStart(2, '0')}`;
-  const failureLabel = formatFailureModeLabel(frontmatter.failure_mode);
-  const titleText = truncateText(frontmatter.title, 72);
-  const symptomText = truncateText(frontmatter.symptom, 140);
-
-  const steps = [...frontmatter.traversed_concepts]
-    .sort((a, b) => a.step_order - b.step_order)
-    .slice(0, 4);
-
-  const stepChildren = steps.flatMap((step, idx) => {
-    const label = truncateText(conceptTitles.get(step.concept_id) ?? step.concept_id, 24);
-    const pill = {
-      type: 'div',
-      props: {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '10px 14px',
-          borderRadius: '8px',
-          backgroundColor: '#12161d',
-          border: '1px solid #252c38',
-          fontSize: '16px',
-          fontWeight: 600,
-          color: '#eef2f7',
-        },
-        children: [
-          {
-            type: 'span',
-            props: {
-              style: { color: '#38bdf8', fontWeight: 700 },
-              children: `${step.step_order}.`,
-            },
-          },
-          {
-            type: 'span',
-            props: {
-              children: label,
-            },
-          },
-        ],
-      },
-    };
-
-    if (idx === steps.length - 1) return [pill];
-    return [
-      pill,
-      {
-        type: 'div',
-        props: {
-          style: {
-            display: 'flex',
-            alignItems: 'center',
-            fontSize: '20px',
-            fontWeight: 700,
-            color: '#38bdf8',
-          },
-          children: '→',
-        },
-      },
-    ];
-  });
-
-  const tree = {
-    type: 'div',
-    props: {
-      style: {
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        backgroundColor: '#0b0d11',
-        color: '#eef2f7',
-        padding: '50px 64px',
-        fontFamily: 'Inter',
-        border: '1px solid #252c38',
-      },
-      children: [
-        // Top Bar
-        {
-          type: 'div',
-          props: {
-            style: {
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              width: '100%',
-            },
-            children: [
-              {
-                type: 'div',
-                props: {
-                  style: { display: 'flex', alignItems: 'center', gap: '12px' },
-                  children: [
-                    {
-                      type: 'div',
-                      props: {
-                        style: {
-                          display: 'flex',
-                          padding: '8px 16px',
-                          borderRadius: '8px',
-                          backgroundColor: '#12161d',
-                          border: '1px solid #252c38',
-                          fontSize: '20px',
+                          fontFamily: 'Newsreader',
+                          fontSize: '60px',
                           fontWeight: 700,
-                          color: '#38bdf8',
+                          lineHeight: 1.08,
+                          letterSpacing: '-0.015em',
+                          color: SRGB.light.ink,
                         },
-                        children: 'frontend.rocks',
+                        children: titleText,
                       },
                     },
                     {
                       type: 'div',
                       props: {
                         style: {
-                          display: 'flex',
-                          padding: '8px 16px',
-                          borderRadius: '8px',
-                          backgroundColor: 'rgba(56, 189, 248, 0.14)',
-                          border: '1px solid rgba(56, 189, 248, 0.42)',
-                          fontSize: '18px',
-                          fontWeight: 700,
-                          color: '#7dd3fc',
+                          fontFamily: 'Newsreader',
+                          fontSize: '26px',
+                          fontWeight: 400,
+                          lineHeight: 1.4,
+                          color: SRGB.light['ink-muted'],
                         },
-                        children: caseBadge,
+                        children: tldrText,
                       },
                     },
                   ],
                 },
               },
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    display: 'flex',
-                    padding: '8px 18px',
-                    borderRadius: '999px',
-                    backgroundColor: 'rgba(245, 118, 66, 0.14)',
-                    border: '1px solid rgba(245, 118, 66, 0.42)',
-                    fontSize: '18px',
-                    fontWeight: 600,
-                    color: '#fdba74',
-                  },
-                  children: failureLabel,
-                },
-              },
-            ],
-          },
-        },
-        // Center Title & Symptom
-        {
-          type: 'div',
-          props: {
-            style: {
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-            },
-            children: [
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    fontSize: titleText.length > 44 ? '42px' : '48px',
-                    fontWeight: 700,
-                    lineHeight: 1.15,
-                    letterSpacing: '-0.02em',
-                    color: '#eef2f7',
-                  },
-                  children: titleText,
-                },
-              },
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    display: 'flex',
-                    padding: '14px 18px',
-                    borderRadius: '10px',
-                    backgroundColor: '#12161d',
-                    border: '1px solid #252c38',
-                    fontSize: '21px',
-                    lineHeight: 1.4,
-                    color: '#98a4b5',
-                  },
-                  children: `Symptom: ${symptomText}`,
-                },
-              },
-            ],
-          },
-        },
-        // Causal Chain Strip
-        {
-          type: 'div',
-          props: {
-            style: {
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '14px',
-            },
-            children: [
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    gap: '10px',
-                  },
-                  children: stepChildren,
-                },
-              },
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    borderTop: '1px solid #252c38',
-                    paddingTop: '18px',
-                    width: '100%',
-                  },
-                  children: [
-                    {
-                      type: 'div',
-                      props: {
-                        style: { fontSize: '18px', fontWeight: 600, color: '#98a4b5' },
-                        children: 'Architecture Autopsy · Root Cause Dissection',
-                      },
-                    },
-                    {
-                      type: 'div',
-                      props: {
-                        style: { fontSize: '18px', fontWeight: 600, color: '#38bdf8' },
-                        children: `frontend.rocks/autopsies/${frontmatter.id}`,
-                      },
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        },
-      ],
-    },
-  };
-
-  return svgToPngBuffer(tree);
-}
-
-const COVER_WIDTH = 1000;
-const COVER_HEIGHT = 420;
-
-export async function renderAutopsyCoverPng(
-  autopsy: LoadedAutopsy,
-  conceptTitles: Map<string, string>
-): Promise<Buffer> {
-  const { frontmatter } = autopsy;
-  const caseBadge = `AUTOPSY #${String(frontmatter.case_number).padStart(2, '0')}`;
-  const failureLabel = formatFailureModeLabel(frontmatter.failure_mode);
-  const titleText = truncateText(frontmatter.title, 68);
-  const symptomText = truncateText(frontmatter.symptom, 115);
-
-  const steps = [...frontmatter.traversed_concepts]
-    .sort((a, b) => a.step_order - b.step_order)
-    .slice(0, 4);
-
-  const stepChildren = steps.flatMap((step, idx) => {
-    const label = truncateText(conceptTitles.get(step.concept_id) ?? step.concept_id, 20);
-    const pill = {
-      type: 'div',
-      props: {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '6px 11px',
-          borderRadius: '6px',
-          backgroundColor: '#12161d',
-          border: '1px solid #252c38',
-          fontSize: '14px',
-          fontWeight: 600,
-          color: '#eef2f7',
-        },
-        children: [
-          {
-            type: 'span',
-            props: {
-              style: { color: '#38bdf8', fontWeight: 700 },
-              children: `${step.step_order}.`,
-            },
-          },
-          {
-            type: 'span',
-            props: { children: label },
-          },
-        ],
-      },
-    };
-
-    if (idx === steps.length - 1) return [pill];
-    return [
-      pill,
-      {
-        type: 'div',
-        props: {
-          style: {
-            display: 'flex',
-            alignItems: 'center',
-            fontSize: '16px',
-            fontWeight: 700,
-            color: '#38bdf8',
-          },
-          children: '→',
-        },
-      },
-    ];
-  });
-
-  const tree = {
-    type: 'div',
-    props: {
-      style: {
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        backgroundColor: '#0b0d11',
-        color: '#eef2f7',
-        padding: '34px 48px',
-        fontFamily: 'Inter',
-        border: '1px solid #252c38',
-      },
-      children: [
-        {
-          type: 'div',
-          props: {
-            style: {
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              width: '100%',
-            },
-            children: [
-              {
-                type: 'div',
-                props: {
-                  style: { display: 'flex', alignItems: 'center', gap: '10px' },
-                  children: [
-                    {
-                      type: 'div',
-                      props: {
-                        style: {
-                          display: 'flex',
-                          padding: '6px 14px',
-                          borderRadius: '8px',
-                          backgroundColor: '#12161d',
-                          border: '1px solid #252c38',
-                          fontSize: '17px',
-                          fontWeight: 700,
-                          color: '#38bdf8',
-                        },
-                        children: 'frontend.rocks',
-                      },
-                    },
-                    {
-                      type: 'div',
-                      props: {
-                        style: {
-                          display: 'flex',
-                          padding: '6px 14px',
-                          borderRadius: '8px',
-                          backgroundColor: 'rgba(56, 189, 248, 0.14)',
-                          border: '1px solid rgba(56, 189, 248, 0.42)',
-                          fontSize: '16px',
-                          fontWeight: 700,
-                          color: '#7dd3fc',
-                        },
-                        children: caseBadge,
-                      },
-                    },
-                  ],
-                },
-              },
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    display: 'flex',
-                    padding: '6px 14px',
-                    borderRadius: '999px',
-                    backgroundColor: 'rgba(245, 118, 66, 0.14)',
-                    border: '1px solid rgba(245, 118, 66, 0.42)',
-                    fontSize: '15px',
-                    fontWeight: 600,
-                    color: '#fdba74',
-                  },
-                  children: failureLabel,
-                },
-              },
-            ],
-          },
-        },
-        {
-          type: 'div',
-          props: {
-            style: {
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-            },
-            children: [
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    fontSize: titleText.length > 44 ? '30px' : '35px',
-                    fontWeight: 700,
-                    lineHeight: 1.15,
-                    letterSpacing: '-0.02em',
-                    color: '#eef2f7',
-                  },
-                  children: titleText,
-                },
-              },
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    display: 'flex',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    backgroundColor: '#12161d',
-                    border: '1px solid #252c38',
-                    fontSize: '17px',
-                    lineHeight: 1.35,
-                    color: '#98a4b5',
-                  },
-                  children: `Symptom: ${symptomText}`,
-                },
-              },
-            ],
-          },
-        },
-        {
-          type: 'div',
-          props: {
-            style: {
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              gap: '8px',
-            },
-            children: stepChildren,
-          },
-        },
-      ],
-    },
-  };
-
-  return svgToPngBuffer(tree, COVER_WIDTH, COVER_HEIGHT);
-}
-
-export async function renderVsOgPng(pair: VsPair): Promise<Buffer> {
-  const { primary, secondary, relationType, note } = pair;
-  const pFm = primary.frontmatter;
-  const sFm = secondary.frontmatter;
-  const pColors = getMaturityColors(pFm.maturity_status);
-  const sColors = getMaturityColors(sFm.maturity_status);
-  const titleA = truncateText(pFm.title, 36);
-  const titleB = truncateText(sFm.title, 36);
-  const verdictText = truncateText(note, 180);
-
-  const tree = {
-    type: 'div',
-    props: {
-      style: {
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        backgroundColor: '#0b0d11',
-        color: '#eef2f7',
-        padding: '50px 64px',
-        fontFamily: 'Inter',
-        border: '1px solid #252c38',
-      },
-      children: [
-        // Top Header
-        {
-          type: 'div',
-          props: {
-            style: {
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              width: '100%',
-            },
-            children: [
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                  },
-                  children: [
-                    {
-                      type: 'div',
-                      props: {
-                        style: {
-                          display: 'flex',
-                          padding: '8px 16px',
-                          borderRadius: '8px',
-                          backgroundColor: '#12161d',
-                          border: '1px solid #252c38',
-                          fontSize: '20px',
-                          fontWeight: 700,
-                          color: '#38bdf8',
-                        },
-                        children: 'frontend.rocks',
-                      },
-                    },
-                    {
-                      type: 'div',
-                      props: {
-                        style: {
-                          display: 'flex',
-                          padding: '8px 16px',
-                          borderRadius: '8px',
-                          backgroundColor: '#181d26',
-                          border: '1px solid #252c38',
-                          fontSize: '18px',
-                          fontWeight: 600,
-                          color: '#eef2f7',
-                        },
-                        children:
-                          relationType === 'replaces'
-                            ? 'Native Replacement'
-                            : 'Mechanical Comparison',
-                      },
-                    },
-                  ],
-                },
-              },
-              ...(pFm.maturity_status || sFm.maturity_status
+              ...(schematicUri
                 ? [
                     {
                       type: 'div',
@@ -850,61 +212,20 @@ export async function renderVsOgPng(pair: VsPair): Promise<Buffer> {
                         style: {
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '8px',
+                          justifyContent: 'center',
+                          width: '380px',
+                          height: '380px',
+                          border: `1px solid ${SRGB.light.rule}`,
+                          padding: '16px',
                         },
-                        children: [
-                          ...(pFm.maturity_status
-                            ? [
-                                {
-                                  type: 'div',
-                                  props: {
-                                    style: {
-                                      display: 'flex',
-                                      padding: '6px 14px',
-                                      borderRadius: '999px',
-                                      backgroundColor: pColors.bg,
-                                      border: `1px solid ${pColors.border}`,
-                                      fontSize: '15px',
-                                      fontWeight: 600,
-                                      color: pColors.text,
-                                    },
-                                    children: formatMaturityLabel(pFm.maturity_status),
-                                  },
-                                },
-                              ]
-                            : []),
-                          ...(pFm.maturity_status && sFm.maturity_status
-                            ? [
-                                {
-                                  type: 'div',
-                                  props: {
-                                    style: { fontSize: '16px', color: '#98a4b5', fontWeight: 700 },
-                                    children: 'vs',
-                                  },
-                                },
-                              ]
-                            : []),
-                          ...(sFm.maturity_status
-                            ? [
-                                {
-                                  type: 'div',
-                                  props: {
-                                    style: {
-                                      display: 'flex',
-                                      padding: '6px 14px',
-                                      borderRadius: '999px',
-                                      backgroundColor: sColors.bg,
-                                      border: `1px solid ${sColors.border}`,
-                                      fontSize: '15px',
-                                      fontWeight: 600,
-                                      color: sColors.text,
-                                    },
-                                    children: formatMaturityLabel(sFm.maturity_status),
-                                  },
-                                },
-                              ]
-                            : []),
-                        ],
+                        children: {
+                          type: 'img',
+                          props: {
+                            src: schematicUri,
+                            width: 348,
+                            height: 260,
+                          },
+                        },
                       },
                     },
                   ]
@@ -912,7 +233,370 @@ export async function renderVsOgPng(pair: VsPair): Promise<Buffer> {
             ],
           },
         },
-        // Center Comparison Title & Verdict
+        {
+          type: 'div',
+          props: {
+            style: {
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderTop: `1px solid ${SRGB.light.rule}`,
+              paddingTop: '20px',
+              width: '100%',
+              fontFamily: 'IBM Plex Mono',
+              fontSize: '18px',
+            },
+            children: [
+              {
+                type: 'div',
+                props: {
+                  style: { fontWeight: 600, color: SRGB.light.ink },
+                  children: 'frontend.rocks',
+                },
+              },
+              ...(proofFooter
+                ? [
+                    {
+                      type: 'div',
+                      props: {
+                        style: { color: SRGB.light['ink-muted'] },
+                        children: proofFooter,
+                      },
+                    },
+                  ]
+                : []),
+            ],
+          },
+        },
+      ],
+    },
+  };
+
+  return svgToPngBuffer(tree);
+}
+
+function buildAutopsyPieceTree(
+  autopsy: LoadedAutopsy,
+  width: number,
+  height: number
+): unknown {
+  const { frontmatter } = autopsy;
+  const pieceHex = SRGB.piece[frontmatter.piece_color];
+  const onHex = LIGHT_ON_PIECES.has(frontmatter.piece_color)
+    ? SRGB.fixed.paper
+    : SRGB.fixed.ink;
+  const caseNum = `#${String(frontmatter.case_number).padStart(2, '0')}`;
+  const titleText = truncateText(frontmatter.title, width < 1100 ? 60 : 72);
+  const symptomText = truncateText(frontmatter.symptom, width < 1100 ? 100 : 130);
+
+  const fmRecord = frontmatter as unknown as Record<string, unknown>;
+  const reproId =
+    typeof fmRecord.repro_experiment_id === 'string' ? fmRecord.repro_experiment_id : null;
+  const schematicUri = schematicDataUriForExperiment(
+    reproId,
+    Math.round(width * 0.42),
+    onHex,
+    onHex
+  );
+  const compact = height < 500;
+
+  return {
+    type: 'div',
+    props: {
+      style: {
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        backgroundColor: pieceHex,
+        padding: compact ? '28px 36px' : '44px 56px',
+        fontFamily: 'Newsreader',
+      },
+      children: [
+        {
+          type: 'div',
+          props: {
+            style: {
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              width: '100%',
+            },
+            children: [
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    fontFamily: 'IBM Plex Mono',
+                    fontSize: compact ? '16px' : '20px',
+                    fontWeight: 600,
+                    letterSpacing: '0.06em',
+                    color: onHex,
+                  },
+                  children: 'FRONTEND.ROCKS',
+                },
+              },
+              schematicUri
+                ? {
+                    type: 'img',
+                    props: {
+                      src: schematicUri,
+                      width: compact ? 280 : 380,
+                      height: compact ? 140 : 200,
+                    },
+                  }
+                : {
+                    type: 'div',
+                    props: {
+                      style: {
+                        fontFamily: 'IBM Plex Mono',
+                        fontSize: compact ? '84px' : '136px',
+                        fontWeight: 600,
+                        lineHeight: 0.9,
+                        color: onHex,
+                      },
+                      children: caseNum,
+                    },
+                  },
+            ],
+          },
+        },
+        {
+          type: 'div',
+          props: {
+            style: {
+              display: 'flex',
+              flexDirection: 'column',
+              gap: compact ? '10px' : '16px',
+              backgroundColor: SRGB.fixed.paper,
+              color: SRGB.fixed.ink,
+              borderTop: `6px solid ${pieceHex}`,
+              borderBottom: `2px solid ${SRGB.fixed.ink}`,
+              padding: compact ? '22px 28px' : '32px 40px',
+              width: compact ? '780px' : '860px',
+            },
+            children: [
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    fontFamily: 'IBM Plex Mono',
+                    fontSize: compact ? '15px' : '18px',
+                    fontWeight: 600,
+                    letterSpacing: '0.06em',
+                    color: SRGB.fixed.ink,
+                  },
+                  children: `CASE ${caseNum}`,
+                },
+              },
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    fontFamily: 'Newsreader',
+                    fontSize: compact ? '34px' : '48px',
+                    fontWeight: 700,
+                    lineHeight: 1.1,
+                    color: SRGB.fixed.ink,
+                  },
+                  children: titleText,
+                },
+              },
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    fontFamily: 'Newsreader',
+                    fontSize: compact ? '19px' : '24px',
+                    fontWeight: 400,
+                    lineHeight: 1.35,
+                    color: SRGB.fixed.ink,
+                  },
+                  children: symptomText,
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  };
+}
+
+export async function renderAutopsyOgPng(
+  autopsy: LoadedAutopsy,
+  _conceptTitles?: Map<string, string>
+): Promise<Buffer> {
+  void _conceptTitles;
+  return svgToPngBuffer(buildAutopsyPieceTree(autopsy, OG_WIDTH, OG_HEIGHT), OG_WIDTH, OG_HEIGHT);
+}
+
+export async function renderAutopsyCoverPng(
+  autopsy: LoadedAutopsy,
+  _conceptTitles?: Map<string, string>
+): Promise<Buffer> {
+  void _conceptTitles;
+  return svgToPngBuffer(
+    buildAutopsyPieceTree(autopsy, COVER_WIDTH, COVER_HEIGHT),
+    COVER_WIDTH,
+    COVER_HEIGHT
+  );
+}
+
+export async function renderSymptomOgPng(
+  symptom: Pick<ProductionSymptomConfig, 'slug' | 'search_title' | 'devtools_signature'>
+): Promise<Buffer> {
+  const titleText = truncateText(symptom.search_title, 76);
+  const sigText = truncateText(symptom.devtools_signature, 200);
+
+  const tree = {
+    type: 'div',
+    props: {
+      style: {
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        backgroundColor: SRGB.light['paper-sunk'],
+        color: SRGB.light.ink,
+        padding: '56px 64px',
+        fontFamily: 'Newsreader',
+      },
+      children: [
+        {
+          type: 'div',
+          props: {
+            style: {
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px',
+            },
+            children: [
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '14px',
+                    borderTop: `2px solid ${SRGB.light.ink}`,
+                    borderBottom: `2px solid ${SRGB.light.ink}`,
+                    padding: '24px 0',
+                  },
+                  children: [
+                    {
+                      type: 'div',
+                      props: {
+                        style: {
+                          fontFamily: 'IBM Plex Mono',
+                          fontSize: '16px',
+                          fontWeight: 600,
+                          letterSpacing: '0.06em',
+                          color: SRGB.light.fail,
+                        },
+                        children: '✕ CONSOLE',
+                      },
+                    },
+                    {
+                      type: 'div',
+                      props: {
+                        style: {
+                          fontFamily: 'IBM Plex Mono',
+                          fontSize: '24px',
+                          fontWeight: 400,
+                          lineHeight: 1.4,
+                          color: SRGB.light.ink,
+                        },
+                        children: sigText,
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    fontFamily: 'Newsreader',
+                    fontSize: '46px',
+                    fontWeight: 700,
+                    lineHeight: 1.12,
+                    color: SRGB.light.ink,
+                  },
+                  children: titleText,
+                },
+              },
+            ],
+          },
+        },
+        {
+          type: 'div',
+          props: {
+            style: {
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderTop: `1px solid ${SRGB.light.rule}`,
+              paddingTop: '20px',
+              fontFamily: 'IBM Plex Mono',
+              fontSize: '18px',
+            },
+            children: [
+              {
+                type: 'div',
+                props: {
+                  style: { fontWeight: 600, color: SRGB.light.ink },
+                  children: 'frontend.rocks',
+                },
+              },
+              {
+                type: 'div',
+                props: {
+                  style: { color: SRGB.light['ink-muted'] },
+                  children: 'DEBUG · SYMPTOMS',
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  };
+
+  return svgToPngBuffer(tree);
+}
+
+export async function renderDefaultOgPng(): Promise<Buffer> {
+  const tree = {
+    type: 'div',
+    props: {
+      style: {
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        backgroundColor: SRGB.light.paper,
+        color: SRGB.light.ink,
+        padding: '64px',
+        fontFamily: 'Newsreader',
+      },
+      children: [
+        {
+          type: 'div',
+          props: {
+            style: {
+              fontFamily: 'IBM Plex Mono',
+              fontSize: '24px',
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              color: SRGB.light.ink,
+            },
+            children: 'frontend.rocks',
+          },
+        },
         {
           type: 'div',
           props: {
@@ -926,38 +610,113 @@ export async function renderVsOgPng(pair: VsPair): Promise<Buffer> {
                 type: 'div',
                 props: {
                   style: {
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'baseline',
-                    gap: '14px',
-                    fontSize: '42px',
+                    fontFamily: 'Newsreader',
+                    fontSize: '76px',
                     fontWeight: 700,
-                    lineHeight: 1.15,
-                    letterSpacing: '-0.02em',
-                    color: '#eef2f7',
+                    lineHeight: 1.05,
+                    letterSpacing: '-0.015em',
+                    color: SRGB.light.ink,
                   },
-                  children: [
-                    { type: 'span', props: { children: titleA } },
-                    {
-                      type: 'span',
-                      props: { style: { color: '#38bdf8', fontSize: '34px' }, children: 'vs' },
-                    },
-                    { type: 'span', props: { children: titleB } },
-                  ],
+                  children: 'Frontend, with receipts.',
                 },
               },
               {
                 type: 'div',
                 props: {
                   style: {
-                    display: 'flex',
-                    padding: '16px 20px',
-                    borderRadius: '10px',
-                    backgroundColor: '#12161d',
-                    border: '1px solid #252c38',
-                    fontSize: '21px',
+                    fontFamily: 'IBM Plex Mono',
+                    fontSize: '20px',
+                    color: SRGB.light['ink-muted'],
+                  },
+                  children: 'CHROMIUM · FIREFOX · WEBKIT',
+                },
+              },
+            ],
+          },
+        },
+        {
+          type: 'div',
+          props: {
+            style: {
+              borderTop: `1px solid ${SRGB.light.rule}`,
+              paddingTop: '20px',
+              fontFamily: 'IBM Plex Mono',
+              fontSize: '18px',
+              color: SRGB.light['ink-muted'],
+            },
+            children: 'Browser internals, architecture autopsies, and machine-checked claims.',
+          },
+        },
+      ],
+    },
+  };
+
+  return svgToPngBuffer(tree);
+}
+
+export async function renderVsOgPng(pair: VsPair): Promise<Buffer> {
+  const titleA = truncateText(pair.primary.frontmatter.title, 36);
+  const titleB = truncateText(pair.secondary.frontmatter.title, 36);
+  const verdictText = truncateText(pair.note, 170);
+
+  const tree = {
+    type: 'div',
+    props: {
+      style: {
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        backgroundColor: SRGB.light.paper,
+        color: SRGB.light.ink,
+        padding: '56px 64px',
+        fontFamily: 'Newsreader',
+      },
+      children: [
+        {
+          type: 'div',
+          props: {
+            style: {
+              fontFamily: 'IBM Plex Mono',
+              fontSize: '18px',
+              fontWeight: 600,
+              letterSpacing: '0.06em',
+              color: SRGB.light['ink-muted'],
+            },
+            children: pair.relationType === 'replaces' ? 'REPLACES' : 'MECHANICAL COMPARISON',
+          },
+        },
+        {
+          type: 'div',
+          props: {
+            style: {
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px',
+            },
+            children: [
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    fontFamily: 'Newsreader',
+                    fontSize: '56px',
+                    fontWeight: 700,
+                    lineHeight: 1.1,
+                    color: SRGB.light.ink,
+                  },
+                  children: `${titleA} vs ${titleB}`,
+                },
+              },
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    fontFamily: 'Newsreader',
+                    fontSize: '26px',
                     lineHeight: 1.4,
-                    color: '#98a4b5',
+                    color: SRGB.light['ink-muted'],
                   },
                   children: verdictText,
                 },
@@ -965,7 +724,6 @@ export async function renderVsOgPng(pair: VsPair): Promise<Buffer> {
             ],
           },
         },
-        // Footer
         {
           type: 'div',
           props: {
@@ -973,23 +731,21 @@ export async function renderVsOgPng(pair: VsPair): Promise<Buffer> {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              borderTop: '1px solid #252c38',
+              borderTop: `1px solid ${SRGB.light.rule}`,
               paddingTop: '20px',
-              width: '100%',
+              fontFamily: 'IBM Plex Mono',
+              fontSize: '18px',
             },
             children: [
               {
                 type: 'div',
-                props: {
-                  style: { fontSize: '18px', fontWeight: 600, color: '#98a4b5' },
-                  children: 'Mechanical Trade-Offs · Browser Internals',
-                },
+                props: { style: { fontWeight: 600, color: SRGB.light.ink }, children: 'frontend.rocks' },
               },
               {
                 type: 'div',
                 props: {
-                  style: { fontSize: '18px', fontWeight: 600, color: '#38bdf8' },
-                  children: `frontend.rocks/vs/${pair.slug}`,
+                  style: { color: SRGB.light['ink-muted'] },
+                  children: `/vs/${pair.slug}`,
                 },
               },
             ],
@@ -1001,4 +757,3 @@ export async function renderVsOgPng(pair: VsPair): Promise<Buffer> {
 
   return svgToPngBuffer(tree);
 }
-

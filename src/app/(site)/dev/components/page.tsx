@@ -35,6 +35,7 @@ import {
   TabsDemo,
   ThemeToggleDemo,
 } from './GalleryDemos';
+import { ClaimPermalinksDemo } from './ClaimPermalinksDemo';
 import './dev-components.css';
 
 export const metadata: Metadata = {
@@ -370,6 +371,11 @@ export default async function DevComponentsPage() {
             </div>
           </div>
         )}
+      />
+      <ThemePair
+        id="claim-permalinks"
+        title="Claim Permalink (5 Proof Kinds)"
+        render={(theme) => <ClaimPermalinksDemo prefix={theme} />}
       />
     </div>
   );

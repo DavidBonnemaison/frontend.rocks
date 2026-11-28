@@ -152,14 +152,7 @@ pre {
   background: var(--semantic-legacy-bg);
 }
 
-/* Concept Page Anatomy */
-.concept-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
-  gap: 36px;
-  align-items: start;
-}
-
+/* Legacy article container (still used by /vs, /symptoms index, /diagnose) */
 .concept-article {
   padding: 32px 0 64px;
   min-width: 0;
@@ -170,109 +163,7 @@ pre {
   scroll-margin-top: 84px;
 }
 
-.concept-toc-sidebar {
-  position: sticky;
-  top: 84px;
-  padding-top: 32px;
-}
-
-.concept-toc {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px;
-}
-
-.concept-toc-heading {
-  font-family: var(--mono);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-  margin-bottom: 10px;
-}
-
-.concept-toc-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.concept-toc-link {
-  display: block;
-  font-size: 0.84rem;
-  color: var(--text-muted);
-  padding: 4px 8px;
-  border-left: 2px solid transparent;
-  border-radius: 0 6px 6px 0;
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-}
-
-.concept-toc-link:hover {
-  color: var(--text);
-  text-decoration: none;
-  background: var(--surface-2);
-}
-
-.concept-toc-link.active {
-  color: var(--accent);
-  border-left-color: var(--accent);
-  background: var(--accent-dim);
-  font-weight: 500;
-}
-
 @media (max-width: 980px) {
-  .concept-layout {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
-  }
-
-  .concept-toc-sidebar {
-    order: -1;
-    position: sticky;
-    top: 60px;
-    z-index: 25;
-    padding: 10px 0 0;
-    background: var(--bg);
-  }
-
-  .concept-toc {
-    padding: 8px 10px;
-    border-radius: 8px;
-  }
-
-  .concept-toc-heading {
-    display: none;
-  }
-
-  .concept-toc-list {
-    flex-direction: row;
-    overflow-x: auto;
-    gap: 6px;
-    scrollbar-width: none;
-  }
-
-  .concept-toc-list::-webkit-scrollbar {
-    display: none;
-  }
-
-  .concept-toc-link {
-    white-space: nowrap;
-    border-left: none;
-    border-bottom: 2px solid transparent;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    padding: 4px 10px;
-  }
-
-  .concept-toc-link.active {
-    border-left-color: transparent;
-    border-bottom-color: var(--accent);
-  }
-
   .concept-article {
     padding-top: 20px;
   }
@@ -292,42 +183,6 @@ pre {
   letter-spacing: -0.02em;
 }
 
-.obsolescence-banner {
-  border: 1px solid var(--semantic-legacy-border);
-  background: var(--semantic-legacy-bg);
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin: 16px 0 20px;
-}
-
-.replacement-banner {
-  border: 1px solid var(--semantic-native-border);
-  background: var(--semantic-native-bg);
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin: 16px 0 20px;
-}
-
-.relations-banner {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-  margin: 20px 0 28px;
-  padding: 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-}
-
-.rel-group-title {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-  font-family: var(--mono);
-}
-
 .rel-chip {
   display: inline-flex;
   align-items: center;
@@ -340,83 +195,6 @@ pre {
   position: relative;
 }
 
-/* Inline Concept Links & Preview Card */
-.concept-inline-wrapper {
-  position: relative;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 3px;
-}
-
-.concept-inline-link {
-  color: var(--accent);
-  text-decoration: underline;
-  text-decoration-color: rgba(56, 189, 248, 0.45);
-  text-underline-offset: 3px;
-}
-
-.concept-inline-link:hover {
-  text-decoration-color: var(--accent);
-}
-
-.concept-inline-info-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 3px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  background-clip: content-box;
-  color: var(--text-muted);
-  cursor: pointer;
-  vertical-align: middle;
-  transform: translateY(-1px);
-}
-
-.concept-inline-info-btn:hover,
-.concept-inline-info-btn:focus-visible {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.concept-preview-card {
-  position: absolute;
-  left: 0;
-  top: calc(100% + 8px);
-  z-index: 50;
-  width: min(320px, 82vw);
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: var(--surface-2);
-  border: 1px solid var(--accent);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  text-align: left;
-  line-height: 1.45;
-  pointer-events: auto;
-}
-
-.concept-preview-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.concept-preview-title {
-  font-weight: 600;
-  font-size: 0.94rem;
-  color: var(--text);
-}
-
-.concept-preview-tldr {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-}
 
 /* Semantic Callouts */
 .callout {

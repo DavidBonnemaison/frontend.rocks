@@ -20,6 +20,8 @@ import {
   renderAutopsyCoverPng,
   renderAutopsyOgPng,
   renderConceptOgPng,
+  renderDefaultOgPng,
+  renderSymptomOgPng,
   renderVsOgPng,
 } from '../src/lib/og-generator';
 import { extractVsPairs } from '../src/lib/vs-pairs';
@@ -347,12 +349,18 @@ ${rssItems}
   // 8. Static OG Images (1200x630 PNG) in public/og/ — generated for ALL pages (every page keeps
   // an accessible URL and a share image is not a content distribution channel).
   if (!skipOg) {
-    const ogConceptsDir = path.join(PUBLIC_DIR, 'og', 'concepts');
-    const ogAutopsiesDir = path.join(PUBLIC_DIR, 'og', 'autopsies');
-    const ogVsDir = path.join(PUBLIC_DIR, 'og', 'vs');
+    const ogRootDir = path.join(PUBLIC_DIR, 'og');
+    const ogConceptsDir = path.join(ogRootDir, 'concepts');
+    const ogAutopsiesDir = path.join(ogRootDir, 'autopsies');
+    const ogSymptomsDir = path.join(ogRootDir, 'symptoms');
+    const ogVsDir = path.join(ogRootDir, 'vs');
     fs.mkdirSync(ogConceptsDir, { recursive: true });
     fs.mkdirSync(ogAutopsiesDir, { recursive: true });
+    fs.mkdirSync(ogSymptomsDir, { recursive: true });
     fs.mkdirSync(ogVsDir, { recursive: true });
+
+    const defaultPng = await renderDefaultOgPng();
+    fs.writeFileSync(path.join(ogRootDir, 'default.png'), defaultPng);
 
     for (const c of allConcepts) {
       const png = await renderConceptOgPng(c);
@@ -363,6 +371,10 @@ ${rssItems}
       fs.writeFileSync(path.join(ogAutopsiesDir, `${a.frontmatter.id}.png`), png);
       const coverPng = await renderAutopsyCoverPng(a, conceptTitles);
       fs.writeFileSync(path.join(ogAutopsiesDir, `${a.frontmatter.id}-cover.png`), coverPng);
+    }
+    for (const s of PRODUCTION_SYMPTOMS) {
+      const png = await renderSymptomOgPng(s);
+      fs.writeFileSync(path.join(ogSymptomsDir, `${s.slug}.png`), png);
     }
     for (const pair of allVsPairs) {
       const png = await renderVsOgPng(pair);
