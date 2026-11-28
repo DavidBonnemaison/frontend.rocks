@@ -20,12 +20,12 @@ test.describe('ReadingProgress CSS scroll-driven bar', () => {
       return;
     }
 
-    // Scroll to 50% of the scrollable height
+    // Scroll to 50% of the scrollable height (instant to bypass html scroll-behavior: smooth)
     await page.evaluate(() => {
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      window.scrollTo(0, Math.round(maxScroll * 0.5));
+      window.scrollTo({ top: Math.round(maxScroll * 0.5), behavior: 'instant' });
     });
-    await page.waitForTimeout(150);
+    await page.waitForTimeout(100);
 
     const scaleX = await bar.evaluate((el) => {
       const tf = getComputedStyle(el).transform;

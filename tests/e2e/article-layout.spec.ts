@@ -16,23 +16,25 @@ test.describe('ArticleLayout 3/6/3 grid', () => {
     await expect(inlineRail).toBeHidden();
 
     // Direct child check for .is-wide blocks inside .article-grid
-    const wideParentOk = await page.evaluate(() => {
+    const geom = await page.evaluate(() => {
       const grid = document.querySelector('.article-grid');
       const wide = document.querySelector('.article-grid > .is-wide');
-      if (!grid || !wide) return false;
-      const gridRect = grid.getBoundingClientRect();
-      const wideRect = wide.getBoundingClientRect();
-      const prose = document.querySelector('.article-grid > p');
-      if (!prose) return false;
-      const proseRect = prose.getBoundingClientRect();
-      // Wide block starts at left edge of prose and finishes at right edge of container
-      return (
-        wide.parentElement === grid &&
-        Math.abs(wideRect.left - proseRect.left) <= 2 &&
-        Math.abs(wideRect.right - gridRect.right) <= 2
-      );
+      const prose = document.querySelector('.article-grid > :is(p, ol, ul, h2)');
+      if (!grid || !wide || !prose) return null;
+      return {
+        isDirectChild: wide.parentElement === grid,
+        gridLeft: grid.getBoundingClientRect().left,
+        gridRight: grid.getBoundingClientRect().right,
+        wideLeft: wide.getBoundingClientRect().left,
+        wideRight: wide.getBoundingClientRect().right,
+        proseLeft: prose.getBoundingClientRect().left,
+        proseRight: prose.getBoundingClientRect().right,
+      };
     });
-    expect(wideParentOk).toBe(true);
+    expect(geom).not.toBeNull();
+    expect(geom!.isDirectChild).toBe(true);
+    expect(Math.abs(geom!.wideLeft - geom!.proseLeft)).toBeLessThanOrEqual(2);
+    expect(Math.abs(geom!.wideRight - geom!.gridRight)).toBeLessThanOrEqual(2);
 
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth + 2
