@@ -5,6 +5,7 @@ import {
   type PageProofStatus,
 } from './proof/claim-schema';
 import { PieceColorSchema, type PieceColor } from './design/piece-colors';
+import { ClaimIdSchema, ExperimentIdSchema } from './proof/claim-schema';
 
 export {
   PAGE_PROOF_STATUSES,
@@ -42,6 +43,8 @@ export const MATURITY_VALUES = [
 export const MaturityStatusSchema = z.enum(MATURITY_VALUES);
 export type MaturityStatus = z.infer<typeof MaturityStatusSchema>;
 
+// `contrasts_with` stays a valid relation (it still drives concept navigation), but it no
+// longer generates a /vs/ page: pairs come only from `content/vs/pairs.json`.
 export const RELATION_TYPES = [
   'requires',
   'under_the_hood',
@@ -331,6 +334,12 @@ export const TraversedConceptSchema = z.object({
 });
 export type TraversedConcept = z.infer<typeof TraversedConceptSchema>;
 
+/** A chain step with the claims that prove its `role_in_chain` (optional while `unverified`). */
+export const AutopsyChainStepSchema = TraversedConceptSchema.extend({
+  claim_ids: z.array(ClaimIdSchema).min(1).optional(),
+});
+export type AutopsyChainStep = z.infer<typeof AutopsyChainStepSchema>;
+
 export const AUTOPSY_CAST_VALUES = [
   'julie',
   'karim',
@@ -346,15 +355,19 @@ export type AutopsyCastMember = z.infer<typeof AutopsyCastMemberSchema>;
 export const AutopsyBadFixSchema = z.object({
   label: z.string().min(3).max(80),
   outcome: z.string().min(5).max(180),
+  outcome_claims: z.array(ClaimIdSchema).default([]),
 });
 
 export const AutopsyCaseFileSchema = z.object({
   trigger: z.string().min(10).max(200),
   symptom: z.string().min(10).max(200),
   root_cause: z.string().min(10).max(220),
+  root_cause_claims: z.array(ClaimIdSchema).min(1).optional(),
   bad_fixes: z.array(AutopsyBadFixSchema).min(1).max(4),
   fix: z.string().min(10).max(220),
+  fix_claims: z.array(ClaimIdSchema).min(1).optional(),
   how_to_spot: z.string().min(10).max(200),
+  how_to_spot_claims: z.array(ClaimIdSchema).min(1).optional(),
   deleted: z.string().min(5).max(200).optional(),
 });
 export type AutopsyCaseFile = z.infer<typeof AutopsyCaseFileSchema>;
@@ -372,8 +385,9 @@ export const AutopsyFrontmatterSchema = z.object({
   format: z.enum(['narrative', 'legacy']).default('narrative'),
   case_type: z.enum(['composite', 'reconstructed']).default('composite'),
   cast: z.array(AutopsyCastMemberSchema).min(2).max(4),
-  traversed_concepts: z.array(TraversedConceptSchema),
+  traversed_concepts: z.array(AutopsyChainStepSchema),
   case_file: AutopsyCaseFileSchema,
+  repro_experiment_id: ExperimentIdSchema.optional(),
   reading_time_min: z.number().int().positive(),
   sources: z.array(z.string().url()).min(1, 'At least one primary source URL is required'),
   last_verified_at: z
@@ -382,16 +396,31 @@ export const AutopsyFrontmatterSchema = z.object({
   proof_status: PageProofStatusSchema.default('unverified'),
   lab_id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
 }).superRefine((fm, ctx) => {
-  if (
-    fm.proof_status === 'proven' &&
-    (fm.traversed_concepts.length < 4 || fm.traversed_concepts.length > 6)
-  ) {
+  const steps = fm.traversed_concepts.length;
+  if (steps < 1 || steps > 6 || (fm.proof_status === 'proven' && steps < 4)) {
     ctx.addIssue({
       code: 'custom',
       path: ['traversed_concepts'],
-      message: 'traversed_concepts must contain 4 to 6 concepts',
+      message:
+        fm.proof_status === 'proven'
+          ? 'traversed_concepts must contain 4 to 6 concepts'
+          : 'traversed_concepts must contain 1 to 6 concepts',
     });
   }
+  if (fm.proof_status !== 'proven') return;
+  const missing = (path: Array<string | number>, field: string) =>
+    ctx.addIssue({
+      code: 'custom',
+      path,
+      message: `${field} is required when proof_status is "proven"`,
+    });
+  fm.traversed_concepts.forEach((step, i) => {
+    if (!step.claim_ids?.length) missing(['traversed_concepts', i, 'claim_ids'], 'claim_ids');
+  });
+  for (const key of ['root_cause_claims', 'fix_claims', 'how_to_spot_claims'] as const) {
+    if (!fm.case_file[key]?.length) missing(['case_file', key], `case_file.${key}`);
+  }
+  if (!fm.repro_experiment_id) missing(['repro_experiment_id'], 'repro_experiment_id');
 });
 
 export type AutopsyFrontmatter = z.infer<typeof AutopsyFrontmatterSchema>;

@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import {
   getAllAutopsies,
   getAllConcepts,
@@ -6,6 +8,8 @@ import {
 } from './content-loader';
 import type { MaturityStatus, PageProofStatus } from './schemas';
 import { vsPairStatus } from './publication';
+import { CONTENT_DIR } from './paths';
+import { VsPairsFileSchema, type VsPairEntry } from './vs/schema';
 
 export type VsRelationType = 'replaces' | 'contrasts_with';
 
@@ -19,6 +23,10 @@ export interface VsPair {
   relatedAutopsies: LoadedAutopsy[];
   dateModified: string;
   sources: string[];
+  /** Set for pairs loaded from content/vs/pairs.json. */
+  question?: string;
+  experimentId?: string;
+  claim_ids?: string[];
 }
 
 const MATURITY_RANK: Record<MaturityStatus, number> = {
@@ -68,7 +76,69 @@ function getPairAutopsies(
   );
 }
 
+/**
+ * Pairs declared in content/vs/pairs.json. Returns an empty list while the file does not exist.
+ */
+export function loadVsPairEntries(): VsPairEntry[] {
+  const file = path.join(CONTENT_DIR, 'vs', 'pairs.json');
+  if (!fs.existsSync(file)) return [];
+  const parsed = VsPairsFileSchema.safeParse(JSON.parse(fs.readFileSync(file, 'utf-8')));
+  if (!parsed.success) {
+    throw new Error(`Schema validation failed in content/vs/pairs.json:\n${parsed.error.message}`);
+  }
+  return [...parsed.data.pairs].sort((a, b) => a.slug.localeCompare(b.slug));
+}
+
+function pairsFromFile(
+  entries: VsPairEntry[],
+  concepts: LoadedConcept[],
+  autopsies: LoadedAutopsy[]
+): VsPair[] {
+  const conceptById = new Map(concepts.map((c) => [c.frontmatter.id, c]));
+  const pairs: VsPair[] = [];
+  for (const entry of entries) {
+    const primary = conceptById.get(entry.primary);
+    const secondary = conceptById.get(entry.secondary);
+    if (!primary || !secondary) continue;
+    const rel = primary.frontmatter.relations.find(
+      (r) => r.target_id === secondary.frontmatter.id && (r.type === 'replaces' || r.type === 'contrasts_with')
+    );
+    pairs.push({
+      slug: entry.slug,
+      proof_status: entry.proof_status,
+      relationType: rel?.type === 'replaces' ? 'replaces' : 'contrasts_with',
+      note: rel?.note ?? entry.question,
+      primary,
+      secondary,
+      relatedAutopsies: getPairAutopsies(primary.frontmatter.id, secondary.frontmatter.id, autopsies),
+      dateModified:
+        primary.frontmatter.last_verified_at >= secondary.frontmatter.last_verified_at
+          ? primary.frontmatter.last_verified_at
+          : secondary.frontmatter.last_verified_at,
+      sources: Array.from(new Set([...primary.frontmatter.sources, ...secondary.frontmatter.sources])),
+      question: entry.question,
+      experimentId: entry.experimentId,
+      claim_ids: entry.claim_ids,
+    });
+  }
+  return pairs.sort((a, b) => a.slug.localeCompare(b.slug));
+}
+
+/**
+ * Pairs come from content/vs/pairs.json. `relationsInput` arguments are ignored when the file
+ * exists (relations no longer create pages). Until the file exists, the legacy relation-derived
+ * pairs keep being served (switch-over in US-35.7).
+ */
 export function extractVsPairs(
+  conceptsInput?: LoadedConcept[],
+  autopsiesInput?: LoadedAutopsy[]
+): VsPair[] {
+  const entries = loadVsPairEntries();
+  if (entries.length === 0) return extractLegacyVsPairs(conceptsInput, autopsiesInput);
+  return pairsFromFile(entries, conceptsInput ?? getAllConcepts(), autopsiesInput ?? getAllAutopsies());
+}
+
+function extractLegacyVsPairs(
   conceptsInput?: LoadedConcept[],
   autopsiesInput?: LoadedAutopsy[]
 ): VsPair[] {

@@ -1,4 +1,4 @@
-import type { AutopsyCaseFile, FailureMode } from './schemas';
+import type { FailureMode } from './schemas';
 
 export interface DetectiveOption {
   id: string;
@@ -152,7 +152,7 @@ function normalizeLabel(label: string): string {
  */
 export function buildDetectiveOptions(
   slug: string,
-  caseFile: Pick<AutopsyCaseFile, 'bad_fixes' | 'root_cause'>,
+  caseFile: { root_cause: string; bad_fixes: ReadonlyArray<{ label: string; outcome: string }> },
   failureMode?: FailureMode
 ): DetectiveOption[] {
   const seenLabels = new Set<string>([normalizeLabel(caseFile.root_cause)]);
