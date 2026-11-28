@@ -795,7 +795,7 @@ export function ExperimentLab({
   );
 
   return (
-    <div className="experiment-lab" data-testid="experiment-lab" data-experiment-id={bundle.id}>
+    <div className="experiment-lab is-wide" data-testid="experiment-lab" data-experiment-id={bundle.id}>
       <InstrumentPanel
         experimentId={bundle.id}
         status={labStatus}

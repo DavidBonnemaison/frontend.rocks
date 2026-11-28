@@ -89,7 +89,7 @@ export function DevToolsDetective({
 
   return (
     <section
-      className="detective-panel"
+      className="detective-panel is-wide"
       aria-labelledby={headingId}
       data-testid="devtools-detective"
     >
@@ -97,9 +97,9 @@ export function DevToolsDetective({
         className={`detective-header${isCollapsed ? ' detective-header--collapsed' : ''}`}
       >
         <div className="detective-title-group">
-          <h2 id={headingId} className="detective-title">
-            <Search size={15} color="var(--accent)" aria-hidden="true" />
-            <span>DevTools Detective</span>
+          <h2 id={headingId} className="detective-title caps">
+            <Search size={15} strokeWidth={1.5} aria-hidden="true" />
+            <span>DIAGNOSE BEFORE YOU READ ON</span>
           </h2>
           <span className="detective-tag">Optional diagnosis</span>
         </div>

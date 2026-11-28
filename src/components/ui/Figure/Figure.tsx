@@ -12,7 +12,7 @@ export interface FigureProps {
 
 export function Figure({ number, question, caption, size = 'prose', children }: FigureProps) {
   return (
-    <figure className="figure" data-size={size}>
+    <figure className={size === 'wide' ? 'figure is-wide' : 'figure'} data-size={size}>
       {question ? <p className="figure-question">{question}</p> : null}
       <FigureReveal>{children}</FigureReveal>
       {caption || typeof number === 'number' ? (

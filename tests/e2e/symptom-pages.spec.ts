@@ -20,7 +20,7 @@ test.describe('Symptom pages', () => {
     await page.waitForLoadState('networkidle');
     await expect(page).toHaveURL(/\/symptoms\/z-index-ignored\/$/);
     await expect(
-      page.getByRole('heading', { name: /Causal Chain of Browser Mechanisms/i })
+      page.getByRole('heading', { name: /Likely causes, most common first/i })
     ).toBeVisible();
     await expect(page.locator('a[href*="/concepts/css-stacking-context/"]').first()).toBeVisible();
 

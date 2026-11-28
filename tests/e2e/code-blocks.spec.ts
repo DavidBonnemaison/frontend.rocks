@@ -15,7 +15,7 @@ test.describe('Code blocks', () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/concepts/css-stacking-context/', { waitUntil: 'networkidle' });
 
-    const codeShell = page.locator('.code-block-shell').first();
+    const codeShell = page.locator('.code-block').first();
     await expect(codeShell).toBeVisible();
 
     const shikiPre = codeShell.locator('pre.shiki');
@@ -55,7 +55,7 @@ test.describe('Code blocks', () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/autopsies/double-payment-race-condition/', { waitUntil: 'networkidle' });
 
-    const codeShell = page.locator('.code-block-shell').first();
+    const codeShell = page.locator('.code-block').first();
     await expect(codeShell).toBeVisible();
     await expect(codeShell.locator('pre.shiki')).toBeVisible();
 

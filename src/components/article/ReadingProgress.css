@@ -1,0 +1,35 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  .reading-progress {
+    display: none;
+    position: fixed;
+    top: var(--header-h);
+    left: 0;
+    right: 0;
+    height: 2px;
+    transform-origin: 0 50%;
+    background: var(--piece, var(--color-ink));
+    z-index: var(--z-sticky);
+    pointer-events: none;
+  }
+
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .reading-progress {
+        display: block;
+        animation: reading-grow linear both;
+        animation-timeline: scroll(root block);
+      }
+    }
+  }
+
+  @keyframes reading-grow {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+}

@@ -1,0 +1,621 @@
+@layer reset, tokens, base, legacy, layout, components, utilities;
+
+@layer components {
+  /* Concept Header (US-40.4) */
+  .concept-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+    padding-bottom: var(--space-l);
+    border-bottom: var(--rule-w) solid var(--color-rule);
+  }
+
+  .concept-header-title {
+    font-family: var(--font-display);
+    font-size: var(--step-3);
+    line-height: var(--lh-tight);
+    margin: 0;
+  }
+
+  .concept-header-tldr {
+    font-family: var(--font-text);
+    font-size: var(--step-1);
+    line-height: var(--lh-ui);
+    color: var(--color-ink);
+    margin: 0;
+  }
+
+  /* Concept Connections (US-40.4) */
+  .concept-connections {
+    padding-top: var(--space-l);
+    border-top: var(--rule-w) solid var(--color-rule);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+  }
+
+  .concept-connections-title {
+    font-family: var(--font-display);
+    font-size: var(--step-2);
+    line-height: var(--lh-snug);
+    margin: 0;
+  }
+
+  .concept-connections-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-xl);
+  }
+
+  @media (width >= 48rem) /* md */ {
+    .concept-connections-cols {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--col-gap);
+    }
+  }
+
+  .concept-connections-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  .concept-connections-group-label {
+    color: var(--color-ink-muted);
+    margin: 0;
+  }
+
+  .concept-autopsies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-l) var(--col-gap);
+  }
+
+  .concept-vs-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .concept-vs-item {
+    padding-block: var(--space-s);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+  }
+
+  .concept-vs-link {
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    font-weight: var(--weight-semibold);
+  }
+
+  .concept-vs-note {
+    margin: 0;
+    font-size: var(--step-0);
+    color: var(--color-ink-muted);
+  }
+
+  /* Proof collapsible details (US-40.4 / US-40.5) */
+  .article-proof-details {
+    margin-top: var(--space-2xl);
+    border-top: var(--rule-w) solid var(--color-rule);
+    border-bottom: var(--rule-w) solid var(--color-rule);
+    padding-block: var(--space-m);
+  }
+
+  .article-proof-summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-m);
+    min-height: 24px;
+  }
+
+  .article-proof-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .article-proof-summary-title {
+    font-family: var(--font-display);
+    font-size: var(--step-2);
+    font-weight: var(--weight-bold);
+    line-height: var(--lh-snug);
+  }
+
+  .article-proof-summary-hint {
+    color: var(--color-ink-muted);
+  }
+
+  .article-proof-body {
+    margin-top: var(--space-m);
+  }
+
+  /* Sources footer (US-40.4 / US-40.5) */
+  .article-sources {
+    margin-top: var(--space-2xl);
+    padding-top: var(--space-m);
+    border-top: var(--rule-w) solid var(--color-rule);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  .article-sources-heading {
+    color: var(--color-ink-muted);
+    margin: 0;
+  }
+
+  .article-sources-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .article-sources-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    word-break: break-all;
+  }
+
+  .article-sources-verified {
+    margin: 0;
+    color: var(--color-ink-muted);
+  }
+
+  /* Autopsy Hero Header wrapper (US-40.5) */
+  .autopsy-hero-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  /* Autopsy Case File (US-40.5) */
+  .autopsy-case-file {
+    margin-top: var(--space-2xl);
+    padding-block: var(--space-l);
+    border-top: var(--rule-w) solid var(--color-rule);
+    border-bottom: var(--rule-w) solid var(--color-rule);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-l);
+  }
+
+  .autopsy-case-file-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-m);
+  }
+
+  .autopsy-case-tab {
+    display: inline-block;
+    padding: var(--space-2xs) var(--space-xs);
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  .autopsy-case-file-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--step-2);
+  }
+
+  .autopsy-bad-fixes {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  .autopsy-bad-fixes-label {
+    color: var(--color-ink-muted);
+    margin: 0;
+  }
+
+  .autopsy-bad-fixes-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .autopsy-bad-fix-item {
+    padding-block: var(--space-s);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+  }
+
+  .autopsy-bad-fix-label {
+    color: var(--color-ink);
+    font-weight: var(--weight-medium);
+  }
+
+  .autopsy-bad-fix-outcome {
+    margin: 0;
+    font-family: var(--font-text);
+    font-size: var(--step-0);
+    color: var(--color-ink-muted);
+  }
+
+  /* Autopsy Causal Chain (US-40.5) */
+  .autopsy-causal {
+    margin-top: var(--space-2xl);
+    padding-top: var(--space-m);
+    border-top: var(--rule-w) solid var(--color-rule);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+  }
+
+  .autopsy-causal-heading {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--step-2);
+  }
+
+  .autopsy-causal-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .autopsy-causal-item {
+    padding-block: var(--space-m);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+  }
+
+  .autopsy-causal-step {
+    color: var(--color-ink-muted);
+  }
+
+  .autopsy-causal-title {
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    font-weight: var(--weight-semibold);
+  }
+
+  .autopsy-causal-role {
+    margin: 0;
+    font-family: var(--font-text);
+    font-size: var(--step-prose);
+    line-height: var(--lh-prose);
+    color: var(--color-ink-muted);
+  }
+
+  /* Autopsy Prev / Next (US-40.5) */
+  .autopsy-prev-next {
+    margin-top: var(--space-2xl);
+    padding-top: var(--space-l);
+    border-top: var(--rule-w) solid var(--color-rule);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-l);
+  }
+
+  @media (width >= 48rem) /* md */ {
+    .autopsy-prev-next {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--col-gap);
+    }
+  }
+
+  .autopsy-prev-next-slot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .autopsy-prev-next-label {
+    color: var(--color-ink-muted);
+  }
+
+  /* Symptom Page (US-40.7) */
+  .symptom-console {
+    background: var(--color-paper-sunk);
+    border-top: var(--rule-w) solid var(--color-ink);
+    border-bottom: var(--rule-w) solid var(--color-ink);
+    padding: var(--space-m);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  .symptom-console-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-s);
+  }
+
+  .symptom-console-label {
+    color: var(--color-ink-muted);
+  }
+
+  .symptom-console-body {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-s);
+  }
+
+  .symptom-console-icon {
+    color: var(--color-fail);
+    flex-shrink: 0;
+    margin-top: var(--space-3xs);
+  }
+
+  .symptom-console-code {
+    font-family: var(--font-meta);
+    font-size: var(--step-1);
+    line-height: var(--lh-ui);
+    color: var(--color-ink);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    user-select: text;
+    margin: 0;
+  }
+
+  .symptom-engines {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .symptom-engines-label {
+    color: var(--color-ink-muted);
+  }
+
+  .symptom-title {
+    font-family: var(--font-display);
+    font-size: var(--step-3);
+    line-height: var(--lh-tight);
+    margin: 0;
+  }
+
+  .symptom-summary {
+    font-family: var(--font-text);
+    font-size: var(--step-1);
+    line-height: var(--lh-ui);
+    margin: 0;
+  }
+
+  .symptom-causes-section {
+    margin-top: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+  }
+
+  .symptom-section-kicker {
+    color: var(--color-ink-muted);
+    margin: 0;
+  }
+
+  .symptom-causes-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .symptom-cause-item {
+    padding-block: var(--space-l);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  .symptom-cause-rank {
+    color: var(--color-ink-muted);
+  }
+
+  .symptom-cause-title {
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    line-height: var(--lh-snug);
+    margin: 0;
+  }
+
+  .symptom-cause-check {
+    background: var(--color-paper-sunk);
+    padding: var(--space-s) var(--space-m);
+    border-left: var(--rule-w) solid var(--color-rule);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+  }
+
+  .symptom-cause-check-label {
+    color: var(--color-ink-muted);
+  }
+
+  .symptom-cause-check-text {
+    margin: 0;
+    color: var(--color-ink);
+  }
+
+  .symptom-cause-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-m);
+  }
+
+  .symptom-related {
+    margin-top: var(--space-xl);
+    padding-top: var(--space-m);
+    border-top: var(--rule-w) solid var(--color-rule);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  .symptom-related-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .symptom-related-item {
+    padding-block: var(--space-xs);
+  }
+
+  /* Claim Permalink Page (US-40.8) */
+  .claim-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+    padding-bottom: var(--space-l);
+    border-bottom: var(--rule-w) solid var(--color-rule);
+  }
+
+  .claim-statement {
+    font-family: var(--font-display);
+    font-size: var(--step-3);
+    line-height: var(--lh-tight);
+    margin: 0;
+  }
+
+  .claim-meta-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-s);
+    color: var(--color-ink-muted);
+  }
+
+  .claim-status-text[data-status='proven'] {
+    color: var(--color-ok);
+  }
+
+  .claim-status-text[data-status='diverges'],
+  .claim-status-text[data-status='stale'] {
+    color: var(--color-warn);
+  }
+
+  .claim-status-text[data-status='failed'] {
+    color: var(--color-fail);
+  }
+
+  .claim-section {
+    margin-top: var(--space-xl);
+    padding-top: var(--space-m);
+    border-top: var(--rule-w) solid var(--color-rule);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+  }
+
+  .claim-section-kicker {
+    margin: 0;
+    color: var(--color-ink-muted);
+  }
+
+  .claim-spec-quote {
+    margin: 0;
+    padding-left: var(--space-m);
+    border-left: var(--rule-w) solid var(--color-ink);
+    font-family: var(--font-text);
+    font-size: var(--step-1);
+    line-height: var(--lh-prose);
+    font-style: italic;
+  }
+
+  .claim-derived-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .claim-derived-item {
+    padding-block: var(--space-xs);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .claim-derived-reasoning {
+    margin: 0;
+    font-family: var(--font-text);
+    font-size: var(--step-prose);
+    line-height: var(--lh-prose);
+  }
+
+  .claim-history-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  .claim-history-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-m);
+    flex-wrap: wrap;
+  }
+
+  .claim-history-engine {
+    min-width: 5.5rem;
+    color: var(--color-ink-muted);
+  }
+
+  .claim-history-cells {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3xs);
+  }
+
+  .claim-history-cell {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    box-sizing: border-box;
+  }
+
+  .claim-history-cell[data-outcome='pass'] {
+    background: var(--color-ok);
+  }
+
+  .claim-history-cell[data-outcome='fail'] {
+    border: 1.5px solid var(--color-fail);
+    background: transparent;
+  }
+
+  .claim-history-cell[data-outcome='missing'] {
+    background: var(--color-ink-faint);
+  }
+
+  .claim-history-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-m);
+    color: var(--color-ink-muted);
+  }
+
+  .claim-history-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+  }
+
+  .claim-used-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .claim-used-item {
+    padding-block: var(--space-xs);
+  }
+
+  .concept-legacy-lab {
+    margin-block: var(--space-l);
+  }
+}

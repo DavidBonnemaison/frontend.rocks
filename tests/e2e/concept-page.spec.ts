@@ -103,22 +103,17 @@ test.describe('Concept page', () => {
   test('renders no maturity badge on an architecture pattern and shows a computed Baseline badge on a platform feature', async ({
     page,
   }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/concepts/hexagonal-ports-adapters-ui/', { waitUntil: 'networkidle' });
-    const patternMeta = page.locator('.concept-meta');
-    await expect(patternMeta).toBeVisible();
-    await expect(
-      patternMeta.locator(
-        '.badge-baseline-widely, .badge-baseline-newly, .badge-interop-experimental, .badge-legacy-pattern, .badge-superseded'
-      )
-    ).toHaveCount(0);
+    const patternRail = page.locator('.article-rail');
+    await expect(patternRail).toBeVisible();
+    await expect(patternRail.locator('.support-badge')).toHaveCount(0);
 
     await page.goto('/concepts/css-container-queries/', { waitUntil: 'networkidle' });
-    const featureBadge = page
-      .locator('.concept-meta')
-      .locator('.badge-baseline-widely, .badge-baseline-newly, .badge-interop-experimental');
+    const featureBadge = page.locator('.article-rail .support-badge');
     await expect(featureBadge).toHaveCount(1);
-    await expect(featureBadge).toHaveText(
-      /^(Baseline · Widely|Baseline · Newly|Limited availability)$/
+    await expect(featureBadge).toContainText(
+      /Baseline|Widely available|Newly available|Limited availability/i
     );
   });
 });

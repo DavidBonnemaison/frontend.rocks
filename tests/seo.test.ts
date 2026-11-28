@@ -24,6 +24,8 @@ import {
   renderAutopsyCoverPng,
   renderAutopsyOgPng,
   renderConceptOgPng,
+  renderDefaultOgPng,
+  renderSymptomOgPng,
   renderVsOgPng,
 } from '@/lib/og-generator';
 import { extractVsPairs } from '@/lib/vs-pairs';
@@ -359,6 +361,22 @@ describe('US-14.1, US-14.2 & Section 1.2: Programmatic /vs/, /symptoms/ & Anti-D
       dateModified: sample.dateModified,
     });
     expect(vsJsonLd['@graph'].some((n) => n['@type'] === 'FAQPage')).toBe(true);
+  });
+
+  it('generates 1200x630 PNGs for symptom and default OG templates', async () => {
+    const symptomPng = await renderSymptomOgPng(PRODUCTION_SYMPTOMS[0]);
+    expect(symptomPng.subarray(0, 8)).toEqual(
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+    );
+    expect(symptomPng.readUInt32BE(16)).toBe(1200);
+    expect(symptomPng.readUInt32BE(20)).toBe(630);
+
+    const defaultPng = await renderDefaultOgPng();
+    expect(defaultPng.subarray(0, 8)).toEqual(
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+    );
+    expect(defaultPng.readUInt32BE(16)).toBe(1200);
+    expect(defaultPng.readUInt32BE(20)).toBe(630);
   });
 });
 
