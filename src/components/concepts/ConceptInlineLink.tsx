@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useId, useRef, useState } from 'react';
-import Link from 'next/link';
 import { Info } from 'lucide-react';
+import { DomainLabel } from '@/components/ui/DomainLabel/DomainLabel';
 import type { Domain, MaturityStatus } from '@/lib/schemas';
-import { formatMaturityLabel, UI_STRINGS } from '@/lib/ui-strings';
+import './ConceptInlineLink.css';
 
 export interface ConceptPreviewData {
   id: string;
@@ -72,8 +72,6 @@ export function ConceptInlineLink({ href, preview, children }: ConceptInlineLink
     return () => clearCloseTimer();
   }, []);
 
-  const domainLabel = UI_STRINGS.domains[preview.domain] ?? preview.domain;
-
   return (
     <span
       ref={containerRef}
@@ -81,7 +79,7 @@ export function ConceptInlineLink({ href, preview, children }: ConceptInlineLink
       onMouseEnter={handleOpen}
       onMouseLeave={handleDelayedClose}
     >
-      <Link
+      <a
         href={href}
         className="concept-inline-link"
         aria-describedby={isOpen ? cardId : undefined}
@@ -89,7 +87,7 @@ export function ConceptInlineLink({ href, preview, children }: ConceptInlineLink
         onBlur={handleDelayedClose}
       >
         {children}
-      </Link>
+      </a>
       <button
         type="button"
         className="concept-inline-info-btn"
@@ -103,7 +101,7 @@ export function ConceptInlineLink({ href, preview, children }: ConceptInlineLink
           setIsOpen((prev) => !prev);
         }}
       >
-        <Info size={12} aria-hidden="true" />
+        <Info size={12} strokeWidth={1.5} aria-hidden="true" />
       </button>
 
       {isOpen && (
@@ -114,14 +112,7 @@ export function ConceptInlineLink({ href, preview, children }: ConceptInlineLink
           onMouseEnter={handleOpen}
           onMouseLeave={handleDelayedClose}
         >
-          <span className="concept-preview-badges">
-            <span className="badge">{domainLabel}</span>
-            {preview.maturity_status && (
-              <span className={`badge badge-${preview.maturity_status}`}>
-                {formatMaturityLabel(preview.maturity_status)}
-              </span>
-            )}
-          </span>
+          <DomainLabel domain={preview.domain} />
           <span className="concept-preview-title">{preview.title}</span>
           <span className="concept-preview-tldr">{preview.summary_tldr}</span>
         </span>
